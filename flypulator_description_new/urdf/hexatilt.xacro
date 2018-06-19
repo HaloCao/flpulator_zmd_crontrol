@@ -5,6 +5,7 @@
   <xacro:property name="namespace" value="/drone" />
   <xacro:property name="PI" value="3.1415926535897931"/>
   <xacro:property name="deg_to_rad" value="0.017453278"/>
+  <xacro:property name="to_kgm2" value="1e-9"/>
   <xacro:property name="rotor_tilt_angle" value="13.6"/> <!--in [deg]-->
   <xacro:property name="rotor_velocity_slowdown_sim" value="10" />
   <xacro:property name="mesh_file" value="hexatilt.dae" />
@@ -45,18 +46,62 @@
   <xacro:property name="color" value="DarkGrey" />
 
   <!-- Property Blocks -->
+
+<!-- Moment of Inertia at Origin   (g mm^2) -->
   <xacro:property name="body_inertia">
-    <inertia ixx="0.0347563" ixy="0.0" ixz="0.0" iyy="0.0458929" iyz="0.0" izz="0.0977" /> <!-- [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] -->
-  </xacro:property>
+    <inertia
+    ixx = "${1.536E+08*to_kgm2}"
+	ixy = "${ 4.372E+04 *to_kgm2}"
+	ixz = "${ 1.475E+04 *to_kgm2}"
+	iyx = "${ 4.372E+04 *to_kgm2}"
+	iyy = "${ 1.580E+08 *to_kgm2}"
+	iyz = "${ -2.790E+04*to_kgm2}"
+	izx = "${ 1.475E+04 *to_kgm2}"
+	izy = "${ -2.790E+04*to_kgm2}"
+	izz = "${ 2.429E+08 *to_kgm2}"     />
+    </xacro:property>
+
+
+<!-- Moment of Inertia at Center of Mass   (g mm^2) -->
+  <xacro:property name="rotor_inertia"> 
+    <inertia 
+    ixx = "${ 8.686E+04*to_kgm2 }"
+    iyy = "${ 3.609E+04*to_kgm2 }"
+    izz = "${ 1.079E+05*to_kgm2 }"  
+    ixy = "${ 4.600E+04*to_kgm2 }"
+	ixz = "${ 1.113E+04*to_kgm2 }"
+    izx = "${ 1.113E+04 *to_kgm2 }"
+	izy = "${ -1.849E+04*to_kgm2 }"
+	iyx = "${ 4.600E+04 *to_kgm2 }"
+    iyz = "${ -1.849E+0*to_kgm2 }"/>  
+	  </xacro:property>
+
+  <!-- <xacro:property name="body_inertia"> -->
+      <!-- <inertia
+           ixx="0.0347563"
+           ixy="0.0"
+           ixz="0.0"
+           iyy="0.0458929"
+           iyz="0.0"
+           izz="0.0977" /> --> 
+
+  <!-- [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] -->
+  <!-- </xacro:property> -->
 
   <!-- inertia of a single rotor, assuming it is a cuboid. Height=3mm, width=15mm -->
-  <xacro:property name="rotor_inertia">
-    <inertia
-    ixx="${1/12 * mass_rotor * (0.015 * 0.015 + 0.003 * 0.003) * rotor_velocity_slowdown_sim}"
-    iyy="${1/12 * mass_rotor * (4 * radius_rotor * radius_rotor + 0.003 * 0.003) * rotor_velocity_slowdown_sim}"
-    izz="${1/12 * mass_rotor * (4 * radius_rotor * radius_rotor + 0.015 * 0.015) * rotor_velocity_slowdown_sim}"
-    ixy="0.0" ixz="0.0"  iyz="0.0" /> <!-- [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] -->
-  </xacro:property>
+  <!-- <xacro:property name="rotor_inertia"> -->
+  <!--   <inertia -->
+  <!--   ixx="${1/12 * mass_rotor * (0.015 * 0.015 + 0.003 * 0.003) * rotor_velocity_slowdown_sim}" -->
+
+  <!--   iyy="${1/12 * mass_rotor * (4 * radius_rotor * radius_rotor + 0.003 * 0.003) * rotor_velocity_slowdown_sim}" -->
+
+  <!--   izz="${1/12 * mass_rotor * (4 * radius_rotor * radius_rotor + 0.015 * 0.015) * rotor_velocity_slowdown_sim}" -->
+
+  <!--   ixy="0.0" -->
+  <!--   ixz="0.0" -->
+  <!--   iyz="0.0" /> -->
+  <!-- </xacro:property> -->
+<!-- [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] -->
 
   <!-- Included URDF Files -->
   <xacro:include filename="$(find flypulator_description_new)/urdf/multirotor_base.xacro" />
@@ -305,47 +350,47 @@
       <velocityGaussianNoise>0.01 0.01 0.01</velocityGaussianNoise>
     </plugin>
   </gazebo>
-
-  <gazebo reference="base_link">
-    <sensor type="camera" name="camera1">
-      <update_rate>30.0</update_rate>
-      <camera name="head">
-        <vertical_fov>3.1415926</vertical_fov>
-        <image>
-          <width>800</width>
-          <height>800</height>
-          <format>R8G8B8</format>
-        </image>
-        <clip>
-          <near>0.02</near>
-          <far>300</far>
-        </clip>
-        <noise>
-          <type>gaussian</type>  -->
+  
+  <!-- <gazebo reference="base_link"> -->
+  <!--   <sensor type="camera" name="camera1"> -->
+  <!--     <update_rate>30.0</update_rate> -->
+  <!--     <camera name="head"> -->
+  <!--       <vertical_fov>3.1415926</vertical_fov> -->
+  <!--       <image> -->
+  <!--         <width>800</width> -->
+  <!--         <height>800</height> -->
+  <!--         <format>R8G8B8</format> -->
+  <!--       </image> -->
+  <!--       <clip> -->
+  <!--         <near>0.02</near> -->
+  <!--         <far>300</far> -->
+  <!--       </clip> -->
+  <!--       <noise> -->
+  <!--         <type>gaussian</type>  --> -->
           <!-- Noise is sampled independently per pixel on each frame.
                That pixel's noise value is added to each of its color
                channels, which at that point lie in the range [0,1]. -->
-          <mean>0.0</mean>
-          <stddev>0.007</stddev>
-        </noise>
-      </camera>
-      <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
-        <robotNamespace>${namespace}</robotNamespace>
-        <alwaysOn>true</alwaysOn>
-        <updateRate>0.0</updateRate>
-        <cameraName>camera1</cameraName>
-        <imageTopicName>image_raw</imageTopicName>
-        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-        <frameName>base_link</frameName>
-        <hackBaseline>0.07</hackBaseline>
-        <distortionK1>0.0</distortionK1>
-        <distortionK2>0.0</distortionK2>
-        <distortionK3>0.0</distortionK3>
-        <distortionT1>0.0</distortionT1>
-        <distortionT2>0.0</distortionT2>
-      </plugin>
-    </sensor>
-  </gazebo>
+          <!-- <mean>0.0</mean> -->
+          <!-- <stddev>0.007</stddev> -->
+        <!-- </noise> -->
+      <!-- </camera> -->
+      <!-- <plugin name="camera_controller" filename="libgazebo_ros_camera.so"> -->
+        <!-- <robotNamespace>${namespace}</robotNamespace> -->
+        <!-- <alwaysOn>true</alwaysOn> -->
+        <!-- <updateRate>0.0</updateRate> -->
+        <!-- <cameraName>camera1</cameraName> -->
+        <!-- <imageTopicName>image_raw</imageTopicName> -->
+        <!-- <cameraInfoTopicName>camera_info</cameraInfoTopicName> -->
+        <!-- <frameName>base_link</frameName> -->
+        <!-- <hackBaseline>0.07</hackBaseline> -->
+        <!-- <distortionK1>0.0</distortionK1> -->
+        <!-- <distortionK2>0.0</distortionK2> -->
+        <!-- <distortionK3>0.0</distortionK3> -->
+        <!-- <distortionT1>0.0</distortionT1> -->
+        <!-- <distortionT2>0.0</distortionT2> -->
+      <!-- </plugin> -->
+    <!-- </sensor> -->
+  <!-- </gazebo> -->
 
 <gazebo>
     <plugin name="propulsion_plugin_hexa" filename="libpropulsion_plugin_hexa.so">
