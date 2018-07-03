@@ -149,6 +149,12 @@ class PropulsionPlugin : public ModelPlugin
 public:
   PropulsionPlugin() {}
 
+public:
+  ~PropulsionPlugin()
+  {
+
+  }
+
   /// \brief The load function is called by Gazebo when the plugin is
   /// inserted into simulation
   /// \param[in] _model A pointer to the model that this plugin is
@@ -272,7 +278,7 @@ public:
     // Spin up the queue helper thread.
     this->rosQueueThread = std::thread(std::bind(&PropulsionPlugin::QueueThread, this));
 
-    //update world to apply constant force
+    // This event is broadcast every simulation iteration.
     this->updateConnection = event::Events::ConnectWorldUpdateBegin(
         boost::bind(&PropulsionPlugin::OnUpdate, this, _1));
 
@@ -280,51 +286,9 @@ public:
   }
 
 public:
-  void OnUpdate(const common::UpdateInfo &_info)
+  void OnUpdate(const common::UpdateInfo &_info) // update rate = 1kHz
   {
     // ROS_INFO_STREAM("propulsion plugin: OnUpdate()!");
-    // this->SetVelocity();
-    // this->SetForce();
-    // this->SetTorque();
-
-    // publish tf base_link ---> world
-    tfPublisher();
-    jointStatePubliher();
-    wrenchPublisher();
-
-    if (WRITE_CSV_FILE)
-    {
-      // if (rotor_vel[0] < 2500 && rotor_vel[0] >= 100)
-      {
-        std::ofstream result_file(RESULT_CSV_PATH, std::ios::app);
-        result_file.setf(std::ios::fixed, std::ios::floatfield);
-        result_file.precision(5);
-        result_file << this->model->GetWorld()->SimTime().Double() << ","
-                    << test_data[0] << ","
-                    << test_data[1] << ","
-                    << test_data[2] << ","
-                    << test_data[3] << ","
-                    << test_data[4] << ","
-                    << test_data[5] << ","
-                    << test_data[6] << ","
-                    << test_data[7] << ","
-                    << test_data[8] << ","
-                    << test_data[9] << ","
-                    << test_data[10] << ","
-                    << test_data[11] << ","
-                    << std::endl;
-        result_file.close();
-  }
-    }
-  }
-
-  //calculate aerodynamic
-public:
-  void OnlinkMsg(const gazebo_msgs::LinkStatesConstPtr &msg)
-  {
-    // ROS_INFO_STREAM("propulsion_plugin: get LinkStatesMsg!");
-
-    // ROS_INFO_STREAM(Vx<<","<<Vx<<","<<Vx);
 
     double curr_time = this->model->GetWorld()->SimTime().Double();
     static double last_time = curr_time;
@@ -411,10 +375,9 @@ public:
     Vz = Vwind_z - Vdrone_z;
     Eigen::Vector3d V_airflow (Vx, Vy, Vz);
 
-
-
     for (int i = 0; i < 6; i++){
-        Eigen::Quaterniond q (msg->pose[2+i].orientation.w, msg->pose[2+i].orientation.x, msg->pose[2+i].orientation.y, msg->pose[2+i].orientation.z);
+        Eigen::Quaterniond q (rotor_link_ptr[i]->WorldPose().Rot().W(),rotor_link_ptr[i]->WorldPose().Rot().X(),
+        rotor_link_ptr[i]->WorldPose().Rot().Y(),rotor_link_ptr[i]->WorldPose().Rot().Z());
         Eigen::Matrix3d t_matrix = q.toRotationMatrix();
         Eigen::Matrix3d t_matrix_trans = t_matrix.transpose();
         Eigen::Vector3d v_local = t_matrix_trans * V_airflow;
@@ -530,7 +493,51 @@ public:
     this->pub_ratio.publish(_msg);
 
     */
-    
+
+    // publish tf base_link ---> world
+    static int publish_cnt = 0;
+    // publish rate = 1000/(10) = 100 [Hz]
+    if(publish_cnt >= (10-1)){
+      publish_cnt = 0;
+      tfPublisher();
+      jointStatePubliher();
+      wrenchPublisher();
+
+      if (WRITE_CSV_FILE)
+      {
+        // if (rotor_vel[0] < 2500 && rotor_vel[0] >= 100)
+        {
+          std::ofstream result_file(RESULT_CSV_PATH, std::ios::app);
+          result_file.setf(std::ios::fixed, std::ios::floatfield);
+          result_file.precision(5);
+          result_file << this->model->GetWorld()->SimTime().Double() << ","
+                      << test_data[0] << ","
+                      << test_data[1] << ","
+                      << test_data[2] << ","
+                      << test_data[3] << ","
+                      << test_data[4] << ","
+                      << test_data[5] << ","
+                      << test_data[6] << ","
+                      << test_data[7] << ","
+                      << test_data[8] << ","
+                      << test_data[9] << ","
+                      << test_data[10] << ","
+                      << test_data[11] << ","
+                      << std::endl;
+          result_file.close();
+        }
+      }
+    }
+    else{
+      publish_cnt ++;
+    }
+  }
+
+  //calculate aerodynamic
+public:
+  void OnlinkMsg(const gazebo_msgs::LinkStatesConstPtr &msg)
+  {
+    // ROS_INFO_STREAM("propulsion_plugin: get LinkStatesMsg!");
   }
 
 

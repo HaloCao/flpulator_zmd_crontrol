@@ -77,6 +77,12 @@ public:
   FakeSensorPlugin() {}
 
 public:
+  ~FakeSensorPlugin()
+  {
+
+  }
+
+public:
   virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   {
     ROS_INFO_STREAM("Loading FakeSensorPlugin ...");
@@ -165,24 +171,23 @@ public:
     // measured states of the drone
     this->pub_meas_state = this->rosNode->advertise<flypulator_common_msgs::UavStateStamped>("/drone/meas_state", 100);
 
-    //subscribe to model link states to get position and orientation for coordinate transformation
-    ros::SubscribeOptions so =
-        ros::SubscribeOptions::create<gazebo_msgs::LinkStates>(
-            "/gazebo/link_states", 100, boost::bind(&FakeSensorPlugin::OnlinkMsg, this, _1),
-            ros::VoidPtr(), &this->rosQueue);
-    this->rosSubLink = this->rosNode->subscribe(so);
-
     // Spin up the queue helper thread.
     this->rosQueueThread = std::thread(std::bind(&FakeSensorPlugin::QueueThread, this));
+
+    // This event is broadcast every simulation iteration.
+    // Get pose of the drone and publish.
+    // TODO: the callback should connect to WorldUpdateEnd signal not Begin
+    this->updateConnection = event::Events::ConnectWorldUpdateBegin(
+        boost::bind(&FakeSensorPlugin::OnUpdate, this, _1));
 
     ROS_INFO_STREAM("FakeSensorPlugin Loaded !");
   }
 
 // publish drone state
 public:
-  void OnlinkMsg(const gazebo_msgs::LinkStatesConstPtr &_msg)
+  void OnUpdate(const common::UpdateInfo &_info) // update rate = 1kHz
   {
-    static int loop_cnt = 0;
+     static int loop_cnt = 0;
 
     if(loop_cnt >= (g_output_rate_divider-1))
     {
@@ -285,7 +290,6 @@ public:
 
   }
 
-
 private:
   void QueueThread()
   {
@@ -333,6 +337,9 @@ private:
   /// \brief A thread the keeps running the rosQueue
 private:
   std::thread rosQueueThread;
+
+private:
+  event::ConnectionPtr updateConnection;
 
 private:
   ros::Publisher pub_real_state;
