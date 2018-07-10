@@ -1,7 +1,7 @@
 <package format="2">
-  <name>flypulator</name>
+  <name>flypulator_launch</name>
   <version>1.0.0</version>
-  <description>The metapackage flypulator contains packages related to modeling, control and simulation of multicopter systems</description>
+  <description>flypulator_launch contains centralized all launch files for flypulator ros packages</description>
   <maintainer email="chao.yao@tu-dresden.de">Chao Yao</maintainer>
 
   <license>GPLv3</license>
@@ -26,8 +26,9 @@
   <exec_depend>flypulator_control</exec_depend>
   <exec_depend>hector_gazebo_plugins</exec_depend>
 
+  <!--
   <export>
     <metapackage />
   </export>
-
+  -->
 </package>

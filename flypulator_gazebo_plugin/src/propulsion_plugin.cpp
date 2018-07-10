@@ -54,28 +54,51 @@ class PropulsionPlugin : public ModelPlugin
   double test_data[12]; // test data for debug
   double ground_effect_coeff; // ground effect coefficient
 
-  int N = 6;         //number of energie
-  double c = 0.016;  //blade chord width
-  double R = 0.75;   //blade radius
-  double a = 5.7;    //2D_lift_curve_slope
-  double th0 = 0.7;  //Profile inclination angle
-  double thtw = 0.5; //Inclination change along radius
-  double pa;         //blade pitch angle
-  double B = 0.98;   //tip loss factor
-  double pho = 1.2;  //air density
-  double A;          //wing area
-  double ki = 1.15;  //factor to calculate torque
-  double k = 4.65;   //factor to calculate torque
+  // int N = 6;         //number of energie
+  // double c = 0.016;  //blade chord width
+  // double R = 0.75;   //blade radius
+  // double a = 5.7;    //2D_lift_curve_slope
+  // double th0 = 0.7;  //Profile inclination angle
+  // double thtw = 0.5; //Inclination change along radius
+  // double B = 0.98;   //tip loss factor
+  // double pho = 1.2;  //air density
+  // double ki = 1.15;  //factor to calculate torque
+  // double k = 4.65;   //factor to calculate torque
+  // //coefficients to calculate induced velocity Vi in vortex ring state
+  // double k0 = 1.15;
+  // double k1 = -1.125;
+  // double k2 = -1.372;
+  // double k3 = -1.718;
+  // double k4 = -0.655;
+  // double CD0 = 0.04;      //Profile_Drag_Coefficient from literatur
+  // double m = 6.15;               //drone_masse
+  // double g = 9.81;        //gravity acceleration constant
+
+  //parameters from external config file(.yaml)
+  int N;       //number of energie
+  double c;    //blade chord width
+  double R;    //blade radius
+  double a;    //2D_lift_curve_slope
+  double th0;  //Profile inclination angle
+  double thtw; //Inclination change along radius
+  double B;    //tip loss factor
+  double pho;  //air density
+  double ki;   //factor to calculate torque
+  double k;    //factor to calculate torque
   //coefficients to calculate induced velocity Vi in vortex ring state
-  double k0 = 1.15;
-  double k1 = -1.125;
-  double k2 = -1.372;
-  double k3 = -1.718;
-  double k4 = -0.655;
-  double CD0 = 0.04;      //Profile_Drag_Coefficient from literatur
+  double k0;
+  double k1;
+  double k2;
+  double k3;
+  double k4;
+  double CD0;  //Profile_Drag_Coefficient from literatur
+  double m;    //drone_masse
+  double g;    //gravity acceleration constant
+  
+  // internal parameters
+  double pa;         //blade pitch angle
+  double A;          //wing area
   double rv = 13.6 * M_PI / 180.0;     //rotor_axis_vertical_axis_angle cos(rv)=cos(pitch)*cos(yaw)
-  double m = 6.15;               //drone_masse
-  double g = 9.81;        //gravity acceleration constant
   double s;               //rotor solidity
   double Vwind_x = 1e-20; //wind velocity in global x
   double Vwind_y = 1e-20; //wind velocity in global y
@@ -87,6 +110,8 @@ class PropulsionPlugin : public ModelPlugin
   double Vy = 1e-20;      //air velocity in global y
   double Vz = 1e-20;      //air velocity in global z
   double Vi_h;            //induced velocity in the hovering case
+  std::vector<std::string> joint_names;  //joint names of propeller
+  std::vector<std::string> link_names;   //link names of propeller
   
   double k_simple_aero = 0.0138;
   double b_simple_aero = 0.00022;
@@ -135,6 +160,10 @@ public:
   virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   {
     ROS_INFO_STREAM("Loading PropulsionPlugin ...");
+
+    //load aerodynamic parameters
+    this->readParamsFromServer();
+
     if (_model->GetJointCount() == 0)
     {
       ROS_ERROR("Invalid joint count, plugin not loaded");
@@ -157,12 +186,12 @@ public:
     this->model = _model;
     // Get the first joint. We are making an assumption about the model
     // having six joints that is the rotational joint.
-    this->joint1 = _model->GetJoint("blade_joint_1");
-    this->joint2 = _model->GetJoint("blade_joint_2");
-    this->joint3 = _model->GetJoint("blade_joint_3");
-    this->joint4 = _model->GetJoint("blade_joint_4");
-    this->joint5 = _model->GetJoint("blade_joint_5");
-    this->joint6 = _model->GetJoint("blade_joint_6");
+    this->joint1 = _model->GetJoint(joint_names[0]);
+    this->joint2 = _model->GetJoint(joint_names[1]);
+    this->joint3 = _model->GetJoint(joint_names[2]);
+    this->joint4 = _model->GetJoint(joint_names[3]);
+    this->joint5 = _model->GetJoint(joint_names[4]);
+    this->joint6 = _model->GetJoint(joint_names[5]);
     //set joint velocity using joint motors to set joint velocity
     this->joint1->SetParam("fmax", 0, 1000000.0); //fmax: maximum joint force or torque
     this->joint2->SetParam("fmax", 0, 1000000.0);
@@ -179,19 +208,27 @@ public:
     //get the six blade link
     
     this->link0 = _model->GetChildLink("base_link");
-    for (int i = 0; i<6; i++){
-        rotor_link_ptr[i] = _model->GetChildLink(std::string("blade_link_") + std::to_string(i+1));
+    for (int i = 0; i<N; i++){
+        //rotor_link_ptr[i] = _model->GetChildLink(std::string("blade_link_") + std::to_string(i+1));
+        rotor_link_ptr[i] = _model->GetChildLink(link_names[i]);
     }
 
-    //load aerodynamic parameters
-    // this->readParamsFromServer();    
-    
-    //calculation of constants
-    //m = this->link0->GetInertial()->GetMass();
-    s = (N * c) / (M_PI * R);                              //rotor solidity
-    A = M_PI * pow(R, 2);                                  //wing area
-    Vi_h = - 1/B * sqrt((m * g) / (2 * N * pho * A * cos(rv))); //induced airflow velocity in hovering case // multiplied by 1/B according to Hiller eq. 4.58
-    pa = th0 - 0.75 * thtw;                              //blade pitch angle
+    // calculate mass of drone from model
+    m = this->link0->GetInertial()->GetMass(); // mass of the base_link
+    // the mass of "base_link" is included the 
+    // mass of all components that fix to the "base_link",
+    // here included 6 arm+motor and 2 leg of the drone
+    for(int i=0; i<N; i++){
+      m += rotor_link_ptr[i]->GetInertial()->GetMass();
+    }
+    ROS_INFO_STREAM("Mass of drone : "<< m << "kg"); // show mass of drone
+
+    s = (N * c) / (M_PI * R); //rotor solidity
+    A = M_PI * pow(R, 2); //wing area
+    //induced airflow velocity in hovering case 
+    // multiplied by 1/B according to Hiller eq. 4.58
+    Vi_h = - 1/B * sqrt((m * g) / (2 * N * pho * A * cos(rv))); 
+    pa = th0 - 0.75 * thtw; //blade pitch angle
 
     // Initialize ros, if it has not already bee initialized.
     if (!ros::isInitialized())
@@ -576,27 +613,156 @@ public:
 private:
   void readParamsFromServer()
   {
-    ROS_INFO_STREAM("propulsion_plugin: loading aerodynamic parameters...");
-    this->rosNode->param("rotor_number", N, N);
-    this->rosNode->param("blade_chord_width", c, c);
-    this->rosNode->param("blade_radius", R, R);
-    this->rosNode->param("2D_lift_curve_slope", a, a);
-    this->rosNode->param("profile_inclination_angle", th0, th0);
-    this->rosNode->param("radial_inclination_change", thtw, thtw);
-    this->rosNode->param("TLF", B, B);
-    this->rosNode->param("air_density", pho, pho);
-    this->rosNode->param("Profile_Drag_Coefficient", CD0, CD0);
-    this->rosNode->param("rotor_axis_vertical_axis_angle", rv, rv);
-    this->rosNode->param("minimal_rotor_velocity", vel_min, vel_min);
-    this->rosNode->param("maximal_rotor_velocity", vel_max, vel_max);
-    this->rosNode->param("default_blade1_rotation_direction", di_blade_rot[0], di_blade_rot[0]);
-    this->rosNode->param("default_blade2_rotation_direction", di_blade_rot[1], di_blade_rot[1]);
-    this->rosNode->param("default_blade3_rotation_direction", di_blade_rot[2], di_blade_rot[2]);
-    this->rosNode->param("default_blade4_rotation_direction", di_blade_rot[3], di_blade_rot[3]);
-    this->rosNode->param("default_blade5_rotation_direction", di_blade_rot[4], di_blade_rot[4]);
-    this->rosNode->param("default_blade6_rotation_direction", di_blade_rot[5], di_blade_rot[5]);
-    this->rosNode->param("bidirectional_optional", bidirectional, bidirectional);
+    //read joint names from yaml file
+    if(ros::param::get("urdf/controller_joint_names", joint_names))
+    {
+      for (auto i: joint_names)
+      {
+        ROS_DEBUG_STREAM("propulsion_plugin: Loaded control joint names : "<< i);
+      }
+      ROS_INFO_STREAM("propulsion_plugin: joint names loaded!");
+    }      
+    else
+    {
+      ROS_ERROR_STREAM("Can't load joint names from yaml file!");
+    }
+
+    //read links names from yaml file
+    if(ros::param::get("urdf/controller_link_names", link_names))
+    {
+      for (auto i: link_names)
+      {
+        ROS_DEBUG_STREAM("propulsion_plugin: Loaded control link names : "<< i);
+      }
+      ROS_INFO_STREAM("propulsion_plugin: link names loaded!");
+    }      
+    else
+    {
+      ROS_ERROR_STREAM("Can't load link names from yaml file!");
+    }
+
+    //read aerodynamic parameter from yaml file
+    if(ros::param::get("aero_param/N", N))
+      ROS_DEBUG_STREAM("Loaded aero_param N : "<< N);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/N from yaml file!");
+    }
+
+    if(ros::param::get("aero_param/c", c))
+      ROS_DEBUG_STREAM("Loaded aero_param/c : "<< c);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/c from yaml file!");
+    }
+
+    if(ros::param::get("aero_param/R", R))
+      ROS_DEBUG_STREAM("Loaded aero_param/R : "<< R);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/R from yaml file!");
+    }
+
+    if(ros::param::get("aero_param/a", a))
+      ROS_DEBUG_STREAM("Loaded aero_param/a : "<< a);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/a from yaml file!");
+    }
+
+    if(ros::param::get("aero_param/th0", th0))
+      ROS_DEBUG_STREAM("Loaded aero_param/th0 : "<< th0);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/th0 from yaml file!");
+    }
+
+    if(ros::param::get("aero_param/thtw", thtw))
+      ROS_DEBUG_STREAM("Loaded aero_param/thtw : "<< thtw);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/thtw from yaml file!");
+    }
+
+    if(ros::param::get("aero_param/B", B))
+      ROS_DEBUG_STREAM("Loaded aero_param/B : "<< B);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/B from yaml file!");
+    }
+
+    if(ros::param::get("aero_param/pho", pho))
+      ROS_DEBUG_STREAM("Loaded aero_param/pho : "<< pho);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/pho from yaml file!");
+    }
+
+    if(ros::param::get("aero_param/ki", ki))
+      ROS_DEBUG_STREAM("Loaded aero_param/ki : "<< ki);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/ki from yaml file!");
+    }
+
+    if(ros::param::get("aero_param/k", k))
+      ROS_DEBUG_STREAM("Loaded aero_param/k : "<< k);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/k from yaml file!");
+    }
+
+    if(ros::param::get("aero_param/k0", k0))
+      ROS_DEBUG_STREAM("Loaded aero_param/k0 : "<< k0);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/k0 from yaml file!");
+    }
+
+    if(ros::param::get("aero_param/k1", k1))
+      ROS_DEBUG_STREAM("Loaded aero_param/k1 : "<< k1);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/k1 from yaml file!");
+    }
+
+    if(ros::param::get("aero_param/k2", k2))
+      ROS_DEBUG_STREAM("Loaded aero_param/k2 : "<< k2);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/k2 from yaml file!");
+    }
+
+    if(ros::param::get("aero_param/k3", k3))
+      ROS_DEBUG_STREAM("Loaded aero_param/k3 : "<< k3);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/k3 from yaml file!");
+    }
+
+    if(ros::param::get("aero_param/k4", k4))
+      ROS_DEBUG_STREAM("Loaded aero_param/k4 : "<< k4);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/k4 from yaml file!");
+    }
+
+    if(ros::param::get("aero_param/CD0", CD0))
+      ROS_DEBUG_STREAM("Loaded aero_param/CD0 : "<< CD0);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/CD0 from yaml file!");
+    }
+
+    if(ros::param::get("aero_param/g", g))
+      ROS_DEBUG_STREAM("Loaded aero_param/g : "<< g);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/g from yaml file!");
+    }
+      
     ROS_INFO_STREAM("propulsion_plugin: aerodynamic parameters loaded!");
+
   }
 
 private:
@@ -615,32 +781,32 @@ private:
     // pose_tmp = this->link1->GetRelativePose();
     // T_tmp.setOrigin(tf::Vector3(pose_tmp.pos.x, pose_tmp.pos.y, pose_tmp.pos.z));
     // T_tmp.setRotation(tf::Quaternion(pose_tmp.rot.x,pose_tmp.rot.y,pose_tmp.rot.z,pose_tmp.rot.w));
-    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "blade_link_1"));
+    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", link_names[0]));
 
     // pose_tmp = this->link2->GetRelativePose();
     // T_tmp.setOrigin(tf::Vector3(pose_tmp.pos.x, pose_tmp.pos.y, pose_tmp.pos.z));
     // T_tmp.setRotation(tf::Quaternion(pose_tmp.rot.x,pose_tmp.rot.y,pose_tmp.rot.z,pose_tmp.rot.w));
-    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "blade_link_2"));
+    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "link_names[1]"));
 
     // pose_tmp = this->link3->GetRelativePose();
     // T_tmp.setOrigin(tf::Vector3(pose_tmp.pos.x, pose_tmp.pos.y, pose_tmp.pos.z));
     // T_tmp.setRotation(tf::Quaternion(pose_tmp.rot.x,pose_tmp.rot.y,pose_tmp.rot.z,pose_tmp.rot.w));
-    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "blade_link_3"));
+    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "link_names[2]"));
 
     // pose_tmp = this->link4->GetRelativePose();
     // T_tmp.setOrigin(tf::Vector3(pose_tmp.pos.x, pose_tmp.pos.y, pose_tmp.pos.z));
     // T_tmp.setRotation(tf::Quaternion(pose_tmp.rot.x,pose_tmp.rot.y,pose_tmp.rot.z,pose_tmp.rot.w));
-    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "blade_link_4"));
+    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "link_names[3]"));
 
     // pose_tmp = this->link5->GetRelativePose();
     // T_tmp.setOrigin(tf::Vector3(pose_tmp.pos.x, pose_tmp.pos.y, pose_tmp.pos.z));
     // T_tmp.setRotation(tf::Quaternion(pose_tmp.rot.x,pose_tmp.rot.y,pose_tmp.rot.z,pose_tmp.rot.w));
-    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "blade_link_5"));
+    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "link_names[4]"));
 
     // pose_tmp = this->link6->GetRelativePose();
     // T_tmp.setOrigin(tf::Vector3(pose_tmp.pos.x, pose_tmp.pos.y, pose_tmp.pos.z));
     // T_tmp.setRotation(tf::Quaternion(pose_tmp.rot.x,pose_tmp.rot.y,pose_tmp.rot.z,pose_tmp.rot.w));
-    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "blade_link_6"));
+    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "link_names[5]"));
   }
 // publish joint state
 private:
