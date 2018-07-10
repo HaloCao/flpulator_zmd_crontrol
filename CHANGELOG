@@ -1,5 +1,8 @@
-Flypulator 2.0.0
+## flypulator_gazebo_plugin 2.1.0
+"Events" callback for simulation update
+
+## flypulator_gazebo_plugin 2.0.0
 add ros melodic compatibility
 
-Flypulator 1.0.0
+## Flypulator 1.0.0
 first version
