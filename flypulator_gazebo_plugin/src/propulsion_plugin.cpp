@@ -621,7 +621,7 @@ private:
   void readParamsFromServer()
   {
     //read joint names from yaml file
-    if(ros::param::get("uav/controller_joint_names", joint_names))
+    if(ros::param::get("urdf/controller_joint_names", joint_names))
     {
       for (auto i: joint_names)
       {
@@ -635,7 +635,7 @@ private:
     }
 
     //read links names from yaml file
-    if(ros::param::get("uav/controller_link_names", link_names))
+    if(ros::param::get("urdf/controller_link_names", link_names))
     {
       for (auto i: link_names)
       {

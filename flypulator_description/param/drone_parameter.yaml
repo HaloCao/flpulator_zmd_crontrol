@@ -10,5 +10,5 @@ uav/k: 0.0138 # [N/(rad/s)²] , f=k*omega_i² 0.0138 0.000057
 uav/b: 0.00022 # [Nm/(rad/s)²] , tau = b * omega_i² 0.00022  0.0000012
 uav/gravity: 9.81 # [m/s²]
 uav/t_motor: 0.11 # [s] motor PT1 time constant 
-uav/controller_joint_names: ['blade_joint_1', 'blade_joint_2', 'blade_joint_3', 'blade_joint_4', 'blade_joint_5', 'blade_joint_6', ]
-uav/controller_link_names: ['blade_link_1', 'blade_link_2', 'blade_link_3', 'blade_link_4', 'blade_link_5', 'blade_link_6', ]
+urdf/controller_joint_names: ['blade_joint_1', 'blade_joint_2', 'blade_joint_3', 'blade_joint_4', 'blade_joint_5', 'blade_joint_6', ]
+urdf/controller_link_names: ['blade_link_1', 'blade_link_2', 'blade_link_3', 'blade_link_4', 'blade_link_5', 'blade_link_6', ]
