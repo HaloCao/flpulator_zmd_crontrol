@@ -110,6 +110,8 @@ class PropulsionPlugin : public ModelPlugin
   double Vy = 1e-20;      //air velocity in global y
   double Vz = 1e-20;      //air velocity in global z
   double Vi_h;            //induced velocity in the hovering case
+  std::vector<std::string> joint_names;  //joint names of propeller
+  std::vector<std::string> link_names;   //link names of propeller
   
   double k_simple_aero = 0.0138;
   double b_simple_aero = 0.00022;
@@ -190,12 +192,12 @@ public:
     this->model = _model;
     // Get the first joint. We are making an assumption about the model
     // having six joints that is the rotational joint.
-    this->joint1 = _model->GetJoint("blade_joint_1");
-    this->joint2 = _model->GetJoint("blade_joint_2");
-    this->joint3 = _model->GetJoint("blade_joint_3");
-    this->joint4 = _model->GetJoint("blade_joint_4");
-    this->joint5 = _model->GetJoint("blade_joint_5");
-    this->joint6 = _model->GetJoint("blade_joint_6");
+    this->joint1 = _model->GetJoint(joint_names[0]);
+    this->joint2 = _model->GetJoint(joint_names[1]);
+    this->joint3 = _model->GetJoint(joint_names[2]);
+    this->joint4 = _model->GetJoint(joint_names[3]);
+    this->joint5 = _model->GetJoint(joint_names[4]);
+    this->joint6 = _model->GetJoint(joint_names[5]);
     //set joint velocity using joint motors to set joint velocity
     this->joint1->SetParam("fmax", 0, 1000000.0); //fmax: maximum joint force or torque
     this->joint2->SetParam("fmax", 0, 1000000.0);
@@ -213,7 +215,8 @@ public:
     
     this->link0 = _model->GetChildLink("base_link");
     for (int i = 0; i<N; i++){
-        rotor_link_ptr[i] = _model->GetChildLink(std::string("blade_link_") + std::to_string(i+1));
+        //rotor_link_ptr[i] = _model->GetChildLink(std::string("blade_link_") + std::to_string(i+1));
+        rotor_link_ptr[i] = _model->GetChildLink(link_names[i]);
     }
 
     // calculate mass of drone from model
@@ -617,64 +620,156 @@ public:
 private:
   void readParamsFromServer()
   {
-    ROS_INFO_STREAM("propulsion_plugin: loading aerodynamic parameters...");
+    //read joint names from yaml file
+    if(ros::param::get("uav/controller_joint_names", joint_names))
+    {
+      for (auto i: joint_names)
+      {
+        ROS_DEBUG_STREAM("propulsion_plugin: Loaded control joint names : "<< i);
+      }
+      ROS_INFO_STREAM("propulsion_plugin: joint names loaded!");
+    }      
+    else
+    {
+      ROS_ERROR_STREAM("Can't load joint names from yaml file!");
+    }
 
+    //read links names from yaml file
+    if(ros::param::get("uav/controller_link_names", link_names))
+    {
+      for (auto i: link_names)
+      {
+        ROS_DEBUG_STREAM("propulsion_plugin: Loaded control link names : "<< i);
+      }
+      ROS_INFO_STREAM("propulsion_plugin: link names loaded!");
+    }      
+    else
+    {
+      ROS_ERROR_STREAM("Can't load link names from yaml file!");
+    }
+
+    //read aerodynamic parameter from yaml file
     if(ros::param::get("aero_param/N", N))
       ROS_DEBUG_STREAM("Loaded aero_param N : "<< N);
-    else{
-      ROS_WARN_STREAM("Can't load aerodynamic parameters from yaml file!");
-      return;
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/N from yaml file!");
     }
 
     if(ros::param::get("aero_param/c", c))
       ROS_DEBUG_STREAM("Loaded aero_param/c : "<< c);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/c from yaml file!");
+    }
 
     if(ros::param::get("aero_param/R", R))
       ROS_DEBUG_STREAM("Loaded aero_param/R : "<< R);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/R from yaml file!");
+    }
 
     if(ros::param::get("aero_param/a", a))
       ROS_DEBUG_STREAM("Loaded aero_param/a : "<< a);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/a from yaml file!");
+    }
 
     if(ros::param::get("aero_param/th0", th0))
       ROS_DEBUG_STREAM("Loaded aero_param/th0 : "<< th0);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/th0 from yaml file!");
+    }
 
     if(ros::param::get("aero_param/thtw", thtw))
       ROS_DEBUG_STREAM("Loaded aero_param/thtw : "<< thtw);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/thtw from yaml file!");
+    }
 
     if(ros::param::get("aero_param/B", B))
       ROS_DEBUG_STREAM("Loaded aero_param/B : "<< B);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/B from yaml file!");
+    }
 
     if(ros::param::get("aero_param/pho", pho))
       ROS_DEBUG_STREAM("Loaded aero_param/pho : "<< pho);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/pho from yaml file!");
+    }
 
     if(ros::param::get("aero_param/ki", ki))
       ROS_DEBUG_STREAM("Loaded aero_param/ki : "<< ki);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/ki from yaml file!");
+    }
 
     if(ros::param::get("aero_param/k", k))
       ROS_DEBUG_STREAM("Loaded aero_param/k : "<< k);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/k from yaml file!");
+    }
 
     if(ros::param::get("aero_param/k0", k0))
       ROS_DEBUG_STREAM("Loaded aero_param/k0 : "<< k0);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/k0 from yaml file!");
+    }
 
     if(ros::param::get("aero_param/k1", k1))
       ROS_DEBUG_STREAM("Loaded aero_param/k1 : "<< k1);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/k1 from yaml file!");
+    }
 
     if(ros::param::get("aero_param/k2", k2))
       ROS_DEBUG_STREAM("Loaded aero_param/k2 : "<< k2);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/k2 from yaml file!");
+    }
 
     if(ros::param::get("aero_param/k3", k3))
       ROS_DEBUG_STREAM("Loaded aero_param/k3 : "<< k3);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/k3 from yaml file!");
+    }
 
     if(ros::param::get("aero_param/k4", k4))
       ROS_DEBUG_STREAM("Loaded aero_param/k4 : "<< k4);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/k4 from yaml file!");
+    }
 
     if(ros::param::get("aero_param/CD0", CD0))
       ROS_DEBUG_STREAM("Loaded aero_param/CD0 : "<< CD0);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/CD0 from yaml file!");
+    }
 
     if(ros::param::get("aero_param/g", g))
       ROS_DEBUG_STREAM("Loaded aero_param/g : "<< g);
+    else
+    {
+      ROS_ERROR_STREAM("Can't load aero_param/g from yaml file!");
+    }
       
     ROS_INFO_STREAM("propulsion_plugin: aerodynamic parameters loaded!");
+
   }
 
 private:
@@ -693,32 +788,32 @@ private:
     // pose_tmp = this->link1->GetRelativePose();
     // T_tmp.setOrigin(tf::Vector3(pose_tmp.pos.x, pose_tmp.pos.y, pose_tmp.pos.z));
     // T_tmp.setRotation(tf::Quaternion(pose_tmp.rot.x,pose_tmp.rot.y,pose_tmp.rot.z,pose_tmp.rot.w));
-    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "blade_link_1"));
+    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", link_names[0]));
 
     // pose_tmp = this->link2->GetRelativePose();
     // T_tmp.setOrigin(tf::Vector3(pose_tmp.pos.x, pose_tmp.pos.y, pose_tmp.pos.z));
     // T_tmp.setRotation(tf::Quaternion(pose_tmp.rot.x,pose_tmp.rot.y,pose_tmp.rot.z,pose_tmp.rot.w));
-    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "blade_link_2"));
+    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "link_names[1]"));
 
     // pose_tmp = this->link3->GetRelativePose();
     // T_tmp.setOrigin(tf::Vector3(pose_tmp.pos.x, pose_tmp.pos.y, pose_tmp.pos.z));
     // T_tmp.setRotation(tf::Quaternion(pose_tmp.rot.x,pose_tmp.rot.y,pose_tmp.rot.z,pose_tmp.rot.w));
-    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "blade_link_3"));
+    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "link_names[2]"));
 
     // pose_tmp = this->link4->GetRelativePose();
     // T_tmp.setOrigin(tf::Vector3(pose_tmp.pos.x, pose_tmp.pos.y, pose_tmp.pos.z));
     // T_tmp.setRotation(tf::Quaternion(pose_tmp.rot.x,pose_tmp.rot.y,pose_tmp.rot.z,pose_tmp.rot.w));
-    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "blade_link_4"));
+    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "link_names[3]"));
 
     // pose_tmp = this->link5->GetRelativePose();
     // T_tmp.setOrigin(tf::Vector3(pose_tmp.pos.x, pose_tmp.pos.y, pose_tmp.pos.z));
     // T_tmp.setRotation(tf::Quaternion(pose_tmp.rot.x,pose_tmp.rot.y,pose_tmp.rot.z,pose_tmp.rot.w));
-    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "blade_link_5"));
+    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "link_names[4]"));
 
     // pose_tmp = this->link6->GetRelativePose();
     // T_tmp.setOrigin(tf::Vector3(pose_tmp.pos.x, pose_tmp.pos.y, pose_tmp.pos.z));
     // T_tmp.setRotation(tf::Quaternion(pose_tmp.rot.x,pose_tmp.rot.y,pose_tmp.rot.z,pose_tmp.rot.w));
-    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "blade_link_6"));
+    // T_br.sendTransform(tf::StampedTransform(T_tmp, ros::Time::now(), "base_link", "link_names[5]"));
   }
 // publish joint state
 private:
