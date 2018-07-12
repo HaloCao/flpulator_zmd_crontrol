@@ -1,4 +1,3 @@
-
 # Contribution Guide
 
 ## Git branches
@@ -10,6 +9,27 @@
 ## Code Style
 
 The code style follows the [ROS C++ Style Guide](http://wiki.ros.org/CppStyleGuide). Hence, class member variables have a underscore suffix (e.g. `variable1_`). Global variables have a leading `g_` prefix (e.g. `g_variable2`). For performance reasons, functions which are called frequently do not return values, but get a reference on the output passed as argument, so the result can be stored in this reference. This is a commonly used principle in C++.
+
+It is recommanded to use clang-format to format your code automatically:
+ - Install clang-format
+ ```
+ sudo apt-get install clang-format
+ ```
+ - Create a file `your_ws/.clang-format`, then paste the following style setting and save
+
+ ```
+ Language: Cpp
+ BasedOnStyle: Google
+ ColumnLimit: 120
+ MaxEmptyLinesToKeep: 1
+ Cpp11BracedListStyle: true
+ Standard: Cpp11
+ IndentWidth: 2
+ TabWidth: 2
+ UseTab: Never
+ SortIncludes: false
+ ```
+ - Enable clang format using this style. Following the instruction [here](https://github.com/davetcoleman/roscpp_code_format/blob/master/README.md).
 
 ## Version Numbering Rules
 Given a version number MAJOR.MINOR.PATCH, increment the:
