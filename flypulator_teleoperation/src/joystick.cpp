@@ -16,11 +16,12 @@ private:
   int force1_, force2_, force3_, torque1_, torque2_, torque3_;
   double f_scale_, t_scale_;
 
-  ros::Publisher wrench_pub_; //publish control wrench signal
+  ros::Publisher wrench_pub_;  // publish control wrench signal
   ros::Subscriber joy_sub_;
 };
 
-TeleopDrone::TeleopDrone(ros::NodeHandle  nh) :nh_(nh),force1_(1),force2_(2),force3_(3),torque1_(4),torque2_(5),torque3_(6)
+TeleopDrone::TeleopDrone(ros::NodeHandle nh)
+  : nh_(nh), force1_(1), force2_(2), force3_(3), torque1_(4), torque2_(5), torque3_(6)
 {
   nh_.param("axis_force1", force1_, force1_);
   nh_.param("axis_force2", force2_, force2_);
@@ -39,8 +40,8 @@ TeleopDrone::TeleopDrone(ros::NodeHandle  nh) :nh_(nh),force1_(1),force2_(2),for
 void TeleopDrone::joyCallback(const sensor_msgs::Joy::ConstPtr &joy)
 {
   geometry_msgs::Wrench msg;
-  msg.force.x = f_scale_ * (1.0 - joy->axes[force1_])/2.0;
-  msg.force.y = f_scale_ * (1.0 - joy->axes[force2_])/2.0;
+  msg.force.x = f_scale_ * (1.0 - joy->axes[force1_]) / 2.0;
+  msg.force.y = f_scale_ * (1.0 - joy->axes[force2_]) / 2.0;
   msg.force.z = f_scale_ * joy->axes[force3_];
   msg.torque.x = t_scale_ * joy->axes[torque1_] * -1.0;
   msg.torque.y = t_scale_ * joy->axes[torque2_];
@@ -54,7 +55,7 @@ int main(int argc, char **argv)
   TeleopDrone teleop_drone(ros::NodeHandle("~"));
   // ros::Rate loop_rate(20);
   ros::spin();
-  //ros::spinOnce();
+  // ros::spinOnce();
   // loop_rate.sleep();
   return 0;
 }

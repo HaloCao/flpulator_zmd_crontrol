@@ -30,56 +30,68 @@
 
 namespace gazebo
 {
+bool write_data_2_file = true;  // save pose data to file
+std::string file_path = "/home/jan/flypulator_ws/src/flypulator/flypulator_gazebo_plugin/position_data_refstep.csv";
 
-   bool write_data_2_file = true; // save pose data to file
-   std::string file_path = "/home/jan/flypulator_ws/src/flypulator/flypulator_gazebo_plugin/position_data_refstep.csv";
-   
-   int g_output_rate_divider = 10; // output rate = 1000Hz/ouput_rate_divider // used if not specified in state_estimation_param_yaml
-   unsigned size_of_queue = 2; // number of messages which meas_state messages are delayed by if not specified in state_estimation_param_yaml
+int g_output_rate_divider =
+    10;  // output rate = 1000Hz/ouput_rate_divider // used if not specified in state_estimation_param_yaml
+unsigned size_of_queue =
+    2;  // number of messages which meas_state messages are delayed by if not specified in state_estimation_param_yaml
 
-   // initial values for noise generators if no noise specified in state_estimation_param.yaml
-   float g_sigma_p = 0;//1 / 3.0f;
-   float g_sigma_v = 0; //sqrt(2)*g_sigma_p/(g_output_rate_divider/1000) / 3.0f;
-   float g_sigma_phi = 0;//M_PI / 180.0f * 1 / 3.0f;
-   float g_sigma_omega = 0;//sqrt(2)*g_sigma_phi/(g_output_rate_divider/1000) / 3.0f;
-   //https://stackoverflow.com/questions/25193991/how-to-initialize-boostmt19937-with-multiple-values-without-using-c11
-   boost::random::seed_seq seed_x ({1ul, 2ul, 3ul, 4ul});
-   boost::random::seed_seq seed_y ({5ul, 6ul, 7ul, 8ul});
-   boost::random::seed_seq seed_z ({9ul, 10ul, 11ul, 12ul});
-   boost::random::seed_seq seed_v_x ({13ul, 14ul, 15ul, 16ul});
-   boost::random::seed_seq seed_v_y ({17ul, 18ul, 19ul, 20ul});
-   boost::random::seed_seq seed_v_z ({21ul, 22ul, 23ul, 24ul});
-   boost::random::seed_seq seed_roll ({25ul, 26ul, 27ul, 28ul});
-   boost::random::seed_seq seed_pitch ({29ul, 30ul, 31ul, 32ul});
-   boost::random::seed_seq seed_yaw ({33ul, 34ul, 35ul, 36ul});
-   boost::random::seed_seq seed_om_x ({37ul, 38ul, 39ul, 40ul});
-   boost::random::seed_seq seed_om_y ({41ul, 42ul, 43ul, 44ul});
-   boost::random::seed_seq seed_om_z ({45ul, 46ul, 47ul, 48ul});
+// initial values for noise generators if no noise specified in state_estimation_param.yaml
+float g_sigma_p = 0;      // 1 / 3.0f;
+float g_sigma_v = 0;      // sqrt(2)*g_sigma_p/(g_output_rate_divider/1000) / 3.0f;
+float g_sigma_phi = 0;    // M_PI / 180.0f * 1 / 3.0f;
+float g_sigma_omega = 0;  // sqrt(2)*g_sigma_phi/(g_output_rate_divider/1000) / 3.0f;
+// https://stackoverflow.com/questions/25193991/how-to-initialize-boostmt19937-with-multiple-values-without-using-c11
+boost::random::seed_seq seed_x({1ul, 2ul, 3ul, 4ul});
+boost::random::seed_seq seed_y({5ul, 6ul, 7ul, 8ul});
+boost::random::seed_seq seed_z({9ul, 10ul, 11ul, 12ul});
+boost::random::seed_seq seed_v_x({13ul, 14ul, 15ul, 16ul});
+boost::random::seed_seq seed_v_y({17ul, 18ul, 19ul, 20ul});
+boost::random::seed_seq seed_v_z({21ul, 22ul, 23ul, 24ul});
+boost::random::seed_seq seed_roll({25ul, 26ul, 27ul, 28ul});
+boost::random::seed_seq seed_pitch({29ul, 30ul, 31ul, 32ul});
+boost::random::seed_seq seed_yaw({33ul, 34ul, 35ul, 36ul});
+boost::random::seed_seq seed_om_x({37ul, 38ul, 39ul, 40ul});
+boost::random::seed_seq seed_om_y({41ul, 42ul, 43ul, 44ul});
+boost::random::seed_seq seed_om_z({45ul, 46ul, 47ul, 48ul});
 
-   boost::variate_generator<boost::mt19937, boost::normal_distribution<> > g_noise_generator_x (boost::mt19937(seed_x), boost::normal_distribution<>(0,g_sigma_p));
-   boost::variate_generator<boost::mt19937, boost::normal_distribution<> > g_noise_generator_y (boost::mt19937(seed_y), boost::normal_distribution<>(0,g_sigma_p));
-   boost::variate_generator<boost::mt19937, boost::normal_distribution<> > g_noise_generator_z (boost::mt19937(seed_z), boost::normal_distribution<>(0,g_sigma_p));
-   boost::variate_generator<boost::mt19937, boost::normal_distribution<> > g_noise_generator_v_x (boost::mt19937(seed_v_x), boost::normal_distribution<>(0,g_sigma_v));
-   boost::variate_generator<boost::mt19937, boost::normal_distribution<> > g_noise_generator_v_y (boost::mt19937(seed_v_y), boost::normal_distribution<>(0,g_sigma_v));
-   boost::variate_generator<boost::mt19937, boost::normal_distribution<> > g_noise_generator_v_z (boost::mt19937(seed_v_z), boost::normal_distribution<>(0,g_sigma_v));
-   boost::variate_generator<boost::mt19937, boost::normal_distribution<> > g_noise_generator_roll (boost::mt19937(seed_roll), boost::normal_distribution<>(0,g_sigma_phi));
-   boost::variate_generator<boost::mt19937, boost::normal_distribution<> > g_noise_generator_pitch (boost::mt19937(seed_pitch), boost::normal_distribution<>(0,g_sigma_phi));
-   boost::variate_generator<boost::mt19937, boost::normal_distribution<> > g_noise_generator_yaw (boost::mt19937(seed_yaw), boost::normal_distribution<>(0,g_sigma_phi));
-   boost::variate_generator<boost::mt19937, boost::normal_distribution<> > g_noise_generator_om_x (boost::mt19937(seed_om_x), boost::normal_distribution<>(0,g_sigma_omega));
-   boost::variate_generator<boost::mt19937, boost::normal_distribution<> > g_noise_generator_om_y (boost::mt19937(seed_om_y), boost::normal_distribution<>(0,g_sigma_omega));
-   boost::variate_generator<boost::mt19937, boost::normal_distribution<> > g_noise_generator_om_z (boost::mt19937(seed_om_z), boost::normal_distribution<>(0,g_sigma_omega));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>>
+    g_noise_generator_x(boost::mt19937(seed_x), boost::normal_distribution<>(0, g_sigma_p));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>>
+    g_noise_generator_y(boost::mt19937(seed_y), boost::normal_distribution<>(0, g_sigma_p));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>>
+    g_noise_generator_z(boost::mt19937(seed_z), boost::normal_distribution<>(0, g_sigma_p));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>>
+    g_noise_generator_v_x(boost::mt19937(seed_v_x), boost::normal_distribution<>(0, g_sigma_v));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>>
+    g_noise_generator_v_y(boost::mt19937(seed_v_y), boost::normal_distribution<>(0, g_sigma_v));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>>
+    g_noise_generator_v_z(boost::mt19937(seed_v_z), boost::normal_distribution<>(0, g_sigma_v));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>>
+    g_noise_generator_roll(boost::mt19937(seed_roll), boost::normal_distribution<>(0, g_sigma_phi));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>>
+    g_noise_generator_pitch(boost::mt19937(seed_pitch), boost::normal_distribution<>(0, g_sigma_phi));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>>
+    g_noise_generator_yaw(boost::mt19937(seed_yaw), boost::normal_distribution<>(0, g_sigma_phi));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>>
+    g_noise_generator_om_x(boost::mt19937(seed_om_x), boost::normal_distribution<>(0, g_sigma_omega));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>>
+    g_noise_generator_om_y(boost::mt19937(seed_om_y), boost::normal_distribution<>(0, g_sigma_omega));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>>
+    g_noise_generator_om_z(boost::mt19937(seed_om_z), boost::normal_distribution<>(0, g_sigma_omega));
 
-   
 class FakeSensorPlugin : public ModelPlugin
 {
-  
 public:
-  FakeSensorPlugin() {}
+  FakeSensorPlugin()
+  {
+  }
 
 public:
   ~FakeSensorPlugin()
   {
-
   }
 
 public:
@@ -105,67 +117,70 @@ public:
     // take noise values from parameter server
     // and change distributions if value read from file
     // https://stackoverflow.com/questions/36289180/boostrandomvariate-generator-change-parameters-after-construction
-    if (ros::param::get("state_estimation/three_sigma_p", three_sigma_p)){
-        ROS_DEBUG("Three_sigma_p load successfully from parameter server");
-        boost::normal_distribution<> new_dist ( 0, three_sigma_p / 3.0f );
-        g_noise_generator_x.distribution() = new_dist;
-        g_noise_generator_y.distribution() = new_dist;
-        g_noise_generator_z.distribution() = new_dist;
-    } 
-    if (ros::param::get("state_estimation/three_sigma_v", three_sigma_v)){
-        ROS_DEBUG("Three_sigma_v load successfully from parameter server");
-        boost::normal_distribution<> new_dist ( 0, three_sigma_v / 3.0f );
-        g_noise_generator_v_x.distribution() = new_dist;
-        g_noise_generator_v_y.distribution() = new_dist;
-        g_noise_generator_v_z.distribution() = new_dist;
-    } 
-    if (ros::param::get("state_estimation/three_sigma_phi", three_sigma_phi)){
-        ROS_DEBUG("Three_sigma_phi load successfully from parameter server");
-        boost::normal_distribution<> new_dist ( 0, three_sigma_phi * M_PI/180.0f / 3.0f );
-        g_noise_generator_roll.distribution() = new_dist;
-        g_noise_generator_pitch.distribution() = new_dist;
-        g_noise_generator_yaw.distribution() = new_dist;
-    } 
-    if (ros::param::get("state_estimation/three_sigma_omega", three_sigma_omega)){
-        ROS_DEBUG("Three_sigma_omega load successfully from parameter server");
-        boost::normal_distribution<> new_dist ( 0, three_sigma_omega * M_PI/180.0f / 3.0f );
-        g_noise_generator_om_x.distribution() = new_dist;
-        g_noise_generator_om_y.distribution() = new_dist;
-        g_noise_generator_om_z.distribution() = new_dist;
-    } 
+    if (ros::param::get("state_estimation/three_sigma_p", three_sigma_p))
+    {
+      ROS_DEBUG("Three_sigma_p load successfully from parameter server");
+      boost::normal_distribution<> new_dist(0, three_sigma_p / 3.0f);
+      g_noise_generator_x.distribution() = new_dist;
+      g_noise_generator_y.distribution() = new_dist;
+      g_noise_generator_z.distribution() = new_dist;
+    }
+    if (ros::param::get("state_estimation/three_sigma_v", three_sigma_v))
+    {
+      ROS_DEBUG("Three_sigma_v load successfully from parameter server");
+      boost::normal_distribution<> new_dist(0, three_sigma_v / 3.0f);
+      g_noise_generator_v_x.distribution() = new_dist;
+      g_noise_generator_v_y.distribution() = new_dist;
+      g_noise_generator_v_z.distribution() = new_dist;
+    }
+    if (ros::param::get("state_estimation/three_sigma_phi", three_sigma_phi))
+    {
+      ROS_DEBUG("Three_sigma_phi load successfully from parameter server");
+      boost::normal_distribution<> new_dist(0, three_sigma_phi * M_PI / 180.0f / 3.0f);
+      g_noise_generator_roll.distribution() = new_dist;
+      g_noise_generator_pitch.distribution() = new_dist;
+      g_noise_generator_yaw.distribution() = new_dist;
+    }
+    if (ros::param::get("state_estimation/three_sigma_omega", three_sigma_omega))
+    {
+      ROS_DEBUG("Three_sigma_omega load successfully from parameter server");
+      boost::normal_distribution<> new_dist(0, three_sigma_omega * M_PI / 180.0f / 3.0f);
+      g_noise_generator_om_x.distribution() = new_dist;
+      g_noise_generator_om_y.distribution() = new_dist;
+      g_noise_generator_om_z.distribution() = new_dist;
+    }
 
     float sampling_time;
-    if (ros::param::get("state_estimation/sampling_time", sampling_time)){
-        ROS_INFO("sampling time load successfully from parameter server");
-        g_output_rate_divider = (int) (sampling_time * 1000.0); // convert sampling time to divider
-    } 
+    if (ros::param::get("state_estimation/sampling_time", sampling_time))
+    {
+      ROS_INFO("sampling time load successfully from parameter server");
+      g_output_rate_divider = (int)(sampling_time * 1000.0);  // convert sampling time to divider
+    }
     int nr_of_msg_delay;
-    if (ros::param::get("state_estimation/nr_of_msg_delay", nr_of_msg_delay)){
-        ROS_INFO("nr of message delay load successfully from parameter server");
-        size_of_queue = nr_of_msg_delay; 
-    } 
-    
+    if (ros::param::get("state_estimation/nr_of_msg_delay", nr_of_msg_delay))
+    {
+      ROS_INFO("nr of message delay load successfully from parameter server");
+      size_of_queue = nr_of_msg_delay;
+    }
 
-
-
-    if (write_data_2_file){
+    if (write_data_2_file)
+    {
       result_file.open(file_path);
       result_file << "time,x,y,z,roll,pitch,yaw" << std::endl;
     }
- 
+
     // Initialize ros, if it has not already bee initialized.
     if (!ros::isInitialized())
     {
       int argc = 0;
       char **argv = NULL;
-      ros::init(argc, argv, "gazebo_client",
-                ros::init_options::NoSigintHandler);
+      ros::init(argc, argv, "gazebo_client", ros::init_options::NoSigintHandler);
       ROS_WARN_STREAM("Create gazebo_client node");
     }
     // Create our ROS node.
     this->rosNode.reset(new ros::NodeHandle("gazebo_client"));
     ROS_INFO_STREAM("fake_sensor_plugin get node:" << this->rosNode->getNamespace());
-    
+
     // real states of the drone
     this->pub_real_state = this->rosNode->advertise<flypulator_common_msgs::UavStateStamped>("/drone/real_state", 100);
     // measured states of the drone
@@ -177,27 +192,26 @@ public:
     // This event is broadcast every simulation iteration.
     // Get pose of the drone and publish.
     // TODO: the callback should connect to WorldUpdateEnd signal not Begin
-    this->updateConnection = event::Events::ConnectWorldUpdateBegin(
-        boost::bind(&FakeSensorPlugin::OnUpdate, this, _1));
+    this->updateConnection = event::Events::ConnectWorldUpdateBegin(boost::bind(&FakeSensorPlugin::OnUpdate, this, _1));
 
     ROS_INFO_STREAM("FakeSensorPlugin Loaded !");
   }
 
-// publish drone state
+  // publish drone state
 public:
-  void OnUpdate(const common::UpdateInfo &_info) // update rate = 1kHz
+  void OnUpdate(const common::UpdateInfo &_info)  // update rate = 1kHz
   {
-     static int loop_cnt = 0;
+    static int loop_cnt = 0;
 
-    if(loop_cnt >= (g_output_rate_divider-1))
+    if (loop_cnt >= (g_output_rate_divider - 1))
     {
-      loop_cnt = 0; // reset loop counter
+      loop_cnt = 0;  // reset loop counter
       // ROS_INFO_STREAM("I am fake sensor:"<<this->world->SimTime().Double());
       ignition::math::Pose3d drone_pose = this->link0->WorldPose();
-     ignition::math::Vector3<double> drone_vel_linear = this->link0->WorldLinearVel(); 
-     ignition::math::Vector3<double> drone_vel_angular = this->link0->RelativeAngularVel(); 
-     ignition::math::Vector3<double> drone_acc_linear = this->link0->WorldLinearAccel();
-     ignition::math::Vector3<double> drone_acc_angular = this->link0->RelativeAngularAccel();
+      ignition::math::Vector3<double> drone_vel_linear = this->link0->WorldLinearVel();
+      ignition::math::Vector3<double> drone_vel_angular = this->link0->RelativeAngularVel();
+      ignition::math::Vector3<double> drone_acc_linear = this->link0->WorldLinearAccel();
+      ignition::math::Vector3<double> drone_acc_angular = this->link0->RelativeAngularAccel();
 
       flypulator_common_msgs::UavStateStamped uav_state_msg;
       uav_state_msg.header.stamp = ros::Time(this->world->SimTime().Double());
@@ -206,8 +220,9 @@ public:
       uav_state_msg.pose.position.y = drone_pose.Pos().Y();
       uav_state_msg.pose.position.z = drone_pose.Pos().Z();
 
-      // Eigen::Quaterniond q_ItoB (drone_pose.Rot().W(),drone_pose.Rot().X(),drone_pose.Rot().Y(),drone_pose.Rot().Z());
-      // Eigen::Quaterniond q_BtoI (q_ItoB.toRotationMatrix().transpose());
+      // Eigen::Quaterniond q_ItoB
+      // (drone_pose.Rot().W(),drone_pose.Rot().X(),drone_pose.Rot().Y(),drone_pose.Rot().Z()); Eigen::Quaterniond
+      // q_BtoI (q_ItoB.toRotationMatrix().transpose());
       uav_state_msg.pose.orientation.w = drone_pose.Rot().W();
       uav_state_msg.pose.orientation.x = drone_pose.Rot().X();
       uav_state_msg.pose.orientation.y = drone_pose.Rot().Y();
@@ -227,7 +242,7 @@ public:
       uav_state_msg.acceleration.angular.y = drone_acc_angular.Y();
       uav_state_msg.acceleration.angular.z = drone_acc_angular.Z();
 
-      //ROS_INFO("x noise = %f ", g_noise_generator_x());
+      // ROS_INFO("x noise = %f ", g_noise_generator_x());
       // ROS_INFO("y noise = %f ", g_noise_generator_y());
 
       flypulator_common_msgs::UavStateStamped uav_state_meas_msg;
@@ -237,11 +252,11 @@ public:
       uav_state_meas_msg.pose.position.z = drone_pose.Pos().Z() + g_noise_generator_z();
 
       // add attitude noise using roll pitch yaw representation (yaw-pitch-roll sequence)
-      ignition::math::Vector3<double> eul (drone_pose.Rot().Roll(), drone_pose.Rot().Pitch(), drone_pose.Rot().Yaw());
+      ignition::math::Vector3<double> eul(drone_pose.Rot().Roll(), drone_pose.Rot().Pitch(), drone_pose.Rot().Yaw());
       eul.X() = eul.X() + g_noise_generator_roll();
       eul.Y() = eul.Y() + g_noise_generator_pitch();
       eul.Z() = eul.Z() + g_noise_generator_yaw();
-      ignition::math::Quaternion<double> q_n (eul);
+      ignition::math::Quaternion<double> q_n(eul);
       uav_state_meas_msg.pose.orientation.w = q_n.W();
       uav_state_meas_msg.pose.orientation.x = q_n.X();
       uav_state_meas_msg.pose.orientation.y = q_n.Y();
@@ -263,20 +278,20 @@ public:
       uav_state_meas_msg.acceleration.angular.z = drone_acc_angular.Z();
 
       uav_state_meas_msg.header.stamp = ros::Time(this->world->SimTime().Double());
-    
+
       // publish real states of the simulated drone
       pub_real_state.publish(uav_state_msg);
-      
+
       // delay measurement messages by multiplies of T_s
       // push message to queue
-      queue.push(uav_state_meas_msg); // pushes new messages to the back
+      queue.push(uav_state_meas_msg);  // pushes new messages to the back
       // at beginning, queue must be filled, so no pop
-      if (queue.size() > size_of_queue){
-          // publish measured states of the simulated drone
-          pub_meas_state.publish(queue.front()); // take first element and publish
-          queue.pop(); // delete first element
+      if (queue.size() > size_of_queue)
+      {
+        // publish measured states of the simulated drone
+        pub_meas_state.publish(queue.front());  // take first element and publish
+        queue.pop();                            // delete first element
       }
-
     }
     else
       loop_cnt++;
@@ -284,10 +299,10 @@ public:
     ros::spinOnce();
 
     // save pose data to file
-    if (write_data_2_file){
-        streamDataToFile();
+    if (write_data_2_file)
+    {
+      streamDataToFile();
     }
-
   }
 
 private:
@@ -300,19 +315,16 @@ private:
     }
   }
 
-  void streamDataToFile(){
+  void streamDataToFile()
+  {
     result_file.setf(std::ios::fixed, std::ios::floatfield);
-        result_file.precision(5);
-        ignition::math::Pose3d drone_pose = this->link0->WorldPose();
-       ignition::math::Vector3<double> eul (drone_pose.Rot().Roll(), drone_pose.Rot().Pitch(), drone_pose.Rot().Yaw());
-        result_file << this->model->GetWorld()->SimTime().Double() << ",";
-        result_file << drone_pose.Pos().X() << ","
-                    << drone_pose.Pos().Y() << ","
-                    << drone_pose.Pos().Z() << ","
-                    << eul.X() << ","
-                    << eul.Y() << ","
-                    << eul.Z();
-        result_file << std::endl;  
+    result_file.precision(5);
+    ignition::math::Pose3d drone_pose = this->link0->WorldPose();
+    ignition::math::Vector3<double> eul(drone_pose.Rot().Roll(), drone_pose.Rot().Pitch(), drone_pose.Rot().Yaw());
+    result_file << this->model->GetWorld()->SimTime().Double() << ",";
+    result_file << drone_pose.Pos().X() << "," << drone_pose.Pos().Y() << "," << drone_pose.Pos().Z() << "," << eul.X()
+                << "," << eul.Y() << "," << eul.Z();
+    result_file << std::endl;
   }
 
   /// \brief Pointer to the model.
@@ -328,7 +340,7 @@ private:
   std::unique_ptr<ros::NodeHandle> rosNode;
 
 private:
- ros::Subscriber rosSubLink;
+  ros::Subscriber rosSubLink;
 
   /// \brief A ROS callbackqueue that helps process messages
 private:
@@ -348,11 +360,10 @@ private:
   std::ofstream result_file;
 
   std::queue<flypulator_common_msgs::UavStateStamped> queue;
-
 };
 
 // Tell Gazebo about this plugin, so that Gazebo can call Load on this plugin.
 GZ_REGISTER_MODEL_PLUGIN(FakeSensorPlugin)
-} // namespace gazebo
+}  // namespace gazebo
 
 #endif /*_FAKE_SENSOR_PLUGIN_HH_*/
