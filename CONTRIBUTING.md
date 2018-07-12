@@ -20,14 +20,59 @@ It is recommanded to use clang-format to format your code automatically:
  ```
  Language: Cpp
  BasedOnStyle: Google
+ AccessModifierOffset: -2
+ AlignEscapedNewlines: Left
+ AlignTrailingComments: true
+ AllowAllParametersOfDeclarationOnNextLine: false
+ AllowShortIfStatementsOnASingleLine: false
+ AllowShortLoopsOnASingleLine: false
+ AllowShortFunctionsOnASingleLine: None
+ AlwaysBreakTemplateDeclarations: true
+ AlwaysBreakBeforeMultilineStrings: false
+ BreakBeforeBinaryOperators: false
+ BreakBeforeTernaryOperators: false
+ BreakConstructorInitializers: BeforeComma
+ BinPackParameters: true
  ColumnLimit: 120
+ ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ ConstructorInitializerIndentWidth: 2
+ ExperimentalAutoDetectBinPacking: false
+ IndentCaseLabels: true
  MaxEmptyLinesToKeep: 1
+ NamespaceIndentation: None
+ ObjCSpaceBeforeProtocolList: true
+ PenaltyBreakBeforeFirstCallParameter: 19
+ PenaltyBreakComment: 60
+ PenaltyBreakString: 1
+ PenaltyBreakFirstLessLess: 1000
+ PenaltyExcessCharacter: 1000
+ PenaltyReturnTypeOnItsOwnLine: 90
+ SpacesBeforeTrailingComments: 2
  Cpp11BracedListStyle: true
  Standard: Cpp11
  IndentWidth: 2
  TabWidth: 2
  UseTab: Never
+ SpacesInParentheses: false
+ SpacesInAngles:  false
+ SpaceInEmptyParentheses: false
+ SpacesInCStyleCastParentheses: false
+ SpaceBeforeAssignmentOperators: true
+ ContinuationIndentWidth: 4
  SortIncludes: false
+ SpaceAfterCStyleCast: false
+ BreakBeforeBraces: Custom
+ BraceWrapping: 
+     AfterClass: true
+     AfterControlStatement: true 
+     AfterEnum: true 
+     AfterFunction: true 
+     AfterNamespace: true 
+     AfterStruct: true 
+     AfterUnion: true 
+     BeforeCatch: true 
+     BeforeElse: true 
+     IndentBraces: false 
  ```
  - Enable clang format using this style. Following the instruction [here](https://github.com/davetcoleman/roscpp_code_format/blob/master/README.md).
 
