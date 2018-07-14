@@ -99,47 +99,47 @@ private:
   /// for debugging.
   void streamDataToFile();
 
-  // TODO: move config param to yaml file
-  bool write_data_2_file;  // new version with more data (contains also hub force and roll moment)
-  bool WRITE_CSV_FILE;     // if save the test_data to .csv
-  std::string RESULT_CSV_PATH;
-  std::string file_path;
-  bool add_wrench_to_drone;     // if add force and torque to drone in gazebo
-  bool use_ground_effect;       // if enable ground effect
-  bool use_motor_dynamic_;      // if enable motor dynamic
-  bool use_simple_aerodynamic;  // use f=k*omega² and tau = b * omega²
-  bool bidirectional;           // bidirectional option
-  bool add_dist_;               // add disturbances
-  double test_data[12];         // test data for debug
+  // simulation configuration parameters
+  bool write_data_2_file_;  // new version with more data (contains also hub force and roll moment)
+  bool WRITE_CSV_FILE_;     // if save the test_data to .csv
+  std::string RESULT_CSV_PATH_;
+  std::string file_path_;
+  bool add_wrench_to_drone_;     // if add force and torque to drone in gazebo
+  bool use_ground_effect_;       // if enable ground effect
+  bool use_motor_dynamic_;       // if enable motor dynamic
+  bool use_simple_aerodynamic_;  // use f=k*omega² and tau = b * omega²
+  bool add_dist_;                // add disturbances
+  double test_data_[12];         // test data for debug
 
-  // internal parameters
-  std::vector<std::string> joint_names_;      // joint names of propeller
-  std::vector<std::string> link_names_;       // link names of propeller
+  // uav and aerodynamic parameters
+  bool bidirectional_;                    // bidirectional option
+  std::vector<std::string> joint_names_;  // joint names of propeller
+  std::vector<std::string> link_names_;   // link names of propeller
+  // if the rotor vel smaller than 325, we will get negativ CT and moment,
+  // caused by the aero dynamic eq.(Hiller's 4.57)
+  double vel_min_;                            // min rotor speed
+  double vel_max_;                            // max rotor speed
   std::map<std::string, double> aero_param_;  // map of aerodynamic parameters
+  double k_simple_aero_;
+  double b_simple_aero_;
 
   double uav_mass_;             // drone mass
+  double tilting_angle_;        // [degree] rotor tilting angle along arm axis
   double ground_effect_coeff_;  // ground effect coefficient
   double blade_pitch_angle_;    // blade pitch angle
   double wing_area_;            // wing area
   double rv;                    // rotor_axis_vertical_axis_angle cos(rv)=cos(pitch)*cos(yaw)
   double solidity_;             // rotor solidity
-  // if the rotor vel smaller than 325, we will get negativ CT and moment,
-  // caused by the aero dynamic eq.(Hiller's 4.57)
-  double vel_min_;  // min rotor speed
-  double vel_max_;  // max rotor speed
-  double k_simple_aero_;
-  double b_simple_aero_;
-
-  double wind_vx_;        // wind velocity in global x
-  double wind_vy_;        // wind velocity in global y
-  double wind_vz_;        // wind velocity in global z
-  double uav_vx_;         // drone velocity in global x
-  double uav_vy_;         // drone velocity in global y
-  double uav_vz_;         // drone velocity in global z
-  double air_global_vx_;  // air velocity in global x
-  double air_global_vy_;  // air velocity in global y
-  double air_global_vz_;  // air velocity in global z
-  double ind_vel_hover_;  // induced velocity in the hovering case
+  double wind_vx_;              // wind velocity in global x
+  double wind_vy_;              // wind velocity in global y
+  double wind_vz_;              // wind velocity in global z
+  double uav_vx_;               // drone velocity in global x
+  double uav_vy_;               // drone velocity in global y
+  double uav_vz_;               // drone velocity in global z
+  double air_global_vx_;        // air velocity in global x
+  double air_global_vy_;        // air velocity in global y
+  double air_global_vz_;        // air velocity in global z
+  double ind_vel_hover_;        // induced velocity in the hovering case
 
   double rotor_vel_raw_[6] = {0};  // rotor velocity with sign, used for motor dynamic
   double rotor_vel_cmd_[6] = {0};  // blade spinning velocity commands
@@ -169,7 +169,8 @@ private:
 
   gazebo::physics::LinkPtr rotor_link_ptr_[6];  // pointer to rotor links
 
-  physics::JointPtr joint1_;  // pointer to rotor links
+  // TODO: rewrite as point array
+  physics::JointPtr joint1_;  // pointer to rotor joints
   physics::JointPtr joint2_;
   physics::JointPtr joint3_;
   physics::JointPtr joint4_;

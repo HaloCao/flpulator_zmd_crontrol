@@ -4,16 +4,19 @@ namespace gazebo
 {
 PropulsionPlugin::PropulsionPlugin()
 {
-  // TODO: move config param to yaml file
-  write_data_2_file = false;
-  WRITE_CSV_FILE = false;
-  RESULT_CSV_PATH = "/home/jinyao/ros_ws/flypulator/result.csv";
-  file_path = "/home/jan/flypulator_ws/src/flypulator/flypulator_gazebo_plugin/rotor_data.csv";
-  add_wrench_to_drone = true;
-  use_ground_effect = false;
+  // set logger level
+  if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug))
+    ros::console::notifyLoggerLevelsChanged();
+
+  // default configuration
+  write_data_2_file_ = false;
+  WRITE_CSV_FILE_ = false;
+  RESULT_CSV_PATH_ = "/home/jinyao/ros_ws/flypulator/result.csv";
+  file_path_ = "/home/jan/flypulator_ws/src/flypulator/flypulator_gazebo_plugin/rotor_data.csv";
+  add_wrench_to_drone_ = true;
+  use_ground_effect_ = false;
   use_motor_dynamic_ = true;
-  use_simple_aerodynamic = false;
-  bidirectional = true;
+  use_simple_aerodynamic_ = true;
   add_dist_ = true;
   distforce_ = ignition::math::Vector3<double>(0, 0, 0);
   // if the rotor vel smaller than 325, we will get negativ CT and moment,
@@ -22,8 +25,26 @@ PropulsionPlugin::PropulsionPlugin()
   vel_max_ = 100000;
   k_simple_aero_ = 0.0138;
   b_simple_aero_ = 0.00022;
-  // TODO: tilting angle as parameter
-  rv = 13.6 * M_PI / 180.0;
+  tilting_angle_ = 13.6;
+  bidirectional_ = true;
+
+  aero_param_["N"] = 6;
+  aero_param_["c"] = 0.016;
+  aero_param_["R"] = 0.75;
+  aero_param_["a"] = 5.7;
+  aero_param_["th0"] = 0.7;
+  aero_param_["thtw"] = 0.5;
+  aero_param_["B"] = 0.98;
+  aero_param_["pho"] = 1.2;
+  aero_param_["ki"] = 1.15;
+  aero_param_["k"] = 4.65;
+  aero_param_["k0"] = 1.15;
+  aero_param_["k1"] = -1.125;
+  aero_param_["k2"] = -1.372;
+  aero_param_["k3"] = -1.718;
+  aero_param_["k4"] = -0.655;
+  aero_param_["CD0"] = 0.04;
+  aero_param_["g"] = 9.81;
 
   wind_vx_ = 1e-20;
   wind_vy_ = 1e-20;
@@ -48,15 +69,15 @@ void PropulsionPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   }
 
   // save test data
-  if (WRITE_CSV_FILE)
+  if (WRITE_CSV_FILE_)
   {
-    std::ofstream fout(RESULT_CSV_PATH, std::ios::out);
+    std::ofstream fout(RESULT_CSV_PATH_, std::ios::out);
     fout.close();
   }
 
-  if (write_data_2_file)
+  if (write_data_2_file_)
   {
-    result_file.open(file_path);
+    result_file.open(file_path_);
     result_file << "time,rotor,omega,force_x,force_y,force_z,torque_x,torque_y,torque_z" << std::endl;
   }
 
@@ -86,7 +107,7 @@ void PropulsionPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   // get the six blade link
   this->link0_ = _model->GetChildLink("base_link");
-  for (int i = 0; i < aero_param_["N"]; i++)
+  for (size_t i = 0; i < size_t(aero_param_["N"]); i++)
   {
     // rotor_link_ptr_[i] = _model->GetChildLink(std::string("blade_link_") + std::to_string(i+1));
     rotor_link_ptr_[i] = _model->GetChildLink(link_names_[i]);
@@ -97,12 +118,13 @@ void PropulsionPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   // the mass of "base_link" is included the
   // mass of all components that fix to the "base_link",
   // here included 6 arm+motor and 2 leg of the drone
-  for (int i = 0; i < aero_param_["N"]; i++)
+  for (size_t i = 0; i < size_t(aero_param_["N"]); i++)
   {
     uav_mass_ += rotor_link_ptr_[i]->GetInertial()->Mass();
   }
   ROS_INFO_STREAM("Mass of drone : " << uav_mass_ << "kg");  // show mass of drone
 
+  rv = tilting_angle_ * M_PI / 180.0;
   solidity_ = (aero_param_["N"] * aero_param_["c"]) / (M_PI * aero_param_["R"]);  // rotor solidity
   wing_area_ = M_PI * pow(aero_param_["R"], 2);                                   // wing area
   // induced airflow velocity in hovering case
@@ -128,7 +150,7 @@ void PropulsionPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
       this->rosNode_->advertise<flypulator_common_msgs::Vector6dMsg>("/drone/thrust_moment_ratio", 10);
   this->pub_joint_state_ = this->rosNode_->advertise<sensor_msgs::JointState>("/drone/joint_states", 50);
 
-  for (int i = 0; i < aero_param_["N"]; i++)
+  for (size_t i = 0; i < size_t(aero_param_["N"]); i++)
   {
     this->pub_link_wrench_[i] = this->rosNode_->advertise<geometry_msgs::WrenchStamped>(
         std::string("/drone/blade_") + std::to_string(i + 1) + std::string("_wrench"), 100);
@@ -187,14 +209,14 @@ void PropulsionPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
   }
   else
   {
-    for (int i = 0; i < aero_param_["N"]; i++)
+    for (size_t i = 0; i < size_t(aero_param_["N"]); i++)
       rotor_vel_raw_[i] = rotor_vel_cmd_[i];
   }
 
   // check direction of the rotors' velocity
-  for (int i = 0; i < aero_param_["N"]; i++)
+  for (size_t i = 0; i < size_t(aero_param_["N"]); i++)
   {
-    if (bidirectional)
+    if (bidirectional_)
     {  // use bi-direction
       if (rotor_vel_raw_[i] < 0)
       {
@@ -223,7 +245,7 @@ void PropulsionPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
   }
 
   // clamp rotors angular velocity
-  for (int i = 0; i < aero_param_["N"]; i++)
+  for (size_t i = 0; i < size_t(aero_param_["N"]); i++)
     rotor_vel_[i] = clamp(rotor_vel_[i], vel_min_, vel_max_);
 
   // altitude/height of the drone to the gorund
@@ -237,7 +259,7 @@ void PropulsionPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
     ground_effect_coeff_ = 0.5;
 
   // if not using ground effect reset the coeff
-  if (!use_ground_effect)
+  if (!use_ground_effect_)
     ground_effect_coeff_ = 1.0;
 
   // ROS_INFO_STREAM("k:"<<motor1_.getK()<<","<<"T:"<<motor1_.getT()<<","<<"omega:"<<motor1_.getOmega());
@@ -250,7 +272,7 @@ void PropulsionPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
   air_global_vz_ = wind_vz_ - uav_vz_;
   Eigen::Vector3d V_airflow(air_global_vx_, air_global_vy_, air_global_vz_);
 
-  for (int i = 0; i < aero_param_["N"]; i++)
+  for (size_t i = 0; i < size_t(aero_param_["N"]); i++)
   {
     Eigen::Quaterniond q(rotor_link_ptr_[i]->WorldPose().Rot().W(), rotor_link_ptr_[i]->WorldPose().Rot().X(),
                          rotor_link_ptr_[i]->WorldPose().Rot().Y(), rotor_link_ptr_[i]->WorldPose().Rot().Z());
@@ -309,9 +331,9 @@ void PropulsionPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
     aero_torque_[i].y() = moment_roll * sin(alpha);
 
     // apply to uav
-    if (add_wrench_to_drone)
+    if (add_wrench_to_drone_)
     {
-      if (use_simple_aerodynamic)
+      if (use_simple_aerodynamic_)
       {
         rotor_link_ptr_[i]->AddRelativeForce(
             ignition::math::Vector3<double>(0, 0, dir_thrust_[i] * k_simple_aero_ * pow(rotor_vel_[i], 2)));
@@ -337,7 +359,7 @@ void PropulsionPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
   }
 
   // print to file
-  if (write_data_2_file)
+  if (write_data_2_file_)
   {
     streamDataToFile();
   }
@@ -346,25 +368,25 @@ void PropulsionPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
   this->SetVelocity();
 
   // save data for csv output
-  test_data[0] = rotor_vel_[0] * dir_vel_actual_[0];
-  test_data[1] = rotor_vel_[1] * dir_vel_actual_[1];
-  test_data[2] = rotor_vel_[2] * dir_vel_actual_[2];
-  test_data[3] = rotor_vel_[3] * dir_vel_actual_[3];
-  test_data[4] = rotor_vel_[4] * dir_vel_actual_[4];
-  test_data[5] = rotor_vel_[5] * dir_vel_actual_[5];
-  test_data[6] = aero_torque_[0].z();
-  test_data[7] = aero_torque_[1].z();
-  test_data[8] = aero_torque_[2].z();
-  test_data[9] = aero_torque_[3].z();
-  test_data[10] = aero_torque_[4].z();
-  test_data[11] = aero_torque_[5].z();
+  test_data_[0] = rotor_vel_[0] * dir_vel_actual_[0];
+  test_data_[1] = rotor_vel_[1] * dir_vel_actual_[1];
+  test_data_[2] = rotor_vel_[2] * dir_vel_actual_[2];
+  test_data_[3] = rotor_vel_[3] * dir_vel_actual_[3];
+  test_data_[4] = rotor_vel_[4] * dir_vel_actual_[4];
+  test_data_[5] = rotor_vel_[5] * dir_vel_actual_[5];
+  test_data_[6] = aero_torque_[0].z();
+  test_data_[7] = aero_torque_[1].z();
+  test_data_[8] = aero_torque_[2].z();
+  test_data_[9] = aero_torque_[3].z();
+  test_data_[10] = aero_torque_[4].z();
+  test_data_[11] = aero_torque_[5].z();
 
-  // test_data[0] = CT1;
-  // test_data[1] = CT2;
-  // test_data[2] = CT3;
-  // test_data[3] = CT4;
-  // test_data[4] = CT5;
-  // test_data[5] = CT6;
+  // test_data_[0] = CT1;
+  // test_data_[1] = CT2;
+  // test_data_[2] = CT3;
+  // test_data_[3] = CT4;
+  // test_data_[4] = CT5;
+  // test_data_[5] = CT6;
   ros::spinOnce();
 
   /*
@@ -402,17 +424,17 @@ void PropulsionPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
     jointStatePubliher();
     wrenchPublisher();
 
-    if (WRITE_CSV_FILE)
+    if (WRITE_CSV_FILE_)
     {
       // if (rotor_vel_[0] < 2500 && rotor_vel_[0] >= 100)
       {
-        std::ofstream result_file(RESULT_CSV_PATH, std::ios::app);
+        std::ofstream result_file(RESULT_CSV_PATH_, std::ios::app);
         result_file.setf(std::ios::fixed, std::ios::floatfield);
         result_file.precision(5);
-        result_file << this->model_->GetWorld()->SimTime().Double() << "," << test_data[0] << "," << test_data[1] << ","
-                    << test_data[2] << "," << test_data[3] << "," << test_data[4] << "," << test_data[5] << ","
-                    << test_data[6] << "," << test_data[7] << "," << test_data[8] << "," << test_data[9] << ","
-                    << test_data[10] << "," << test_data[11] << "," << std::endl;
+        result_file << this->model_->GetWorld()->SimTime().Double() << "," << test_data_[0] << "," << test_data_[1]
+                    << "," << test_data_[2] << "," << test_data_[3] << "," << test_data_[4] << "," << test_data_[5]
+                    << "," << test_data_[6] << "," << test_data_[7] << "," << test_data_[8] << "," << test_data_[9]
+                    << "," << test_data_[10] << "," << test_data_[11] << "," << std::endl;
         result_file.close();
       }
     }
@@ -441,7 +463,7 @@ void PropulsionPlugin::OnControlMsg(const flypulator_common_msgs::RotorVelStampe
     return;
   }
 
-  for (int i = 0; i < int(aero_param_["N"]); i++)
+  for (size_t i = 0; i < size_t(aero_param_["N"]); i++)
     rotor_vel_cmd_[i] = _msg->velocity[i];
 
   // ROS_INFO_STREAM("aero:"<<_msg->velocity[0]<<","<<_msg->velocity[1]<<","<<_msg->velocity[2]<<","<<_msg->velocity[3]<<","<<_msg->velocity[4]<<","<<_msg->velocity[5]);
@@ -504,7 +526,7 @@ void PropulsionPlugin::readParamsFromServer()
     ROS_ERROR_STREAM("Can't load joint names from parameter server!");
   }
 
-  // read links names from ros parameter server
+  // try to read links names from ros parameter server
   if (ros::param::get("urdf/controller_link_names", link_names_))
   {
     for (auto i : link_names_)
@@ -518,10 +540,23 @@ void PropulsionPlugin::readParamsFromServer()
     ROS_ERROR_STREAM("Can't load link names from parameter server!");
   }
 
-  // try to read aerodynamic parameter from ros parameter server
-  if (ros::param::get("/aero_param", aero_param_))
+  // try to read model parameter from ros parameter server
+  if (ros::param::get("/aero_param", aero_param_) && ros::param::get("uav/rotor_vel_min", vel_min_))
   {
-    ROS_INFO_STREAM("propulsion_plugin: aerodynamic parameters loaded.");
+    ros::param::get("uav/rotor_vel_max", vel_max_);
+    ros::param::get("uav/k", k_simple_aero_);
+    ros::param::get("uav/b", b_simple_aero_);
+    ros::param::get("uav/alpha", tilting_angle_);
+    ros::param::get("urdf/bidirectional", bidirectional_);
+
+    ROS_INFO_STREAM("propulsion_plugin: model parameters loaded.");
+
+    ROS_DEBUG_STREAM("propulsion_plugin: uav/rotor_vel_min: " << vel_min_);
+    ROS_DEBUG_STREAM("propulsion_plugin: uav/rotor_vel_max: " << vel_max_);
+    ROS_DEBUG_STREAM("propulsion_plugin: uav/k: " << k_simple_aero_);
+    ROS_DEBUG_STREAM("propulsion_plugin: uav/b: " << b_simple_aero_);
+    ROS_DEBUG_STREAM("propulsion_plugin: uav/alpha: " << tilting_angle_);
+    ROS_DEBUG_STREAM("propulsion_plugin: uav/bidirectional: " << bidirectional_);
     for (auto elem : aero_param_)
     {
       ROS_DEBUG_STREAM("propulsion_plugin: aeroparam/" << elem.first << ": " << elem.second);
@@ -529,25 +564,27 @@ void PropulsionPlugin::readParamsFromServer()
   }
   else
   {
-    ROS_WARN_STREAM("No aerodynamic parameters availiable, use default values...");
-    aero_param_["N"] = 6;
-    aero_param_["c"] = 0.016;
-    aero_param_["R"] = 0.75;
-    aero_param_["a"] = 5.7;
-    aero_param_["th0"] = 0.7;
-    aero_param_["thtw"] = 0.5;
-    aero_param_["B"] = 0.98;
-    aero_param_["pho"] = 1.2;
-    aero_param_["ki"] = 1.15;
-    aero_param_["k"] = 4.65;
-    aero_param_["k0"] = 1.15;
-    aero_param_["k1"] = -1.125;
-    aero_param_["k2"] = -1.372;
-    aero_param_["k3"] = -1.718;
-    aero_param_["k4"] = -0.655;
-    aero_param_["CD0"] = 0.04;
-    // TODO: move g to uav_parameter.yaml
-    aero_param_["g"] = 9.81;
+    ROS_WARN_STREAM("No model parameters availiable, use default values...");
+    // default values in constructor
+  }
+
+  // try to read simulation configuration from ros parameter server
+  if (ros::param::get("sim/write_data_2_file", write_data_2_file_))
+  {
+    ros::param::get("sim/WRITE_CSV_FILE", WRITE_CSV_FILE_);
+    ros::param::get("sim/RESULT_CSV_PATH", RESULT_CSV_PATH_);
+    ros::param::get("sim/file_path", file_path_);
+    ros::param::get("sim/add_wrench_to_drone", add_wrench_to_drone_);
+    ros::param::get("sim/use_ground_effect", use_ground_effect_);
+    ros::param::get("sim/use_motor_dynamic", use_motor_dynamic_);
+    ros::param::get("sim/use_simple_aerodynamic", use_simple_aerodynamic_);
+    ros::param::get("sim/add_dist", add_dist_);
+
+    ROS_INFO_STREAM("propulsion_plugin: simulation configuration loaded.");
+  }
+  else
+  {
+    ROS_WARN_STREAM("No simulation configuration availiable, use default values...");
   }
 }
 
@@ -627,6 +664,7 @@ void PropulsionPlugin::wrenchPublisher()
 
   for (int i = 0; i < 6; i++)
   {
+    // TODO: check link name
     wrench_msg_tmp.header.frame_id = std::string("motor_link_") + std::to_string(i + 1);
     wrench_msg_tmp.wrench.force.x = aero_force_[i].x();
     wrench_msg_tmp.wrench.force.y = aero_force_[i].y();

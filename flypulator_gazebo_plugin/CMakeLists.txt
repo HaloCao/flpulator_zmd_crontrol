@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(flypulator_gazebo_plugin)
 
-set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_CXX_FLAGS "-std=c++11")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
+#set(CMAKE_BUILD_TYPE "Release")
+## Compile as C++11, supported in ROS Kinetic and newer
+add_compile_options(-std=c++11)
+#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 
 find_package(gazebo REQUIRED)
@@ -23,7 +24,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-#  INCLUDE_DIRS include
+   INCLUDE_DIRS include
    CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs std_srvs tf dynamic_reconfigure robot_state_publisher flypulator_common_msgs
 )
 

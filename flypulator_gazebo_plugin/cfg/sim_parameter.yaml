@@ -1,0 +1,10 @@
+---
+sim/write_data_2_file: false
+sim/WRITE_CSV_FILE: false
+sim/RESULT_CSV_PATH: "/home/jinyao/ros_ws/flypulator/result.csv"
+sim/file_path: "/home/chao/flypulator_ws/src/flypulator_gazebo_plugin/rotor_data.csv"
+sim/add_wrench_to_drone: true  # apply aerodynamic wrench to UAV
+sim/use_ground_effect: false
+sim/use_motor_dynamic: true    # add motor model to simulation
+sim/use_simple_aerodynamic: false  # coeff. k and b are constant
+sim/add_dist: true   # add disturbance forces on base_link
