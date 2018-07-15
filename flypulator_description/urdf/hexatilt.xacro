@@ -103,7 +103,7 @@
 <!-- [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] -->
 
   <!-- Included URDF Files -->
-  <xacro:include filename="$(find flypulator_description_new)/urdf/multirotor_base.xacro" />
+  <xacro:include filename="$(find flypulator_description)/urdf/multirotor_base.xacro" />
 
   <!-- Instantiate multirotor_base_macro once -->
   <xacro:multirotor_base_macro

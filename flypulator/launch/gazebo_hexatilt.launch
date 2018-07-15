@@ -7,9 +7,9 @@
   <arg name="headless" default="false"/>
   <arg name="debug" default="false"/>
  
- <rosparam command="load" file="$(find flypulator_description_new)/param/state_estimation_param.yaml" />
+ <rosparam command="load" file="$(find flypulator_description)/param/state_estimation_param.yaml" />
 
-  <arg name="model" default="'$(find flypulator_description_new)/urdf/hexatilt_base.xacro'"/>
+  <arg name="model" default="'$(find flypulator_description)/urdf/hexatilt_base.xacro'"/>
 
  <include file="$(find gazebo_ros)/launch/empty_world.launch" >
   <arg name="debug" value="$(arg debug)" />
