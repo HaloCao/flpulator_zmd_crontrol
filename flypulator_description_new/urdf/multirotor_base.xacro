@@ -41,7 +41,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://hexatilt_description/meshes/${mesh_file}"
+          <mesh filename="package://flypulator_description_new/meshes/${mesh_file}"
             scale="${mesh_scale}" />
           <!-- <box size="${body_width} ${body_width} ${body_height}"/> --> <!-- [m] [m] [m] -->
         </geometry>
@@ -105,7 +105,7 @@
       <visual>
         <geometry>
           <!-- <cylinder length="0.005" radius="${radius_rotor}"/> --> <!-- [m] -->
-          <mesh filename="package://hexatilt_description/meshes/${mesh}_${direction}.dae"
+          <mesh filename="package://flypulator_description_new/meshes/${mesh}_${direction}.dae"
             scale="${mesh_scale}" />
           <!-- <box size="${2*radius_rotor} 0.01 0.005"/> -->
         </geometry>
@@ -178,7 +178,7 @@
         <origin xyz="0 0 0" rpy="0 0 0 " />
         <geometry>
           <!-- <cylinder length="0.005" radius="${radius_rotor}"/> --> <!-- [m] -->
-          <mesh filename="package://hexatilt_description/meshes/right_leg.dae"
+          <mesh filename="package://flypulator_description_new/meshes/right_leg.dae"
              scale="${mesh_scale}" /> 
             <!-- <cylinder length="${length_leg}" radius="${radius_leg}" /> <1 [m] -1> -->
         </geometry>
@@ -207,7 +207,7 @@
       <!-- <visual> -->
         <!-- <geometry> -->
           <!-- <cylinder length="0.005" radius="${radius_rotor}"/> --> <!-- [m] -->
-          <!-- <mesh filename="package://hexatilt_description/meshes/${mesh}_${suffix}.dae" -->
+          <!-- <mesh filename="package://flypulator_description_new/meshes/${mesh}_${suffix}.dae" -->
             <!-- scale="${mesh_scale}" /> -->
             <!-- <cylinder length="${length_leg}" radius="${radius_leg}" />  -->
         <!-- </geometry> -->
