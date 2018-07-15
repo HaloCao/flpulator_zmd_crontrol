@@ -477,7 +477,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://hexatilt_description/meshes/vi_sensor.dae" scale="1 1 1" />
+          <mesh filename="package://flypulator_description_new/meshes/vi_sensor.dae" scale="1 1 1" />
         </geometry>
       </visual>
 
