@@ -28,7 +28,6 @@ PropulsionPlugin::PropulsionPlugin()
   tilting_angle_ = 13.6;
   bidirectional_ = true;
 
-  aero_param_["N"] = 6;
   aero_param_["c"] = 0.016;
   aero_param_["R"] = 0.75;
   aero_param_["a"] = 5.7;
@@ -62,7 +61,7 @@ void PropulsionPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   // load aerodynamic parameters
   this->readParamsFromServer();
 
-  if (_model->GetJointCount() == 0)
+  if (_model->GetJointCount() == 0 || joint_names_.size() != 6)  // this plugin is only valid for Hexarotor for now!
   {
     ROS_ERROR("Invalid joint count, plugin not loaded");
     return;
@@ -83,34 +82,22 @@ void PropulsionPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   // Store the model pointer for convenience.
   this->model_ = _model;
-  // Get the first joint. We are making an assumption about the model
-  // having six joints that is the rotational joint.
-  this->joint1_ = _model->GetJoint(joint_names_[0]);
-  this->joint2_ = _model->GetJoint(joint_names_[1]);
-  this->joint3_ = _model->GetJoint(joint_names_[2]);
-  this->joint4_ = _model->GetJoint(joint_names_[3]);
-  this->joint5_ = _model->GetJoint(joint_names_[4]);
-  this->joint6_ = _model->GetJoint(joint_names_[5]);
-  // set joint velocity using joint motors to set joint velocity
-  this->joint1_->SetParam("fmax", 0, 1000000.0);  // fmax: maximum joint force or torque
-  this->joint2_->SetParam("fmax", 0, 1000000.0);
-  this->joint3_->SetParam("fmax", 0, 1000000.0);
-  this->joint4_->SetParam("fmax", 0, 1000000.0);
-  this->joint5_->SetParam("fmax", 0, 1000000.0);
-  this->joint6_->SetParam("fmax", 0, 1000000.0);
-  this->joint1_->SetParam("vel", 0, 0);
-  this->joint2_->SetParam("vel", 0, 0);
-  this->joint3_->SetParam("vel", 0, 0);
-  this->joint4_->SetParam("vel", 0, 0);
-  this->joint5_->SetParam("vel", 0, 0);
-  this->joint6_->SetParam("vel", 0, 0);
 
-  // get the six blade link
-  this->link0_ = _model->GetChildLink("base_link");
-  for (size_t i = 0; i < size_t(aero_param_["N"]); i++)
+  for (size_t i = 0; i < joint_names_.size(); i++)
   {
-    // rotor_link_ptr_[i] = _model->GetChildLink(std::string("blade_link_") + std::to_string(i+1));
-    rotor_link_ptr_[i] = _model->GetChildLink(link_names_[i]);
+    // get control related joints
+    this->ctrl_joint_ptr_[i] = _model->GetJoint(joint_names_[i]);
+
+    // set joint velocity using joint motors: http://gazebosim.org/tutorials?tut=set_velocity#SetVelocityWithJointMotors
+    this->ctrl_joint_ptr_[i]->SetParam("fmax", 0, 1000000.0);
+    this->ctrl_joint_ptr_[i]->SetParam("vel", 0, 0);
+  }
+
+  // get control related links
+  this->link0_ = _model->GetChildLink("base_link");
+  for (size_t i = 0; i < joint_names_.size(); i++)
+  {
+    this->ctrl_link_ptr_[i] = _model->GetChildLink(link_names_[i]);
   }
 
   // calculate mass of drone from model
@@ -118,20 +105,21 @@ void PropulsionPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   // the mass of "base_link" is included the
   // mass of all components that fix to the "base_link",
   // here included 6 arm+motor and 2 leg of the drone
-  for (size_t i = 0; i < size_t(aero_param_["N"]); i++)
+  for (size_t i = 0; i < joint_names_.size(); i++)
   {
-    uav_mass_ += rotor_link_ptr_[i]->GetInertial()->Mass();
+    uav_mass_ += ctrl_link_ptr_[i]->GetInertial()->Mass();
   }
-  ROS_INFO_STREAM("Mass of drone : " << uav_mass_ << "kg");  // show mass of drone
+  ROS_INFO_STREAM("UAV Mass: " << uav_mass_ << "kg");  // show mass of drone
 
   rv = tilting_angle_ * M_PI / 180.0;
-  solidity_ = (aero_param_["N"] * aero_param_["c"]) / (M_PI * aero_param_["R"]);  // rotor solidity
-  wing_area_ = M_PI * pow(aero_param_["R"], 2);                                   // wing area
+  // TODO: wrong equation!!!
+  solidity_ = (double(joint_names_.size()) * aero_param_["c"]) / (M_PI * aero_param_["R"]);  // rotor solidity
+  wing_area_ = M_PI * pow(aero_param_["R"], 2);                                              // wing area
   // induced airflow velocity in hovering case
   // multiplied by 1/B according to Hiller eq. 4.58
-  ind_vel_hover_ =
-      -1 / aero_param_["B"] *
-      sqrt((uav_mass_ * aero_param_["g"]) / (2 * aero_param_["N"] * aero_param_["pho"] * wing_area_ * cos(rv)));
+  ind_vel_hover_ = -1 / aero_param_["B"] *
+                   sqrt((uav_mass_ * aero_param_["g"]) /
+                        (2 * double(joint_names_.size()) * aero_param_["pho"] * wing_area_ * cos(rv)));
   blade_pitch_angle_ = aero_param_["th0"] - 0.75 * aero_param_["thtw"];  // blade pitch angle
 
   // Initialize ros, if it has not already bee initialized.
@@ -150,7 +138,7 @@ void PropulsionPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
       this->rosNode_->advertise<flypulator_common_msgs::Vector6dMsg>("/drone/thrust_moment_ratio", 10);
   this->pub_joint_state_ = this->rosNode_->advertise<sensor_msgs::JointState>("/drone/joint_states", 50);
 
-  for (size_t i = 0; i < size_t(aero_param_["N"]); i++)
+  for (size_t i = 0; i < joint_names_.size(); i++)
   {
     this->pub_link_wrench_[i] = this->rosNode_->advertise<geometry_msgs::WrenchStamped>(
         std::string("/drone/blade_") + std::to_string(i + 1) + std::string("_wrench"), 100);
@@ -158,25 +146,25 @@ void PropulsionPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   // Create a wind velocity topic and subscribe to it
   ros::SubscribeOptions sub_wind_cmd = ros::SubscribeOptions::create<geometry_msgs::Vector3>(
-      "/drone/wind_cmd", 100, boost::bind(&PropulsionPlugin::OnRosWindMsg, this, _1), ros::VoidPtr(), &this->rosQueue_);
+      "/drone/wind_cmd", 100, boost::bind(&PropulsionPlugin::onRosWindMsg, this, _1), ros::VoidPtr(), &this->rosQueue_);
   this->rosSubWind_ = this->rosNode_->subscribe(sub_wind_cmd);
 
   // subscribe to control signal,six global velocity for drone
   ros::SubscribeOptions sub_rotor_cmd = ros::SubscribeOptions::create<flypulator_common_msgs::RotorVelStamped>(
-      "/drone/rotor_cmd", 100, boost::bind(&PropulsionPlugin::OnControlMsg, this, _1), ros::VoidPtr(),
+      "/drone/rotor_cmd", 100, boost::bind(&PropulsionPlugin::onControlMsg, this, _1), ros::VoidPtr(),
       &this->rosQueue_);
   this->rosSubControl_ = this->rosNode_->subscribe(sub_rotor_cmd);
 
   // Spin up the queue helper thread.
-  this->rosQueueThread_ = std::thread(std::bind(&PropulsionPlugin::QueueThread, this));
+  this->rosQueueThread_ = std::thread(std::bind(&PropulsionPlugin::queueThread, this));
 
   // This event is broadcast every simulation iteration.
-  this->updateConnection_ = event::Events::ConnectWorldUpdateBegin(boost::bind(&PropulsionPlugin::OnUpdate, this, _1));
+  this->updateConnection_ = event::Events::ConnectWorldUpdateBegin(boost::bind(&PropulsionPlugin::onUpdate, this, _1));
 
   ROS_INFO_STREAM("PropulsionPlugin Loaded !");
 }
 
-void PropulsionPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate = 1kHz
+void PropulsionPlugin::onUpdate(const common::UpdateInfo &_info)  // update rate = 1kHz
 {
   // ROS_INFO_STREAM("propulsion plugin: OnUpdate()!");
 
@@ -209,12 +197,13 @@ void PropulsionPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
   }
   else
   {
-    for (size_t i = 0; i < size_t(aero_param_["N"]); i++)
+    for (size_t i = 0; i < joint_names_.size(); i++)
       rotor_vel_raw_[i] = rotor_vel_cmd_[i];
   }
+  // ROS_INFO_STREAM("k:"<<motor1_.getK()<<","<<"T:"<<motor1_.getT()<<","<<"omega:"<<motor1_.getOmega());
 
   // check direction of the rotors' velocity
-  for (size_t i = 0; i < size_t(aero_param_["N"]); i++)
+  for (size_t i = 0; i < joint_names_.size(); i++)
   {
     if (bidirectional_)
     {  // use bi-direction
@@ -245,25 +234,19 @@ void PropulsionPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
   }
 
   // clamp rotors angular velocity
-  for (size_t i = 0; i < size_t(aero_param_["N"]); i++)
+  for (size_t i = 0; i < joint_names_.size(); i++)
     rotor_vel_[i] = clamp(rotor_vel_[i], vel_min_, vel_max_);
 
-  // altitude/height of the drone to the gorund
-  double drone_height = this->link0_->WorldPose().Pos().Z();
-
-  // TODO: only approximate ground effect, neglect the tilting angle of the drone and propeller
-  // calculate ground effect coefficient, T_eff = T_nom/ground_effect_coeff_
-  if (drone_height > 0.35 * aero_param_["R"])                                    // R = blade radius
-    ground_effect_coeff_ = 1.0 - pow(aero_param_["R"] / (4 * drone_height), 2);  // min.~0.5
+  if (use_ground_effect_)
+  {
+    calcGroundEffectCoeff();
+  }
   else
-    ground_effect_coeff_ = 0.5;
-
-  // if not using ground effect reset the coeff
-  if (!use_ground_effect_)
+  {
     ground_effect_coeff_ = 1.0;
+  }
 
-  // ROS_INFO_STREAM("k:"<<motor1_.getK()<<","<<"T:"<<motor1_.getT()<<","<<"omega:"<<motor1_.getOmega());
-
+  // why not  this->model_->WorldLinearVel().X();
   uav_vx_ = this->model_->RelativeLinearVel().X();
   uav_vy_ = this->model_->RelativeLinearVel().Y();
   uav_vz_ = this->model_->RelativeLinearVel().Z();
@@ -272,10 +255,10 @@ void PropulsionPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
   air_global_vz_ = wind_vz_ - uav_vz_;
   Eigen::Vector3d V_airflow(air_global_vx_, air_global_vy_, air_global_vz_);
 
-  for (size_t i = 0; i < size_t(aero_param_["N"]); i++)
+  for (size_t i = 0; i < joint_names_.size(); i++)
   {
-    Eigen::Quaterniond q(rotor_link_ptr_[i]->WorldPose().Rot().W(), rotor_link_ptr_[i]->WorldPose().Rot().X(),
-                         rotor_link_ptr_[i]->WorldPose().Rot().Y(), rotor_link_ptr_[i]->WorldPose().Rot().Z());
+    Eigen::Quaterniond q(ctrl_link_ptr_[i]->WorldPose().Rot().W(), ctrl_link_ptr_[i]->WorldPose().Rot().X(),
+                         ctrl_link_ptr_[i]->WorldPose().Rot().Y(), ctrl_link_ptr_[i]->WorldPose().Rot().Z());
     Eigen::Matrix3d t_matrix = q.toRotationMatrix();
     Eigen::Matrix3d t_matrix_trans = t_matrix.transpose();
     Eigen::Vector3d v_local = t_matrix_trans * V_airflow;
@@ -291,7 +274,7 @@ void PropulsionPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
     if (C >= 0)
     {
       // Vi1 = -(sqrt(pow((Vzz1 / 2), 2) + pow(ind_vel_hover_, 2)) + Vzz1 / 2); //Vi induced airflow velocity
-      v_i = -v_z / 2.0f + sqrt(pow((v_z / 2.0f), 2) + pow(ind_vel_hover_, 2));
+      v_i = -v_z / 2.0 + sqrt(pow((v_z / 2.0), 2) + pow(ind_vel_hover_, 2));
     }
     else if (C >= -2 && C < 0)
     {
@@ -335,16 +318,16 @@ void PropulsionPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
     {
       if (use_simple_aerodynamic_)
       {
-        rotor_link_ptr_[i]->AddRelativeForce(
+        ctrl_link_ptr_[i]->AddRelativeForce(
             ignition::math::Vector3<double>(0, 0, dir_thrust_[i] * k_simple_aero_ * pow(rotor_vel_[i], 2)));
-        rotor_link_ptr_[i]->AddRelativeTorque(
+        ctrl_link_ptr_[i]->AddRelativeTorque(
             ignition::math::Vector3<double>(0, 0, dir_spin_default_[i] * b_simple_aero_ * pow(rotor_vel_[i], 2)));
       }
       else
       {
-        rotor_link_ptr_[i]->AddRelativeForce(ignition::math::Vector3<double>(
-            aero_force_[i].x(), aero_force_[i].y(), aero_force_[i].z() / ground_effect_coeff_));
-        rotor_link_ptr_[i]->AddRelativeTorque(
+        ctrl_link_ptr_[i]->AddRelativeForce(ignition::math::Vector3<double>(aero_force_[i].x(), aero_force_[i].y(),
+                                                                            aero_force_[i].z() / ground_effect_coeff_));
+        ctrl_link_ptr_[i]->AddRelativeTorque(
             ignition::math::Vector3<double>(aero_torque_[i].x(), aero_torque_[i].y(), aero_torque_[i].z()));
       }
     }
@@ -365,21 +348,14 @@ void PropulsionPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
   }
 
   // TODO: set velocity in onUpdate() or onCtrolMsg()???
-  this->SetVelocity();
+  this->setRotorVelocity();
 
   // save data for csv output
-  test_data_[0] = rotor_vel_[0] * dir_vel_actual_[0];
-  test_data_[1] = rotor_vel_[1] * dir_vel_actual_[1];
-  test_data_[2] = rotor_vel_[2] * dir_vel_actual_[2];
-  test_data_[3] = rotor_vel_[3] * dir_vel_actual_[3];
-  test_data_[4] = rotor_vel_[4] * dir_vel_actual_[4];
-  test_data_[5] = rotor_vel_[5] * dir_vel_actual_[5];
-  test_data_[6] = aero_torque_[0].z();
-  test_data_[7] = aero_torque_[1].z();
-  test_data_[8] = aero_torque_[2].z();
-  test_data_[9] = aero_torque_[3].z();
-  test_data_[10] = aero_torque_[4].z();
-  test_data_[11] = aero_torque_[5].z();
+  for (size_t i = 0; i < joint_names_.size(); i++)
+  {
+    test_data_[i] = rotor_vel_[i] * dir_vel_actual_[i];
+    test_data_[i + 6] = aero_torque_[i].z();
+  }
 
   // test_data_[0] = CT1;
   // test_data_[1] = CT2;
@@ -445,32 +421,31 @@ void PropulsionPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
   }
 }
 
-void PropulsionPlugin::OnRosWindMsg(const geometry_msgs::Vector3ConstPtr &_wind_msg)
+void PropulsionPlugin::onRosWindMsg(const geometry_msgs::Vector3ConstPtr &_wind_msg)
 {
-  // wind_vx_ = _wind_msg->x;
-  // wind_vy_ = _wind_msg->y;
-  // wind_vz_ = _wind_msg->z;
-  ROS_INFO("add wind disturbance");
-  distforce_ = ignition::math::Vector3<double>(_wind_msg->x, _wind_msg->y, _wind_msg->z);
+  wind_vx_ = _wind_msg->x;
+  wind_vy_ = _wind_msg->y;
+  wind_vz_ = _wind_msg->z;
+  // ROS_INFO("add wind disturbance");
+  // distforce_ = ignition::math::Vector3<double>(_wind_msg->x, _wind_msg->y, _wind_msg->z);
 }
 
-void PropulsionPlugin::OnControlMsg(const flypulator_common_msgs::RotorVelStampedConstPtr &_msg)
+void PropulsionPlugin::onControlMsg(const flypulator_common_msgs::RotorVelStampedConstPtr &_msg)
 {
-  // TODO: replace N with sizeof(joint_names_)
-  if (_msg->velocity.size() != size_t(aero_param_["N"]))
+  if (_msg->velocity.size() != joint_names_.size())
   {
-    ROS_ERROR("Dimention of rotor cmd does not match joint number!");
+    ROS_ERROR_STREAM("Dimention mismatch rotor_cmd and joint number!");
     return;
   }
 
-  for (size_t i = 0; i < size_t(aero_param_["N"]); i++)
+  for (size_t i = 0; i < joint_names_.size(); i++)
     rotor_vel_cmd_[i] = _msg->velocity[i];
 
   // ROS_INFO_STREAM("aero:"<<_msg->velocity[0]<<","<<_msg->velocity[1]<<","<<_msg->velocity[2]<<","<<_msg->velocity[3]<<","<<_msg->velocity[4]<<","<<_msg->velocity[5]);
   // ROS_INFO_STREAM("aero:"<<rotor_vel_[0]<<","<<rotor_vel_[1]<<","<<rotor_vel_[2]<<","<<rotor_vel_[3]<<","<<rotor_vel_[4]<<","<<rotor_vel_[5]);
 }
 
-void PropulsionPlugin::QueueThread()
+void PropulsionPlugin::queueThread()
 {
   static const double timeout = 0.01;
   while (this->rosNode_->ok())
@@ -479,35 +454,38 @@ void PropulsionPlugin::QueueThread()
   }
 }
 
-int PropulsionPlugin::Sgn(const double &_num)
+template <typename T>
+int PropulsionPlugin::Sgn(T &_num)
 {
-  if (_num < 0)
-    return -1;
-  else if (_num > 0)
-    return 1;
-  else
-    return 0;
+  return (T(0) < _num) - (_num < T(0));
 }
 
-double PropulsionPlugin::clamp(double _x, double _low, double _high)
+double PropulsionPlugin::clamp(double _x, double _lower, double _upper)
 {
-  if (_x > _high)
-    return _high;
-  if (_x < _low)
-    return _low;
-  return _x;
+  return std::min(_upper, std::max(_x, _lower));
 }
 
-void PropulsionPlugin::SetVelocity()
+void PropulsionPlugin::setRotorVelocity()
 {
-  this->joint1_->SetParam("vel", 0, rotor_vel_[0] * dir_vel_actual_[0]);
-  this->joint2_->SetParam("vel", 0, rotor_vel_[1] * dir_vel_actual_[1]);
-  this->joint3_->SetParam("vel", 0, rotor_vel_[2] * dir_vel_actual_[2]);
-  this->joint4_->SetParam("vel", 0, rotor_vel_[3] * dir_vel_actual_[3]);
-  this->joint5_->SetParam("vel", 0, rotor_vel_[4] * dir_vel_actual_[4]);
-  this->joint6_->SetParam("vel", 0, rotor_vel_[5] * dir_vel_actual_[5]);
+  for (size_t i = 0; i < joint_names_.size(); i++)
+  {
+    this->ctrl_joint_ptr_[i]->SetParam("vel", 0, rotor_vel_[i] * dir_vel_actual_[i]);
+  }
   // ROS_DEBUG_STREAM("aero:"<<rotor_vel_[0]<<","<<rotor_vel_[1]<<","<<rotor_vel_[2]<<","<<rotor_vel_[3]<<","<<rotor_vel_[4]<<","<<rotor_vel_[5]);
   // ROS_DEBUG_STREAM("aero plugin: SetVelocity()!");
+}
+
+void PropulsionPlugin::calcGroundEffectCoeff()
+{
+  // altitude/height of the drone to the gorund
+  double drone_height = this->link0_->WorldPose().Pos().Z();
+
+  // TODO: only approximate ground effect, neglect the tilting angle of the drone and propeller
+  // calculate ground effect coefficient, T_eff = T_nom/ground_effect_coeff_
+  if (drone_height > 0.35 * aero_param_["R"])                                    // R = blade radius
+    ground_effect_coeff_ = 1.0 - pow(aero_param_["R"] / (4 * drone_height), 2);  // min.~0.5
+  else
+    ground_effect_coeff_ = 0.5;
 }
 
 void PropulsionPlugin::readParamsFromServer()
@@ -524,6 +502,11 @@ void PropulsionPlugin::readParamsFromServer()
   else
   {
     ROS_ERROR_STREAM("Can't load joint names from parameter server!");
+  }
+  // ROS_DEBUG_STREAM("control joint number: " << joint_names_.size());
+  for (auto i : joint_names_)
+  {
+    ROS_INFO_STREAM("test: " << i);
   }
 
   // try to read links names from ros parameter server
@@ -635,24 +618,18 @@ void PropulsionPlugin::jointStatePubliher()
 {
   // publish joint state
   sensor_msgs::JointState joint_state_msg;
-  joint_state_msg.name.resize(6);
-  joint_state_msg.position.resize(6);
-  joint_state_msg.velocity.resize(6);
+  joint_state_msg.name.resize(joint_names_.size());
+  joint_state_msg.position.resize(joint_names_.size());
+  joint_state_msg.velocity.resize(joint_names_.size());
+  joint_state_msg.effort.resize(joint_names_.size());
   joint_state_msg.header.stamp = ros::Time::now();
   joint_state_msg.header.frame_id = "base_link";
-  joint_state_msg.name[0] = this->joint1_->GetName();
-  joint_state_msg.name[1] = this->joint2_->GetName();
-  joint_state_msg.name[2] = this->joint3_->GetName();
-  joint_state_msg.name[3] = this->joint4_->GetName();
-  joint_state_msg.name[4] = this->joint5_->GetName();
-  joint_state_msg.name[5] = this->joint6_->GetName();
-
-  joint_state_msg.position[0] = this->joint1_->Position(0);
-  joint_state_msg.position[1] = this->joint2_->Position(0);
-  joint_state_msg.position[2] = this->joint3_->Position(0);
-  joint_state_msg.position[3] = this->joint4_->Position(0);
-  joint_state_msg.position[4] = this->joint5_->Position(0);
-  joint_state_msg.position[5] = this->joint6_->Position(0);
+  for (size_t i = 0; i < joint_names_.size(); i++)
+  {
+    joint_state_msg.name[i] = this->ctrl_joint_ptr_[i]->GetName();
+    joint_state_msg.position[i] = this->ctrl_joint_ptr_[i]->Position(0);
+    joint_state_msg.velocity[i] = this->ctrl_joint_ptr_[i]->GetVelocity(0);
+  }
 
   pub_joint_state_.publish(joint_state_msg);
 }
@@ -664,7 +641,7 @@ void PropulsionPlugin::wrenchPublisher()
 
   for (int i = 0; i < 6; i++)
   {
-    // TODO: check link name
+    // TODO: check link name, publish another variable for simple aero model!!!
     wrench_msg_tmp.header.frame_id = std::string("motor_link_") + std::to_string(i + 1);
     wrench_msg_tmp.wrench.force.x = aero_force_[i].x();
     wrench_msg_tmp.wrench.force.y = aero_force_[i].y();

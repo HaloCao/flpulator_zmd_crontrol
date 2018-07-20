@@ -1,3 +1,6 @@
+## flypulator_gazebo_plugin 2.2.0
+code refactor, simple aerodynamics as default because of faulty aerodynamic model.
+
 ## flypulator_gazebo_plugin 2.1.0
 "Events" callback for simulation update
 

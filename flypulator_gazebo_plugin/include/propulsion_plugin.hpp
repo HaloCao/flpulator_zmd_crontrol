@@ -51,34 +51,39 @@ public:
   /// \brief The onUpdate function is called by Gazebo for every simulation
   /// iteration. Update rate = 1 KHz
   /// \param[in] _info Update infomation.
-  void OnUpdate(const common::UpdateInfo &_info);
+  void onUpdate(const common::UpdateInfo &_info);
 
   /// \brief The onRosWindMsg function is called every update of the
   /// topic for wind.
   /// \param[in] _wind_msg wind command message.
-  void OnRosWindMsg(const geometry_msgs::Vector3ConstPtr &_wind_msg);
+  void onRosWindMsg(const geometry_msgs::Vector3ConstPtr &_wind_msg);
 
   /// \brief The onControlMsg function is called every update of the
   /// topic for rotor command.
   /// \param[in] _info Update infomation.
-  void OnControlMsg(const flypulator_common_msgs::RotorVelStampedConstPtr &_msg);
+  void onControlMsg(const flypulator_common_msgs::RotorVelStampedConstPtr &_msg);
 
   /// \brief sign function
   /// \param[in]
-  int Sgn(const double &_num);
+  template <typename T>
+  int Sgn(T &_num);
 
   /// \brief Clamp a value in his limitation.
   /// \param[in] x input value
   /// \param[in]
   double clamp(double _x, double _low, double _high);
 
+private:
   /// \brief The setVelotity function is called to set rotor velocity
   /// using the method: Joint Motors
   /// (http://gazebosim.org/tutorials?tut=set_velocity)
-  void SetVelocity();
+  void setRotorVelocity();
 
-private:
-  void QueueThread();
+  /// \brief The calcGroundEffectCoeff function is called to calculate
+  /// the coeffecient for ground effect.
+  void calcGroundEffectCoeff();
+
+  void queueThread();
 
   /// \brief The setVelotity function is called to load parameters from
   /// ros parameter server.
@@ -141,6 +146,7 @@ private:
   double air_global_vz_;        // air velocity in global z
   double ind_vel_hover_;        // induced velocity in the hovering case
 
+  // TODO: change all array to vector and resize with joint_names_.size()
   double rotor_vel_raw_[6] = {0};  // rotor velocity with sign, used for motor dynamic
   double rotor_vel_cmd_[6] = {0};  // blade spinning velocity commands
   double rotor_vel_[6] = {0};      // blade spinning velocity
@@ -167,17 +173,10 @@ private:
   /// \brief Pointer to the model.
   physics::ModelPtr model_;
 
-  gazebo::physics::LinkPtr rotor_link_ptr_[6];  // pointer to rotor links
+  physics::LinkPtr ctrl_link_ptr_[6];  // pointer to control links
+  physics::LinkPtr link0_;             // point to base link
 
-  // TODO: rewrite as point array
-  physics::JointPtr joint1_;  // pointer to rotor joints
-  physics::JointPtr joint2_;
-  physics::JointPtr joint3_;
-  physics::JointPtr joint4_;
-  physics::JointPtr joint5_;
-  physics::JointPtr joint6_;
-
-  physics::LinkPtr link0_;
+  physics::JointPtr ctrl_joint_ptr_[6];  // pointer to control joints
 
   /// \brief A node use for ROS transport
   std::unique_ptr<ros::NodeHandle> rosNode_;
