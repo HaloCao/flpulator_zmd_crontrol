@@ -6,7 +6,15 @@
   <arg name="gui" default="true"/>
   <arg name="headless" default="false"/>
   <arg name="debug" default="false"/>
- 
+
+
+
+  <rosparam command="load" file="$(find flypulator_description)/param/state_estimation_param.yaml" />
+ <rosparam command="load" file="$(find flypulator_description)/param/drone_parameter.yaml" />
+ <rosparam command="load" file="$(find flypulator_description)/param/aero_param.yaml" />
+ <rosparam command="load" file="$(find flypulator_gazebo_plugin)/cfg/sim_parameter.yaml" />
+
+
  <rosparam command="load" file="$(find flypulator_description)/param/state_estimation_param.yaml" />
 
   <arg name="model" default="'$(find flypulator_description)/urdf/hexatilt_base.xacro'"/>

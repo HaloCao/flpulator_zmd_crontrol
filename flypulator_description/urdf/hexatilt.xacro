@@ -13,7 +13,8 @@
   <xacro:property name="sqrt2" value="1.4142135623730951" />
   <!-- Mesh parameters -->
   <xacro:property name="mesh_file" value="hexatilt.dae" />
-  <xacro:property name="mesh_scale" value="0.001 0.001 0.001"/>
+  <!-- <xacro:property name="mesh_scale" value="0.001 0.001 0.001"/> -->
+  <xacro:property name="mesh_scale" value="1 1 1"/>
   <xacro:property name="mesh_scale_prop" value="0.098 0.098 0.098"/>
   <xacro:property name="mesh_scale_leg" value="0.1 0.1 0.1"/>
 
@@ -289,11 +290,5 @@
     <plugin name="propulsion_plugin" filename="libpropulsion_plugin.so">
     </plugin>
   </gazebo>
-
-<!-- <gazebo> -->
-<!--     <plugin name="propulsion_plugin_hexa" filename="libpropulsion_plugin_hexa.so"> -->
-<!--     </plugin> -->
-<!--   </gazebo> -->
-
 
 </robot>
