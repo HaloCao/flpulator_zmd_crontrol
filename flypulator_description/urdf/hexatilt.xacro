@@ -13,15 +13,15 @@
   <xacro:property name="sqrt2" value="1.4142135623730951" />
   <!-- Mesh parameters -->
   <xacro:property name="mesh_file" value="hexatilt.dae" />
-  <xacro:property name="mesh_scale" value="1 1 1"/>
+  <xacro:property name="mesh_scale" value="0.001 0.001 0.001"/>
   <xacro:property name="mesh_scale_prop" value="0.098 0.098 0.098"/>
   <xacro:property name="mesh_scale_leg" value="0.1 0.1 0.1"/>
 
   <!-- Geometric Parameters -->
   <!-- These parameters are pulled from the .yaml file -->
   <xacro:property name="rotor_tilt_angle"   value="${DP['uav/alpha']}"/> <!--in [deg]-->
-  <xacro:property name="body_radius"        value="${DP['uav/body_radius']}" /> <!-- [m] -->
-  <xacro:property name="body_height"        value="${DP['uav/body_height']}" /> 
+  <xacro:property name="body_radius"        value="${DP['uav/base_radius']}" /> <!-- [m] -->
+  <xacro:property name="body_height"        value="${DP['uav/base_height']}" /> 
   <xacro:property name="mass_rotor"         value="${DP['uav/blade_mass']}" /> <!-- [kg] -->
   <xacro:property name="arm_length_x"       value="${DP['uav/x']}" /> <!-- [Man[m] -->
   <xacro:property name="arm_length_y"       value="${DP['uav/y']}" /> <!-- [m] -->
@@ -46,7 +46,7 @@
 
   <!-- Property Blocks -->
  <!-- Mass and inertial Properties -->
-  <xacro:property name="base_mass" value="${DP['uav/mass']}" /> <!-- [kg] -->
+  <xacro:property name="base_mass" value="${DP['uav/base_mass']}" /> <!-- [kg] -->
   <xacro:property name="leg_pos_side_x" value="0.11" /> <!-- [m] -->
   <xacro:property name="mass_leg" value="0.180" /> <!-- [kg] -->
 
@@ -107,32 +107,10 @@
   </xacro:multirotor_base_macro>
 
   <!-- Instantiate rotors -->
-  <xacro:vertical_rotor
-    robot_namespace="${namespace}"
-    suffix="front_right"
-    direction="ccw"
-    motor_constant="${motor_constant}"
-    moment_constant="${moment_constant}"
-    parent="base_link"
-    mass_rotor="${mass_rotor}"
-    radius_rotor="${radius_rotor}"
-    time_constant_up="${time_constant_up}"
-    time_constant_down="${time_constant_down}"
-    max_rot_velocity="${max_rot_velocity}"
-    motor_number="0"
-    rotor_drag_coefficient="${rotor_drag_coefficient}"
-    rolling_moment_coefficient="${rolling_moment_coefficient}"
-    mesh="hexatilt_prop"
-    mesh_scale="${mesh_scale_prop}"
-    color="DarkGrey">
-    <origin xyz="${arm_length_x+0.01} -${arm_length_y} ${rotor_offset_top}" rpy="${rotor_tilt_angle*deg_to_rad} 0  ${120*deg_to_rad}" />
-    <xacro:insert_block name="rotor_inertia" />
-  </xacro:vertical_rotor>
-
-  <xacro:vertical_rotor
-    robot_namespace="${namespace}"
-    suffix="back_left"
-    direction="ccw"
+ 
+  <xacro:vertical_rotor robot_namespace="${namespace}"
+    suffix="back_right"
+    direction="cw"
     motor_constant="${motor_constant}"
     moment_constant="${moment_constant}"
     parent="base_link"
@@ -146,14 +124,15 @@
     rolling_moment_coefficient="${rolling_moment_coefficient}"
     mesh="hexatilt_prop"
     mesh_scale="${mesh_scale_prop}"
-    color="Red">
-    <origin xyz="-${arm_length_x-0.02} ${arm_length_y} ${rotor_offset_top}" rpy="-${rotor_tilt_angle*deg_to_rad} 0  -${60*deg_to_rad}" />
+    color="DarkGrey">
+    <origin xyz="-${arm_length_x+0.01} -${arm_length_y} ${rotor_offset_top}" rpy= "-${rotor_tilt_angle*deg_to_rad} 0  ${60*deg_to_rad}"/>
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 
-  <xacro:vertical_rotor robot_namespace="${namespace}"
-    suffix="front_left"
-    direction="cw"
+ <xacro:vertical_rotor
+    robot_namespace="${namespace}"
+    suffix="front_right"
+    direction="ccw"
     motor_constant="${motor_constant}"
     moment_constant="${moment_constant}"
     parent="base_link"
@@ -167,8 +146,8 @@
     rolling_moment_coefficient="${rolling_moment_coefficient}"
     mesh="hexatilt_prop"
     mesh_scale="${mesh_scale_prop}"
-    color="Red">
-    <origin xyz="${arm_length_x-0.02} ${arm_length_y} ${rotor_offset_top}" rpy= "${rotor_tilt_angle*deg_to_rad} 0  ${240*deg_to_rad}"/>
+    color="DarkGrey">
+    <origin xyz="${arm_length_x+0.01} -${arm_length_y} ${rotor_offset_top}" rpy="${rotor_tilt_angle*deg_to_rad} 0  ${120*deg_to_rad}" />
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 
@@ -189,12 +168,12 @@
     mesh="hexatilt_prop"
     mesh_scale="${mesh_scale_prop}"
     color="DarkGrey">
-    <origin xyz="-${arm_length_x+0.01} -${arm_length_y} ${rotor_offset_top}" rpy= "-${rotor_tilt_angle*deg_to_rad} 0  ${60*deg_to_rad}"/>
+    <origin xyz="${arm_length_side_x} -${arm_length_side_y} ${rotor_offset_top}" rpy="-${rotor_tilt_angle*deg_to_rad} 0  ${180*deg_to_rad}" />
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 
   <xacro:vertical_rotor robot_namespace="${namespace}"
-    suffix="back_right"
+    suffix="front_left"
     direction="cw"
     motor_constant="${motor_constant}"
     moment_constant="${moment_constant}"
@@ -209,15 +188,16 @@
     rolling_moment_coefficient="${rolling_moment_coefficient}"
     mesh="hexatilt_prop"
     mesh_scale="${mesh_scale_prop}"
-    color="DarkGrey">
-    <origin xyz="-${arm_length_side_x} -${arm_length_side_y} ${rotor_offset_top}" rpy="${rotor_tilt_angle*deg_to_rad} 0  ${0*deg_to_rad}" />
+    color="Red">
+    <origin xyz="${arm_length_x-0.02} ${arm_length_y} ${rotor_offset_top}" rpy= "${rotor_tilt_angle*deg_to_rad} 0  ${240*deg_to_rad}"/>
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 
 
-  <xacro:vertical_rotor robot_namespace="${namespace}"
-    suffix="back_right"
-    direction="cw"
+  <xacro:vertical_rotor
+    robot_namespace="${namespace}"
+    suffix="back_left"
+    direction="ccw"
     motor_constant="${motor_constant}"
     moment_constant="${moment_constant}"
     parent="base_link"
@@ -231,10 +211,33 @@
     rolling_moment_coefficient="${rolling_moment_coefficient}"
     mesh="hexatilt_prop"
     mesh_scale="${mesh_scale_prop}"
-    color="DarkGrey">
-    <origin xyz="${arm_length_side_x} -${arm_length_side_y} ${rotor_offset_top}" rpy="-${rotor_tilt_angle*deg_to_rad} 0  ${180*deg_to_rad}" />
+    color="Red">
+    <origin xyz="-${arm_length_x-0.02} ${arm_length_y} ${rotor_offset_top}" rpy="-${rotor_tilt_angle*deg_to_rad} 0  -${60*deg_to_rad}" />
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
+
+  <xacro:vertical_rotor robot_namespace="${namespace}"
+    suffix="back_right"
+    direction="cw"
+    motor_constant="${motor_constant}"
+    moment_constant="${moment_constant}"
+    parent="base_link"
+    mass_rotor="${mass_rotor}"
+    radius_rotor="${radius_rotor}"
+    time_constant_up="${time_constant_up}"
+    time_constant_down="${time_constant_down}"
+    max_rot_velocity="${max_rot_velocity}"
+    motor_number="6"
+    rotor_drag_coefficient="${rotor_drag_coefficient}"
+    rolling_moment_coefficient="${rolling_moment_coefficient}"
+    mesh="hexatilt_prop"
+    mesh_scale="${mesh_scale_prop}"
+    color="DarkGrey">
+    <origin xyz="-${arm_length_side_x} -${arm_length_side_y} ${rotor_offset_top}" rpy="${rotor_tilt_angle*deg_to_rad} 0  ${0*deg_to_rad}" />
+    <xacro:insert_block name="rotor_inertia" />
+  </xacro:vertical_rotor>
+
+
 
 <xacro:landing_gear robot_namespace="${namespace}"
     suffix="left"
@@ -266,14 +269,11 @@
     reflect="1"
     color="DarkGrey">
     <origin xyz="-${leg_pos_side_x} 0 -0.02" rpy="0 ${10*deg_to_rad} 0" />
-
     <xacro:insert_block name="leg_inertia" />
   </xacro:landing_gear>
-  <!--<gazebo>
-    <plugin name="control_plugin" filename="libcontrol_plugin.so">
-    </plugin>
-  </gazebo>-->
 
+
+<!-- Gazebo plugins .. move to import document.. -->
   <gazebo>
     <plugin name="fake_sensor_plugin" filename="libfake_sensor_plugin.so">
     </plugin>
@@ -286,103 +286,14 @@
   </gazebo>
 
   <gazebo>
-    <plugin name="drone_internal_imu_plugin" filename="libhector_gazebo_ros_imu.so" >
-      <robotNamespace>${namespace}</robotNamespace>
-      <alwaysOn>true</alwaysOn>
-      <bodyName>base_link</bodyName>
-      <frameName>base_link</frameName>
-      <topicName>IMU/imu_data</topicName>
-      <serviceName>drone/internal_sensors/imu_service</serviceName>
-      <updateRate>100.0</updateRate>
-      <gaussianNoise>0.001</gaussianNoise>
-      <!-- accelerometer params -->
-      <accelOffset>0.0 0.0 0.0</accelOffset>
-      <accelGaussianNoise>0.0003 0.0003 0.0003</accelGaussianNoise>
-      <accelDrift>0.00004 0.00004 0.00004</accelDrift>
-      <accelFrequency>0.0025 0.0025 0.0025</accelFrequency>
-      <!-- gyroscope params -->
-      <rateOffset>0.0 0.0 0.0</rateOffset>
-      <rateDrift>0.01 0.01 0.01</rateDrift>
-      <rateDriftFrequency>0.001 0.001 0.001</rateDriftFrequency>
-      <rateGaussianNoise>0.01 0.01 0.01</rateGaussianNoise>
+    <plugin name="propulsion_plugin" filename="libpropulsion_plugin.so">
     </plugin>
   </gazebo>
 
-  <gazebo>
-    <plugin name="drone_internal_magnetic_sim" filename="libhector_gazebo_ros_magnetic.so">
-      <robotNamespace>${namespace}</robotNamespace>
-      <updateRate>100.0</updateRate>
-      <bodyName>base_link</bodyName>
-      <frameId>base_link</frameId>
-      <topicName>MAGNET/magnetic_data</topicName>
-      <offset>0 0 0</offset>
-      <drift>0.0 0.0 0.0</drift>
-      <gaussianNoise>1.3e-3 1.3e-3 1.3e-3</gaussianNoise>
-    </plugin>
-  </gazebo>
-
-  <gazebo>
-    <plugin name="drone_internal_gps_sim" filename="libhector_gazebo_ros_gps.so">
-      <robotNamespace>${namespace}</robotNamespace>
-      <updateRate>4.0</updateRate>
-      <bodyName>base_link</bodyName>
-      <frameId>base_link</frameId>
-      <topicName>GPS/fix</topicName>
-      <velocityTopicName>GPS/fix_velocity</velocityTopicName>
-      <referenceLatitude>49.860246</referenceLatitude>
-      <referenceLongitude>8.687077</referenceLongitude>
-      <drift>0.0 0.0 0.0</drift>
-      <gaussianNoise>0.01 0.01 0.01</gaussianNoise>
-      <velocityDrift>0 0 0</velocityDrift>
-      <velocityGaussianNoise>0.01 0.01 0.01</velocityGaussianNoise>
-    </plugin>
-  </gazebo>
-  
-  <!-- <gazebo reference="base_link"> -->
-  <!--   <sensor type="camera" name="camera1"> -->
-  <!--     <update_rate>30.0</update_rate> -->
-  <!--     <camera name="head"> -->
-  <!--       <vertical_fov>3.1415926</vertical_fov> -->
-  <!--       <image> -->
-  <!--         <width>800</width> -->
-  <!--         <height>800</height> -->
-  <!--         <format>R8G8B8</format> -->
-  <!--       </image> -->
-  <!--       <clip> -->
-  <!--         <near>0.02</near> -->
-  <!--         <far>300</far> -->
-  <!--       </clip> -->
-  <!--       <noise> -->
-  <!--         <type>gaussian</type>  --> -->
-          <!-- Noise is sampled independently per pixel on each frame.
-               That pixel's noise value is added to each of its color
-               channels, which at that point lie in the range [0,1]. -->
-          <!-- <mean>0.0</mean> -->
-          <!-- <stddev>0.007</stddev> -->
-        <!-- </noise> -->
-      <!-- </camera> -->
-      <!-- <plugin name="camera_controller" filename="libgazebo_ros_camera.so"> -->
-        <!-- <robotNamespace>${namespace}</robotNamespace> -->
-        <!-- <alwaysOn>true</alwaysOn> -->
-        <!-- <updateRate>0.0</updateRate> -->
-        <!-- <cameraName>camera1</cameraName> -->
-        <!-- <imageTopicName>image_raw</imageTopicName> -->
-        <!-- <cameraInfoTopicName>camera_info</cameraInfoTopicName> -->
-        <!-- <frameName>base_link</frameName> -->
-        <!-- <hackBaseline>0.07</hackBaseline> -->
-        <!-- <distortionK1>0.0</distortionK1> -->
-        <!-- <distortionK2>0.0</distortionK2> -->
-        <!-- <distortionK3>0.0</distortionK3> -->
-        <!-- <distortionT1>0.0</distortionT1> -->
-        <!-- <distortionT2>0.0</distortionT2> -->
-      <!-- </plugin> -->
-    <!-- </sensor> -->
-  <!-- </gazebo> -->
-
-<gazebo>
-    <plugin name="propulsion_plugin_hexa" filename="libpropulsion_plugin_hexa.so">
-    </plugin>
-  </gazebo>
+<!-- <gazebo> -->
+<!--     <plugin name="propulsion_plugin_hexa" filename="libpropulsion_plugin_hexa.so"> -->
+<!--     </plugin> -->
+<!--   </gazebo> -->
 
 
 </robot>

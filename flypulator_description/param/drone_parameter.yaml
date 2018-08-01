@@ -1,9 +1,19 @@
 # Geometric properties of drone
-# Body
-uav/body_height: 0.085 # [m] 
-uav/body_radius: 0.45 # [m] 
-uav/delta_h: 0 # [m]
-uav/length: 0.6 # [m]
+# Motor numbering: 
+#       ^
+#      / \
+#       |
+#
+#    5     4
+#
+# 6           3
+#
+#    1     2
+#
+# Base
+uav/base_height: 0.085 # [m] 
+uav/base_radius: 0.45 # [m] 
+uav/base_mass: 4.5 # [kg]
 # Blades
 uav/x: 0.22    # [m]
 uav/y: 0.37    # [m]
@@ -15,14 +25,19 @@ uav/blade_mass: 0.010 # [kg]
 # Legs
 uav/leg_radius: 0.0125 # [m] 
 uav/leg_length: 0.413 # [m] 
+
 # Kinematic properties
+uav/delta_h: 0 # [m]
+uav/length: 0.6 # [m]
 uav/mass: 4.15 # [kg] 
+
 # UAV parameters for control, only double value is allowed for /uav
 uav/i_xx: 0.45 # [kg m²]
 uav/i_yy: 0.33 # [kg m²]
 uav/i_zz: 0.70 # [kg m²]
 uav/alpha: 13.6 # [°] 
 uav/beta: 0 # [°]
+
 # coefficients used for simple aerodynamic model
 uav/k: 0.0138 # [N/(rad/s)²] , f=k*omega_i² 0.0138 0.000057
 uav/b: 0.00022 # [Nm/(rad/s)²] , tau = b * omega_i² 0.00022  0.0000012
@@ -30,7 +45,7 @@ uav/gravity: 9.81 # [m/s²] gravity acceleration constant
 uav/t_motor: 0.11 # [s] motor PT1 time constant 
 uav/rotor_vel_min: 0.01 # [rpm] min. rotor velocity
 uav/rotor_vel_max: 100000 # [rpm] max. rotor velocity
-
+#naming conventions
 urdf/controller_joint_names: ['blade_joint_1', 'blade_joint_2', 'blade_joint_3', 'blade_joint_4', 'blade_joint_5', 'blade_joint_6', ]
 urdf/controller_link_names: ['blade_link_1', 'blade_link_2', 'blade_link_3', 'blade_link_4', 'blade_link_5', 'blade_link_6', ]
 urdf/bidirectional: true # thrust inversible in gazebo
