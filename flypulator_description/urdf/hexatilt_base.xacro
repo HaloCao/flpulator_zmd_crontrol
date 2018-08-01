@@ -27,9 +27,6 @@
   <!-- macros for gazebo plugins, sensors -->
   <!-- <xacro:include filename="$(find flypulator_description)/urdf/component_snippets.xacro" /> -->
 
-  <!-- macros for gazebo plugins, for flypulator -->
-  <!-- <xacro:include filename="$(find flypulator_description)/urdf/gazebo_plugins.xacro" /> -->
-
   <!-- Instantiate hexatilt "mechanics" -->
   <xacro:include filename="$(find flypulator_description)/urdf/hexatilt.xacro" />
 

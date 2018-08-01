@@ -13,7 +13,8 @@
   <xacro:property name="sqrt2" value="1.4142135623730951" />
   <!-- Mesh parameters -->
   <xacro:property name="mesh_file" value="hexatilt.dae" />
-  <xacro:property name="mesh_scale" value="0.001 0.001 0.001"/>
+  <!-- <xacro:property name="mesh_scale" value="0.001 0.001 0.001"/> -->
+  <xacro:property name="mesh_scale" value="1 1 1"/>
   <xacro:property name="mesh_scale_prop" value="0.098 0.098 0.098"/>
   <xacro:property name="mesh_scale_leg" value="0.1 0.1 0.1"/>
 
@@ -49,6 +50,9 @@
   <xacro:property name="base_mass" value="${DP['uav/base_mass']}" /> <!-- [kg] -->
   <xacro:property name="leg_pos_side_x" value="0.11" /> <!-- [m] -->
   <xacro:property name="mass_leg" value="0.180" /> <!-- [kg] -->
+
+
+  <xacro:include filename="$(find flypulator_description)/urdf/gazebo_plugins.xacro" />
 
 
 <!-- Moment of Inertia at Origin   (g mm^2) -->
@@ -271,29 +275,6 @@
     <origin xyz="-${leg_pos_side_x} 0 -0.02" rpy="0 ${10*deg_to_rad} 0" />
     <xacro:insert_block name="leg_inertia" />
   </xacro:landing_gear>
-
-
-<!-- Gazebo plugins .. move to import document.. -->
-  <gazebo>
-    <plugin name="fake_sensor_plugin" filename="libfake_sensor_plugin.so">
-    </plugin>
-  </gazebo>
-
-  <gazebo>
-    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
-      <robotNamespace>${namespace}</robotNamespace>
-    </plugin>
-  </gazebo>
-
-  <gazebo>
-    <plugin name="propulsion_plugin" filename="libpropulsion_plugin.so">
-    </plugin>
-  </gazebo>
-
-<!-- <gazebo> -->
-<!--     <plugin name="propulsion_plugin_hexa" filename="libpropulsion_plugin_hexa.so"> -->
-<!--     </plugin> -->
-<!--   </gazebo> -->
 
 
 </robot>

@@ -7,8 +7,9 @@
     * landing_gear --> 
 
     <!-- The gazebo plugins that were used in px4 are located at /src/Firmware/Tools/sitl_gazebo/src. (have to clone their firmware folder) Can be viewed for comparison with our own plugins -->
-
+    
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
+
   <!-- Main multirotor link -->
   <xacro:macro name="multirotor_base_macro"
     params="robot_namespace mass body_radius body_height mesh_file mesh_scale color *inertia">
@@ -82,7 +83,7 @@
     </link>
     <!--PX4 memory: attach librotors_gazebo_motor_model to the base_link -->
     <gazebo>
-         </gazebo>
+    </gazebo>
     <gazebo reference="blade_link_${motor_number}">
       <material>Gazebo/${color}</material>
     </gazebo>

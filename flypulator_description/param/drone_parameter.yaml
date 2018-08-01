@@ -29,7 +29,7 @@ uav/leg_length: 0.413 # [m]
 # Kinematic properties
 uav/delta_h: 0 # [m]
 uav/length: 0.6 # [m]
-uav/mass: 4.15 # [kg] 
+uav/mass: 5.15 # [kg] 
 
 # UAV parameters for control, only double value is allowed for /uav
 uav/i_xx: 0.45 # [kg m²]
