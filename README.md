@@ -1,5 +1,3 @@
-PS: merge the develop branch to master only after validation.
-
 # Flypulator Project
 
 ## Prerequisites
@@ -13,22 +11,22 @@ From [gazebosim.org](http://gazebosim.org/tutorials?cat=guided_b&tut=guided_b1):
  - Ubuntu Trusty or later installed.
 
 ### Install ROS and Gazebo
-To install ROS Kinetic, follow the instructions of [Ros Wiki](http://wiki.ros.org/kinetic/Installation). It is highly recommended to use Ubuntu 16.04 64Bit. Choose to install full version of ROS (for Ubuntu, [Step 1.4: sudo apt-get install ros-kinetic-desktop-full](http://wiki.ros.org/kinetic/Installation/Ubuntu#Installation-1)). Gazebo 7 is already included in this package.
+To install ROS, follow the instructions of [Ros Wiki](http://www.ros.org/). It is highly recommended to use Ubuntu based linux OS. Choose to install full version of ROS (for Ubuntu, [Step 1.4: sudo apt-get install ros-[your ros version]]-desktop-full](http://wiki.ros.org/melodic/Installation/Ubuntu#Installation-1)). Gazebo 9 is already included in this package.
 
 ### Build
 The content of this repository must be cloned into the `/src` folder of a catkin workspace ([how to create an empty workspace](http://wiki.ros.org/catkin/Tutorials/create_a_workspace)). For an existing workspace in `~/catkin_ws` that requires the following steps (in a new terminal):
 
 ```
-cd ~/catkin_ws/src/
+cd ~/your_ws/src/
 git clone https://github.com/FLYing-maniPULATOR/flypulator.git
 cd ..
 catkin_make
 ```
 Dont forget sourcing the setup.bash file:
 ```
-source ~/catkin_ws/devel/setup.bash
+source ~/your_ws/devel/setup.bash
 ```
-To do sourcing permanently, edit the .bashrc file with `gedit ~/.bashrc` and add the source command from above (`source ~/catkin_ws/devel/setup.bash`). *Note that you have to start a new terminal to apply the changes*. You can check if it has worked by trying to locate a package using `rospack find flypulator_control`.
+To do sourcing permanently, edit the .bashrc file with `gedit ~/.bashrc` and add the source command from above (`source ~/your_ws/devel/setup.bash`). *Note that you have to start a new terminal to apply the changes*. You can check if it has worked by trying to locate a package using `rospack find flypulator_control`.
 
 ## Gazebo simulation
 
@@ -54,7 +52,7 @@ and to start controller node:
 
 Remember that `roscore` must be running!
 
-To start both packages, controller and trajectory generator, and load the .yaml file including the model parameters, a launch file is provided in `~/catkin_ws/src/flypulator/flypulator/launch` named `controller.launch`, which can be launched using the following command:
+To start both packages, controller and trajectory generator, and load the .yaml file including the model parameters, a launch file is provided in `~/your_ws/src/flypulator/flypulator/launch` named `controller.launch`, which can be launched using the following command:
 
 ` roslaunch flypulator controller.launch `
 
@@ -67,11 +65,11 @@ They can be called by the following command (for instance):
 
 ` rosservice call /linear_trajectory '{x_start: [0,0,0], x_end:  [5,5,-1], rpy_start: [-9,0,23], rpy_end: [5,85,360], delta_t: 10}'`
 
-The model parameters are defined in the file `drone_parameter.yaml` located at `~/catkin_ws/src/flypulator/flypulator_description/param/`. They have to be load to ROS parameter server either using the provided launchfile `controller.launch` or using the following command: 
+The model parameters are defined in the file `drone_parameter.yaml` located at `.../flypulator/flypulator_description/param/`. They have to be load to ROS parameter server either using the provided launchfile `controller.launch` or using the following command: 
 
 ` rosparam load flypulator_ws/src/flypulator/flypulator_description/param/drone_parameter.yaml `
 
-The control parameters can be changed via runtime using the [dynamic_reconfigure package](http://wiki.ros.org/dynamic_reconfigure). The default values are defined in the file `control_parameter.cfg` located at `~/catkin_ws/src/flypulator/flypulator_control/cfg/`. To start the dynamic reconfigure GUI, use the following command:
+The control parameters can be changed via runtime using the [dynamic_reconfigure package](http://wiki.ros.org/dynamic_reconfigure). The default values are defined in the file `control_parameter.cfg` located at `.../flypulator/flypulator_control/cfg/`. To start the dynamic reconfigure GUI, use the following command:
 
 ` rosrun rqt_reconfigure rqt_reconfigure `
 
@@ -98,3 +96,13 @@ The code style follows the [ROS C++ Style Guide](http://wiki.ros.org/CppStyleGui
  - Sometimes gazebo fails to start. Just exit and start again
  - If `catkin_make` does not succeed because some header files are missing, just run it twice.
  - Sometimes the drone model is not loaded correctly and there are errors in console. Try log out and log in (Linux) or delete `/build` and `/devel` folder in `~/catkin_ws/` and rerun `catkin_make`.
+ - When upgrading ROS version, clean your workspace folder (delete `devel` and `build`) and remove related `source ~/your_ws/devel/setup.bash`, since it still points to old version and causes errors.
+
+## Version Numbering Rules
+Given a version number MAJOR.MINOR.PATCH, increment the:
+
+ - MAJOR version when you make incompatible API changes,
+ - MINOR version when you add functionality in a backwards-compatible manner, and
+ - PATCH version when you make backwards-compatible bug fixes.
+ 
+ Refer to [Semantic Versioning](https://semver.org/) for more details.

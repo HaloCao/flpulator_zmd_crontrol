@@ -1,6 +1,6 @@
-<package>
+<package format="2">
   <name>flypulator_common_msgs</name>
-  <version>0.0.1</version>
+  <version>1.0.0</version>
   <description>The common messages package</description>
 
   <maintainer email="jinyao383@hotmail.com">Jinyao Zhu</maintainer>
@@ -10,12 +10,10 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>sensor_msgs</build_depend>
+  <depend>std_msgs</depend>  
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
   <build_depend>message_generation</build_depend>
-
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>message_runtime</run_depend>
+  <exec_depend>message_runtime</exec_depend>
 
 </package>
