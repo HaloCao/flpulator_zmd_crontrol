@@ -13,7 +13,7 @@
 # Base
 uav/base_height: 0.085 # [m] 
 uav/base_radius: 0.45 # [m] 
-uav/base_mass: 4.5 # [kg]
+uav/base_mass: 3.85 # [kg]
 # Blades
 uav/x: 0.22    # [m]
 uav/y: 0.37    # [m]
@@ -25,16 +25,16 @@ uav/blade_mass: 0.010 # [kg]
 # Legs
 uav/leg_radius: 0.0125 # [m] 
 uav/leg_length: 0.413 # [m] 
-
+uav/leg_mass: 0.0 # [kg]
 # Kinematic properties
 uav/delta_h: 0 # [m]
 uav/length: 0.6 # [m]
-uav/mass: 5.15 # [kg] 
+uav/mass: 3.85 # [kg] 
 
 # UAV parameters for control, only double value is allowed for /uav
-uav/i_xx: 0.45 # [kg m²]
-uav/i_yy: 0.33 # [kg m²]
-uav/i_zz: 0.70 # [kg m²]
+uav/i_xx: 0.122 # [kg m²]
+uav/i_yy: 0.123 # [kg m²]
+uav/i_zz: 0.235 # [kg m²]
 uav/alpha: 13.6 # [°] 
 uav/beta: 0 # [°]
 

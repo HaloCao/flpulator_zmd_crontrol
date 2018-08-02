@@ -53,6 +53,15 @@
   </xacro:macro>
 
   <!-- Rotor joint and link -->
+  <!-- The following parameters are artifacts of the gazebo_motor_model plugin. It will be removed when we are sure it is not needed later in SITL integration. -->
+  * motor_constant
+  * moment_constant
+  * time_constant_up
+  * time_constant_down
+  * max_rot_velocity
+  * rotor_drag_coefficient
+  * rolling_moment_coefficient
+
   <xacro:macro name="vertical_rotor"
     params="robot_namespace suffix direction motor_constant moment_constant parent mass_rotor radius_rotor time_constant_up time_constant_down max_rot_velocity motor_number rotor_drag_coefficient rolling_moment_coefficient color mesh mesh_scale *origin *inertia">
 
@@ -70,7 +79,7 @@
       </inertial>
       <visual>
         <geometry>
-          <mesh filename="package://flypulator_description/meshes/${mesh}_${direction}.dae"
+          <mesh filename="package://flypulator_description/meshes/${direction}.dae"
             scale="${mesh_scale}" />
           <!-- <box size="${2*radius_rotor} 0.01 0.005"/> -->
         </geometry>

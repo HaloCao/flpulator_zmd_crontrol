@@ -12,11 +12,11 @@
   <xacro:property name="cos30" value="0.866025403784" />
   <xacro:property name="sqrt2" value="1.4142135623730951" />
   <!-- Mesh parameters -->
-  <xacro:property name="mesh_file" value="hexatilt.dae" />
+  <xacro:property name="mesh_file" value="hexatilt_base_down.dae" />
   <!-- <xacro:property name="mesh_scale" value="0.001 0.001 0.001"/> -->
-  <xacro:property name="mesh_scale" value="1 1 1"/>
-  <xacro:property name="mesh_scale_prop" value="0.098 0.098 0.098"/>
-  <xacro:property name="mesh_scale_leg" value="0.1 0.1 0.1"/>
+  <xacro:property name="mesh_scale" value="0.001 0.001 0.001"/>
+  <xacro:property name="mesh_scale_prop" value="0.001 0.001 0.001"/>
+  <xacro:property name="mesh_scale_leg" value="0.001 0.001 0.001"/>
 
   <!-- Geometric Parameters -->
   <!-- These parameters are pulled from the .yaml file -->
@@ -49,7 +49,7 @@
  <!-- Mass and inertial Properties -->
   <xacro:property name="base_mass" value="${DP['uav/base_mass']}" /> <!-- [kg] -->
   <xacro:property name="leg_pos_side_x" value="0.11" /> <!-- [m] -->
-  <xacro:property name="mass_leg" value="0.180" /> <!-- [kg] -->
+  <xacro:property name="mass_leg" value="${DP['uav/leg_mass']}"  /> <!-- [kg] -->
 
 
   <xacro:include filename="$(find flypulator_description)/urdf/gazebo_plugins.xacro" />
@@ -58,28 +58,28 @@
 <!-- Moment of Inertia at Origin   (g mm^2) -->
   <xacro:property name="body_inertia">
     <inertia
-    ixx = "${1.536E+08*to_kgm2}"
-	ixy = "${ 4.372E+04 *to_kgm2}"
-	ixz = "${ 1.475E+04 *to_kgm2}"
-	iyx = "${ 4.372E+04 *to_kgm2}"
-	iyy = "${ 1.580E+08 *to_kgm2}"
-	iyz = "${ -2.790E+04*to_kgm2}"
-	izx = "${ 1.475E+04 *to_kgm2}"
-	izy = "${ -2.790E+04*to_kgm2}"
-	izz = "${ 2.429E+08 *to_kgm2}"     />
+    ixx = "${1.223E+08  *to_kgm2}"
+	ixy = "${-7.268E+04 *to_kgm2}"
+	ixz = "${-1.303E+04 *to_kgm2}"
+	iyx = "${-7.268E+04 *to_kgm2}"
+	iyy = "${1.232E+08  *to_kgm2}"
+	iyz = "${-2.035E+04 *to_kgm2}"
+	izx = "${-1.303E+04 *to_kgm2}"
+	izy = "${-2.035E+04 *to_kgm2}"
+	izz = "${2.355E+08  *to_kgm2}"     />
     </xacro:property>
 
   <xacro:property name="leg_inertia"> 
     <inertia 
-    ixx = "${ 3.321E+06*to_kgm2 }"
-    ixy = "${ 0.048    *to_kgm2 }"
-    ixz = "${ 4.097E+05*to_kgm2 }" 
-    iyx = "${ 0.048    *to_kgm2 }"
-    iyy = "${ 2.407E+06*to_kgm2 }"
-    iyz = "${ -0.271    *to_kgm2 }"
-    izx = "${ 4.097E+05*to_kgm2 }"
-    izy = "${ -0.271   *to_kgm2 }"
-    izz = "${ 1.070E+06*to_kgm2 }"/>
+    ixx = "${ 0*to_kgm2 }"
+    ixy = "${ 0*to_kgm2 }"
+    ixz = "${ 0*to_kgm2 }" 
+    iyx = "${ 0*to_kgm2 }"
+    iyy = "${ 0*to_kgm2 }"
+    iyz = "${ 0*to_kgm2 }"
+    izx = "${ 0*to_kgm2 }"
+    izy = "${ 0*to_kgm2 }"
+    izz = "${ 0*to_kgm2 }"/>
      </xacro:property>
                         
   <xacro:property name="rotor_inertia"> 
