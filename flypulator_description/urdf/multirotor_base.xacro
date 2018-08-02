@@ -120,7 +120,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0 " />
         <geometry>
-          <mesh filename="package://flypulator_description/meshes/right_leg.dae"
+          <mesh filename="package://flypulator_description/meshes/leg.dae"
              scale="${mesh_scale}" /> 
             <!-- <cylinder length="${length_leg}" radius="${radius_leg}" /> <1 [m] -1> -->
         </geometry>

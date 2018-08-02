@@ -13,10 +13,9 @@
   <xacro:property name="sqrt2" value="1.4142135623730951" />
   <!-- Mesh parameters -->
   <xacro:property name="mesh_file" value="hexatilt_base_down.dae" />
-  <!-- <xacro:property name="mesh_scale" value="0.001 0.001 0.001"/> -->
-  <xacro:property name="mesh_scale" value="0.001 0.001 0.001"/>
-  <xacro:property name="mesh_scale_prop" value="0.001 0.001 0.001"/>
-  <xacro:property name="mesh_scale_leg" value="0.001 0.001 0.001"/>
+  <xacro:property name="mesh_scale" value="1 1 1"/>
+  <xacro:property name="mesh_scale_prop" value="1 1 1"/>
+  <xacro:property name="mesh_scale_leg" value="1 1 1"/>
 
   <!-- Geometric Parameters -->
   <!-- These parameters are pulled from the .yaml file -->
@@ -68,7 +67,7 @@
 	izy = "${-2.035E+04 *to_kgm2}"
 	izz = "${2.355E+08  *to_kgm2}"     />
     </xacro:property>
-
+ <!-- The inertia of the legs are set to zero and the MoI of the body includes the legs. -->
   <xacro:property name="leg_inertia"> 
     <inertia 
     ixx = "${ 0*to_kgm2 }"
@@ -114,7 +113,7 @@
  
   <xacro:vertical_rotor robot_namespace="${namespace}"
     suffix="back_right"
-    direction="cw"
+    direction="ccw"
     motor_constant="${motor_constant}"
     moment_constant="${moment_constant}"
     parent="base_link"
@@ -129,14 +128,14 @@
     mesh="hexatilt_prop"
     mesh_scale="${mesh_scale_prop}"
     color="DarkGrey">
-    <origin xyz="-${arm_length_x+0.01} -${arm_length_y} ${rotor_offset_top}" rpy= "-${rotor_tilt_angle*deg_to_rad} 0  ${60*deg_to_rad}"/>
+    <origin xyz="-${arm_length_x-0.02} -${arm_length_y} ${rotor_offset_top}" rpy= "-${rotor_tilt_angle*deg_to_rad} 0  ${60*deg_to_rad}"/>
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 
  <xacro:vertical_rotor
     robot_namespace="${namespace}"
     suffix="front_right"
-    direction="ccw"
+    direction="cw"
     motor_constant="${motor_constant}"
     moment_constant="${moment_constant}"
     parent="base_link"
@@ -151,13 +150,13 @@
     mesh="hexatilt_prop"
     mesh_scale="${mesh_scale_prop}"
     color="DarkGrey">
-    <origin xyz="${arm_length_x+0.01} -${arm_length_y} ${rotor_offset_top}" rpy="${rotor_tilt_angle*deg_to_rad} 0  ${120*deg_to_rad}" />
+    <origin xyz="${arm_length_x-0.02} -${arm_length_y} ${rotor_offset_top}" rpy="${rotor_tilt_angle*deg_to_rad} 0  ${120*deg_to_rad}" />
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 
   <xacro:vertical_rotor robot_namespace="${namespace}"
     suffix="back_right"
-    direction="cw"
+    direction="ccw"
     motor_constant="${motor_constant}"
     moment_constant="${moment_constant}"
     parent="base_link"
@@ -172,7 +171,7 @@
     mesh="hexatilt_prop"
     mesh_scale="${mesh_scale_prop}"
     color="DarkGrey">
-    <origin xyz="${arm_length_side_x} -${arm_length_side_y} ${rotor_offset_top}" rpy="-${rotor_tilt_angle*deg_to_rad} 0  ${180*deg_to_rad}" />
+    <origin xyz="${arm_length_side_x} +${arm_length_side_y} ${rotor_offset_top}" rpy="-${rotor_tilt_angle*deg_to_rad} 0  ${180*deg_to_rad}" />
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 
@@ -193,7 +192,7 @@
     mesh="hexatilt_prop"
     mesh_scale="${mesh_scale_prop}"
     color="Red">
-    <origin xyz="${arm_length_x-0.02} ${arm_length_y} ${rotor_offset_top}" rpy= "${rotor_tilt_angle*deg_to_rad} 0  ${240*deg_to_rad}"/>
+    <origin xyz="${arm_length_x-0.0} ${arm_length_y} ${rotor_offset_top}" rpy= "${rotor_tilt_angle*deg_to_rad} 0  ${240*deg_to_rad}"/>
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 
@@ -216,7 +215,7 @@
     mesh="hexatilt_prop"
     mesh_scale="${mesh_scale_prop}"
     color="Red">
-    <origin xyz="-${arm_length_x-0.02} ${arm_length_y} ${rotor_offset_top}" rpy="-${rotor_tilt_angle*deg_to_rad} 0  -${60*deg_to_rad}" />
+    <origin xyz="-${arm_length_x+0.0} ${arm_length_y} ${rotor_offset_top}" rpy="-${rotor_tilt_angle*deg_to_rad} 0  -${60*deg_to_rad}" />
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 
@@ -237,7 +236,7 @@
     mesh="hexatilt_prop"
     mesh_scale="${mesh_scale_prop}"
     color="DarkGrey">
-    <origin xyz="-${arm_length_side_x} -${arm_length_side_y} ${rotor_offset_top}" rpy="${rotor_tilt_angle*deg_to_rad} 0  ${0*deg_to_rad}" />
+    <origin xyz="-${arm_length_side_x} +${arm_length_side_y} ${rotor_offset_top}" rpy="${rotor_tilt_angle*deg_to_rad} 0  ${0*deg_to_rad}" />
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 
