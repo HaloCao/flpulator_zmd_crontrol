@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <launch>
  <rosparam command="load" file="$(find flypulator_description)/param/state_estimation_param.yaml" />
- <rosparam command="load" file="$(find flypulator_description)/param/aero_param.yaml" />
- <rosparam command="load" file="$(find flypulator_description)/param/drone_parameter.yaml" />
+ <rosparam command="load" file="$(find flypulator_description)/param/aero_param_igs.yaml" />
+ <rosparam command="load" file="$(find flypulator_description)/param/drone_parameter_igs.yaml" />
+ <rosparam command="load" file="$(find flypulator_gazebo_plugin)/cfg/sim_parameter.yaml" />
 
  <arg name="model" default="$(find flypulator_description)/urdf/hexarotor_igs.urdf"/>
 

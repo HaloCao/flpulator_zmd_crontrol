@@ -1,7 +1,7 @@
 ---
 # aerodynamic prameters for gazebo simulation, only double because read as dictionary
 aero_param/c : 0.016  #blade chord width
-aero_param/R : 0.1905   #blade radius
+aero_param/R : 0.075   #blade radius
 aero_param/a : 5.7    #2D_lift_curve_slope
 aero_param/th0 : 0.7  #Profile inclination angle
 aero_param/thtw : 0.5 #Inclination change along radius

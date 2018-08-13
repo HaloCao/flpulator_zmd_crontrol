@@ -22,5 +22,5 @@
     name="rviz"
     pkg="rviz"
     type="rviz"
-    args="-d $(find flypulator_description)/Hexacopter_igs.rviz" />
+    args="-d $(find flypulator_description)/launch/Hexacopter_igs.rviz" />
 </launch>
