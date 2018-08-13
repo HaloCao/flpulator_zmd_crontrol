@@ -16,7 +16,7 @@
     <link name="base_link"></link>
 
     <joint name="base_joint" type="fixed">
-      <origin xyz="0 0 0" rpy="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 ${0*deg_to_rad}" />
       <parent link="base_link" />
       <child link="base_link_inertia" />
     </joint>
@@ -29,7 +29,7 @@
       </inertial>
 
       <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 ${90*deg_to_rad}" />
         <geometry>
           <mesh filename="package://flypulator_description/meshes/${mesh_file}"
             scale="${mesh_scale}" />

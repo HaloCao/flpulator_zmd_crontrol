@@ -4,21 +4,21 @@
 #      / \
 #       |
 #
-#    5     4
+#    2     1
 #
-# 6           3
+# 3           6
 #
-#    1     2
+#    4     5
 #
 # Base
 uav/base_height: 0.085 # [m] 
 uav/base_radius: 0.45 # [m] 
 uav/base_mass: 3.85 # [kg]
 # Blades
-uav/x: 0.22    # [m]
-uav/y: 0.37    # [m]
-uav/side_x: 0.43   # [m]
-uav/side_y: 0.01   # [m]
+uav/y: 0.22    # [m]
+uav/x: 0.37    # [m]
+uav/side_y: 0.43   # [m]
+uav/side_x: 0.01   # [m]
 uav/blade_radius: 0.1905 # [m]
 uav/blade_offset_top: -0.0222 # [m]
 uav/blade_mass: 0.010 # [kg]
@@ -48,4 +48,4 @@ uav/rotor_vel_max: 100000 # [rpm] max. rotor velocity
 #naming conventions
 urdf/controller_joint_names: ['blade_joint_1', 'blade_joint_2', 'blade_joint_3', 'blade_joint_4', 'blade_joint_5', 'blade_joint_6', ]
 urdf/controller_link_names: ['blade_link_1', 'blade_link_2', 'blade_link_3', 'blade_link_4', 'blade_link_5', 'blade_link_6', ]
-urdf/bidirectional: false # thrust inversible in gazebo
+urdf/bidirectional: true # thrust inversible in gazebo
