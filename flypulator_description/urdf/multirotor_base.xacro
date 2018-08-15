@@ -44,9 +44,6 @@
       </collision>
     </link>
 
-    <!--PX4 memory: attach multirotor_base_plugin to the base_link -->
-    <gazebo>
-    </gazebo>
     <gazebo reference="base_link">
     <material>Gazebo/${color}</material>
     </gazebo>
@@ -63,18 +60,18 @@
   * rolling_moment_coefficient
 
   <xacro:macro name="vertical_rotor"
-    params="robot_namespace suffix direction motor_constant moment_constant parent mass_rotor radius_rotor time_constant_up time_constant_down max_rot_velocity motor_number rotor_drag_coefficient rolling_moment_coefficient color mesh mesh_scale *origin *inertia">
+    params="robot_namespace suffix direction parent mass_propeller radius_rotor max_rot_velocity motor_number color mesh mesh_scale *origin *inertia">
 
     <joint name="blade_joint_${motor_number}" type="continuous">
       <xacro:insert_block name="origin" />
       <axis xyz="0 0 1" />
       <parent link="${parent}" />
       <child link="blade_link_${motor_number}" />
-
     </joint>
+    
     <link name="blade_link_${motor_number}">
       <inertial>
-        <mass value="${mass_rotor}" /> <!-- [kg] -->
+        <mass value="${mass_propeller}" /> <!-- [kg] -->
         <xacro:insert_block name="inertia" />
       </inertial>
       <visual>
@@ -90,9 +87,6 @@
         </geometry>
       </collision>
     </link>
-    <!--PX4 memory: attach librotors_gazebo_motor_model to the base_link -->
-    <gazebo>
-    </gazebo>
     <gazebo reference="blade_link_${motor_number}">
       <material>Gazebo/${color}</material>
     </gazebo>
@@ -103,15 +97,15 @@
     params="robot_namespace suffix reflect parent mass_leg radius_leg length_leg max_leg_velocity leg_number color mesh mesh_scale *origin *inertia">
 
 <!-- Landing gear joint: -->
-    <joint name="leg_${leg_number}_joint" type="fixed">
+    <joint name="leg_joint_${leg_number}" type="fixed">
       <xacro:insert_block name="origin" />
       <axis xyz="0 1 0" />
           <parent link="${parent}" />
-      <child link="leg_${leg_number}" />
+      <child link="leg_link_${leg_number}" />
     </joint>
 
 <!-- Leg link -->
-    <link name="leg_${leg_number}">
+    <link name="leg_link_${leg_number}">
       <inertial>
         <origin xyz="0 0 -${length_leg/2}" rpy="0 0 0 " />
         <mass value="${mass_leg}" /> <!-- [kg] -->
@@ -134,14 +128,14 @@
     </link>
 
 <!-- Joint Leg-foot fixed -->
-    <joint name="foot_${leg_number}_joint" type="fixed">
-      <parent link="leg_${leg_number}" />
-      <child link="foot_${leg_number}" />
+    <joint name="foot_joint_${leg_number}" type="fixed">
+      <parent link="leg_link_${leg_number}" />
+      <child link="foot_link_${leg_number}" />
       <origin xyz="0 0 -${length_leg}" rpy= "1.57 0 0"/> 
 
     </joint>
 <!-- Foot link -->
-    <link name="foot_${leg_number}">
+    <link name="foot_link_${leg_number}">
       <inertial>
         <mass value="${mass_leg}" /> <!-- [kg] -->
         <xacro:insert_block name="inertia" />
@@ -158,9 +152,7 @@
       </collision>
     </link>
 
-    <gazebo>
-         </gazebo>
-    <gazebo reference="leg_${leg_number}">
+    <gazebo reference="leg_link_${leg_number}">
       <material>Gazebo/${color}</material>
     </gazebo>
   </xacro:macro>

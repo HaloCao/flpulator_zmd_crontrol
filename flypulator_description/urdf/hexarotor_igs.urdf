@@ -105,6 +105,9 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="base_link">
+      <material>Gazebo/DarkGrey</material>
+  </gazebo>
   <!-- <joint
     name="base_joint"
     type="fixed">
@@ -158,6 +161,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="arm_link_1">
+  	<material>Gazebo/DarkGrey</material>
+  </gazebo>
+
   <joint
     name="arm_joint_1"
     type="fixed">
@@ -211,6 +218,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="motor_link_1">
+  	<material>Gazebo/DarkGrey</material>
+  </gazebo>
+  
   <joint
     name="motor_joint_1"
     type="fixed">
@@ -224,6 +235,7 @@
     <axis
       xyz="0 0 0" />
   </joint>
+  
   <link
     name="blade_link_1">
     <inertial>
@@ -264,6 +276,9 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="blade_link_1">
+  	<material>Gazebo/Red</material>
+  </gazebo>
   <joint
     name="blade_joint_1"
     type="continuous">
@@ -280,6 +295,7 @@
       effort="0"
       velocity="630" />
   </joint>
+  
   <link
     name="arm_link_2">
     <inertial>
@@ -320,6 +336,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="arm_link_2">
+  	<material>Gazebo/DarkGrey</material>
+  </gazebo>
+  
   <joint
     name="arm_joint_2"
     type="fixed">
@@ -333,6 +353,7 @@
     <axis
       xyz="0 0 0" />
   </joint>
+  
   <link
     name="motor_link_2">
     <inertial>
@@ -373,6 +394,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="motor_link_2">
+  	<material>Gazebo/DarkGrey</material>
+  </gazebo>
+  
   <joint
     name="motor_joint_2"
     type="fixed">
@@ -386,6 +411,7 @@
     <axis
       xyz="0 0 0" />
   </joint>
+  
   <link
     name="blade_link_2">
     <inertial>
@@ -426,6 +452,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="blade_link_2">
+  	<material>Gazebo/Red</material>
+  </gazebo>
+  
   <joint
     name="blade_joint_2"
     type="continuous">
@@ -442,6 +472,7 @@
       effort="0"
       velocity="630" />
   </joint>
+  
   <link
     name="arm_link_3">
     <inertial>
@@ -482,6 +513,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="arm_link_3">
+  	<material>Gazebo/DarkGrey</material>
+  </gazebo>
+  
   <joint
     name="arm_joint_3"
     type="fixed">
@@ -495,6 +530,7 @@
     <axis
       xyz="0 0 0" />
   </joint>
+  
   <link
     name="motor_link_3">
     <inertial>
@@ -535,6 +571,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="motor_link_3">
+  	<material>Gazebo/DarkGrey</material>
+  </gazebo>
+  
   <joint
     name="motor_joint_3"
     type="fixed">
@@ -548,6 +588,7 @@
     <axis
       xyz="0 0 0" />
   </joint>
+  
   <link
     name="blade_link_3">
     <inertial>
@@ -588,6 +629,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="blade_link_3">
+  	<material>Gazebo/FlatBlack</material>
+  </gazebo>
+  
   <joint
     name="blade_joint_3"
     type="continuous">
@@ -604,6 +649,7 @@
       effort="0"
       velocity="630" />
   </joint>
+  
   <link
     name="arm_link_4">
     <inertial>
@@ -644,6 +690,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="arm_link_4">
+  	<material>Gazebo/DarkGrey</material>
+  </gazebo>
+  
   <joint
     name="arm_joint_4"
     type="fixed">
@@ -657,6 +707,7 @@
     <axis
       xyz="0 0 0" />
   </joint>
+  
   <link
     name="motor_link_4">
     <inertial>
@@ -697,6 +748,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="motor_link_4">
+  	<material>Gazebo/DarkGrey</material>
+  </gazebo>
+  
   <joint
     name="motor_joint_4"
     type="fixed">
@@ -710,6 +765,7 @@
     <axis
       xyz="0 0 0" />
   </joint>
+  
   <link
     name="blade_link_4">
     <inertial>
@@ -750,6 +806,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="blade_link_4">
+  	<material>Gazebo/FlatBlack</material>
+  </gazebo>
+  
   <joint
     name="blade_joint_4"
     type="continuous">
@@ -806,6 +866,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="arm_link_5">
+  	<material>Gazebo/DarkGrey</material>
+  </gazebo>
+  
   <joint
     name="arm_joint_5"
     type="fixed">
@@ -819,6 +883,7 @@
     <axis
       xyz="0 0 0" />
   </joint>
+  
   <link
     name="motor_link_5">
     <inertial>
@@ -859,6 +924,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="motor_link_5">
+  	<material>Gazebo/DarkGrey</material>
+  </gazebo>
+  
   <joint
     name="motor_joint_5"
     type="fixed">
@@ -872,6 +941,7 @@
     <axis
       xyz="0 0 0" />
   </joint>
+  
   <link
     name="blade_link_5">
     <inertial>
@@ -912,6 +982,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="blade_link_5">
+  	<material>Gazebo/FlatBlack</material>
+  </gazebo>
+  
   <joint
     name="blade_joint_5"
     type="continuous">
@@ -928,6 +1002,7 @@
       effort="0"
       velocity="630" />
   </joint>
+  
   <link
     name="arm_link_6">
     <inertial>
@@ -968,6 +1043,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="arm_link_6">
+  	<material>Gazebo/DarkGrey</material>
+  </gazebo>
+  
   <joint
     name="arm_joint_6"
     type="fixed">
@@ -981,6 +1060,7 @@
     <axis
       xyz="0 0 0" />
   </joint>
+  
   <link
     name="motor_link_6">
     <inertial>
@@ -1021,6 +1101,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="motor_link_6">
+  	<material>Gazebo/DarkGrey</material>
+  </gazebo>
+  
   <joint
     name="motor_joint_6"
     type="fixed">
@@ -1034,6 +1118,7 @@
     <axis
       xyz="0 0 0" />
   </joint>
+  
   <link
     name="blade_link_6">
     <inertial>
@@ -1074,6 +1159,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="blade_link_6">
+  	<material>Gazebo/FlatBlack</material>
+  </gazebo>
+  
   <joint
     name="blade_joint_6"
     type="continuous">
@@ -1130,6 +1219,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="foot_link_left">
+  	<material>Gazebo/DarkGrey</material>
+  </gazebo>
+  
   <joint
     name="foot_link_left"
     type="fixed">
@@ -1143,6 +1236,7 @@
     <axis
       xyz="0 0 0" />
   </joint>
+  
   <link
     name="foot_link_right">
     <inertial>
@@ -1183,6 +1277,10 @@
       </geometry>
     </collision>
   </link>
+  <gazebo reference="foot_link_right">
+  	<material>Gazebo/DarkGrey</material>
+  </gazebo>
+  
   <joint
     name="foot_joint_right"
     type="fixed">
