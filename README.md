@@ -31,7 +31,10 @@ To do sourcing permanently, edit the .bashrc file with `gedit ~/.bashrc` and add
 ## Gazebo simulation
 
 ### Launch:  
-` roslaunch flypulator gazebo.launch ` 
+` roslaunch flypulator_launch gazebo.launch ` 
+for old drone or
+` roslaunch flypulator_launch gazebo_hexatilt.launch ` 
+for the new model
 includes aerodynamics, fake sensor plugin & parameters.
 
 ### Check tf in rviz: 
