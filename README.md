@@ -66,7 +66,7 @@ The trajectory generator can be applied via service call. It provides (atm) two 
 
 They can be called by the following command (for instance):
 
-` rosservice call /linear_trajectory '{x_start: [0,0,0], x_end:  [5,5,-1], rpy_start: [-9,0,23], rpy_end: [5,85,360], delta_t: 10}'`
+` rosservice call /linear_trajectory '{x_start: [0,0,0], x_end:  [5,5,5], rpy_start: [0,0,0], rpy_end: [5,85,360], delta_t: 10}'`
 
 The model parameters are defined in the file `drone_parameter.yaml` located at `.../flypulator/flypulator_description/param/`. They have to be load to ROS parameter server either using the provided launchfile `controller.launch` or using the following command: 
 
