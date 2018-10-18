@@ -1,5 +1,6 @@
-This describes shortly how mavlink instances are controlled in the extras.txt startupscript.
-
+This describes shortly how mavlink instances are controlled in the extras.txt
+startupscript:
+https://dev.px4.io/en/middleware/modules_communication.html
 # ----------------------------------------------
 #   Mavlink Start/Stop
 # ----------------------------------------------
