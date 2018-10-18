@@ -1,0 +1,13 @@
+set USE_IO yes #no = FMU only mode / yes + FMU + IO
+set OUTPUT_MODE mkblctrl # start the mkblctrl driver on startup
+set MKBLCTRL_MODE x
+
+set CBRK_USB_CHK 197848
+set CBRK_AIRSPD_CHK 162128
+set CBRK_BUZZER 782097
+set CBRK_FLIGHTTERM 121212 
+set CBRK_GPSFAIL 240024 
+set CBRK_IO_SAFETY 22027 
+set CBRK_RATE_CTRL 140253
+set CBRK_VELPOSERR 201607
+set COM_RC_IN_MODE 0
