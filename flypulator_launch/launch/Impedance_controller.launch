@@ -1,0 +1,12 @@
+<launch>
+	<!-- loaded in gazebo.launch
+	<rosparam command="load" file="$(find flypulator_description)/param/drone_parameter.yaml" />
+	-->
+	<rosparam command="load" file="$(find flypulator_Impedance_control)/cfg/control_parameter.yaml" />
+
+	<node name="controller_node" pkg="flypulator_Impedance_control" type="controller_node" 			output="screen">
+	</node>
+
+	<node name="trajectory_generator_server" pkg="flypulator_traj_generator" 			type="trajectory_generator_server" output="screen">
+	</node> 
+</launch>
