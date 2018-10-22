@@ -75,7 +75,6 @@ private:
   Eigen::Vector4f s_R_I_;
   Eigen::Vector3f u_R_I_;
 
-
   // Impedance control variable
   Eigen::Matrix3f Kp_;
   Eigen::Matrix3f Kd_;
