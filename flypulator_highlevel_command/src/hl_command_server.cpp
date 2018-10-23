@@ -10,8 +10,13 @@ geometry_msgs::Pose currPose;
 bool executeCommandCB(flypulator_highlevel_command::hl_command::Request &req,
                       flypulator_highlevel_command::hl_command::Response &res)
 {
+  double v_speed = 0.3; // vertical speed by take off and landing [m/s]
+  double landing_altitude = 0.2; // position z when the drone is landed [m]
+  double take_off_height = 1.5; // position z when the drone is hovering [m]
+
   flypulator_traj_generator::linear_trajectory traj_srv;
 
+  // convert quaternion to roll pitch yaw angle
   tf::Quaternion q(currPose.orientation.x, currPose.orientation.y,
                    currPose.orientation.z, currPose.orientation.w);
   tf::Matrix3x3 R(q);
@@ -26,17 +31,14 @@ bool executeCommandCB(flypulator_highlevel_command::hl_command::Request &req,
   traj_srv.request.rpy_start.y = pitch;
   traj_srv.request.rpy_start.z = yaw;
 
-  double v_speed = 0.2; // vertical speed by take off and landing [m/s]
-
-  traj_srv.request.delta_t = currPose.position.z/v_speed; // sec
-
   if ("take off" == req.command)
   {
     ROS_INFO_STREAM("Got: take off command!");
+    traj_srv.request.delta_t = take_off_height/v_speed;
     // set end pose
     traj_srv.request.x_end.x = traj_srv.request.x_start.x;
     traj_srv.request.x_end.y = traj_srv.request.x_start.y;
-    traj_srv.request.x_end.z = 1.5;
+    traj_srv.request.x_end.z = take_off_height;
     traj_srv.request.rpy_end.x = 0;
     traj_srv.request.rpy_end.y = 0;
     traj_srv.request.rpy_end.z = 0;
@@ -45,9 +47,16 @@ bool executeCommandCB(flypulator_highlevel_command::hl_command::Request &req,
   if ("landing" == req.command)
   {
     ROS_INFO_STREAM("Got: landing command!");
+    // calculate the trajectory time
+    traj_srv.request.delta_t = (currPose.position.z - landing_altitude) / v_speed; // sec
+
+    if (traj_srv.request.delta_t < 0) // negativ altitude
+      traj_srv.request.delta_t = -traj_srv.request.delta_t;
+      
+    // end pose
     traj_srv.request.x_end.x = traj_srv.request.x_start.x;
     traj_srv.request.x_end.y = traj_srv.request.x_start.y;
-    traj_srv.request.x_end.z = 0.2;
+    traj_srv.request.x_end.z = landing_altitude;
     traj_srv.request.rpy_end.x = 0;
     traj_srv.request.rpy_end.y = 0;
     traj_srv.request.rpy_end.z = 0;
