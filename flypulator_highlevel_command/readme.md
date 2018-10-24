@@ -19,8 +19,13 @@ take off:
 ```
 rosservice call /hl_command_service '{command: take off}'
 ````
-or landing:
+landing:
 ```
 rosservice call /hl_command_service '{command: landing}'
+```
+go to:
+```
+rosservice call /hl_command_service '{command: go to, x_end: [3,0,1.5], rpy_end: [0,0,0]}'
+
 ```
 

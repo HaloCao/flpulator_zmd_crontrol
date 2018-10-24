@@ -1,3 +1,5 @@
 string command
+geometry_msgs/Vector3 x_end
+geometry_msgs/Vector3 rpy_end
 ---
 bool finished
