@@ -39,33 +39,17 @@ void param_cb(flypulator_mavros::offb_parameterConfig &config, uint32_t level)
  Input[3] = config.motor1_speed; // drone motor 1
  Input[4] = config.motor5_speed; // drone motor 5
  Input[5] = config.motor4_speed; //drone motor 4
-
-    
-
 }
 
-
-    void input_cb(const sensor_msgs::Joy::ConstPtr& msg){
-                int i = 0;
-    for(std::vector<float>::const_iterator it = msg->axes.begin(); it != msg->axes.end(); ++it)
-    {
-                Input[i] = *it;
-                /* ROS_INFO("%f: ", *it); */
-                i++;
-    }
-    return;
-}
 
 int main(int argc, char **argv)
 {
 
-    ros::init(argc, argv, "mediator_node");
+    ros::init(argc, argv, "offboard_node");
     ros::NodeHandle nh;
 // add subscribers for topics state and control output
-    ros::Subscriber input_sub = nh.subscribe("spacenav/joy", 10, input_cb); 
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>("mavros/state", 10, state_cb);
 
-   
 // add publisher for actuator commands
     ros::Publisher pub = nh.advertise<mavros_msgs::ActuatorControl>("mavros/actuator_control", 100); 
 
@@ -85,7 +69,7 @@ int main(int argc, char **argv)
         mavros_msgs::SetMode offb_set_mode;
         offb_set_mode.request.custom_mode = "OFFBOARD";
         mavros_msgs::CommandBool arm_cmd;
-        arm_cmd.request.value =Armed;
+        arm_cmd.request.value =true;
         mavros_msgs::ActuatorControl ac_msg; 
 
 
@@ -138,10 +122,10 @@ int main(int argc, char **argv)
 
 
     ac_msg.header.stamp = ros::Time::now();
-    for (int i =0; i<6; i++){
-    ac_msg.controls[i]=Input[i];
-    }
-    pub.publish(ac_msg); 
+    /* for (int i =0; i<6; i++){ */
+    /* ac_msg.controls[i]=Input[i]; */
+    /* } */
+    /* pub.publish(ac_msg); */ 
     
     
     ros::spinOnce();
