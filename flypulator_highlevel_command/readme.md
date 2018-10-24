@@ -25,7 +25,10 @@ rosservice call /hl_command_service '{command: landing}'
 ```
 go to:
 ```
-rosservice call /hl_command_service '{command: go to, x_end: [3,0,1.5], rpy_end: [0,0,0]}'
+rosservice call /hl_command_service '{command: go to, x_end: [3,3,3], rpy_end: [0,0,90]}'
 
 ```
-
+go home:
+```
+rosservice call /hl_command_service '{command: go home}'
+````
