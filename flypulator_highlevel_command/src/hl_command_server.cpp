@@ -174,6 +174,8 @@ bool executeCommandCB(flypulator_highlevel_command::hl_command::Request &req,
   else if ("go home" == req.command)
   {
     ROS_INFO_STREAM("Got: go home command!");
+    // delay 2s
+    ros::Duration duration(2);
     // Step 1:
     getPoseRPY(currPose, curr_pos, curr_rpy);
     // ROS_INFO("Start position: x:%5.2f, y:%5.2f, z:%5.3f",
@@ -182,8 +184,11 @@ bool executeCommandCB(flypulator_highlevel_command::hl_command::Request &req,
             //  curr_rpy.x(), curr_rpy.y(), curr_rpy.z());
     target_pos = curr_pos;
     target_pos.setZ(take_off_height);
-    target_rpy = tf::Vector3(0, 0, curr_rpy.z());
+    target_rpy = tf::Vector3(0, 0, 0);
     gotoTarget(currPose, target_pos, target_rpy, track_speed);
+
+    duration.sleep(); // delay 2s
+
     // Step 2:
     // getPoseRPY(currPose, curr_pos, curr_rpy);
     // ROS_INFO("Start position: x:%5.2f, y:%5.2f, z:%5.3f",
@@ -195,9 +200,9 @@ bool executeCommandCB(flypulator_highlevel_command::hl_command::Request &req,
     target_pos = tf::Vector3(0,0,take_off_height);
     target_rpy = tf::Vector3(0, 0, 0);
     gotoTarget(start_pos, start_rpy, target_pos, target_rpy, track_speed);
-    // delay 2s
-    ros::Duration duration(2);
-    duration.sleep();
+    
+    duration.sleep(); // delay 2s
+
     // Step 3:
     // getPoseRPY(currPose, curr_pos, curr_rpy);
     // ROS_INFO("Start position: x:%5.2f, y:%5.2f, z:%5.3f",
