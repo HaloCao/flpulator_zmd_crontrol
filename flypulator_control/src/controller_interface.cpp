@@ -159,8 +159,8 @@ void ControllerInterface::mapControlForceTorqueInputToPropellerRates(const PoseV
         if (use_bidirectional_propeller_ != true)
         {
             ROS_INFO("The computed spinning rates are negative. Wait for valid pose.");
-            /* spinning_rates_current_(i,0) = (0); */    
-            spinning_rates_current_(i,0) = sqrt(spinning_rates_last_(i, 0));    
+            spinning_rates_current_(i,0) = (0);    
+            /* spinning_rates_current_(i,0) = sqrt(spinning_rates_last_(i, 0)); */    
 
 
         }
@@ -168,7 +168,10 @@ void ControllerInterface::mapControlForceTorqueInputToPropellerRates(const PoseV
         {
             spinning_rates_current_(i, 0) = -sqrt(-spinning_rates_current_(i, 0));
 
-        }
+
+        } 
+
+        
          }
   }
 };
@@ -182,13 +185,19 @@ void ControllerInterface::motorFeedForwardControl(Eigen::Matrix<float, 6, 1>& sp
     if (use_motor_ff_control_)
     {
       spinning_rates(i, 0) = 1 / k_ff_ * spinning_rates_current_(i, 0) - z_p_ff_ / k_ff_ * spinning_rates_last_(i, 0);
+      if (use_bidirectional_propeller_ != true && spinning_rates(i, 0)<0)
+          spinning_rates(i,0) = 0;
+
     }
     else
     {
       // save to output variable
       spinning_rates(i, 0) = spinning_rates_current_(i, 0);
+      /* if (use_bidirectional_propeller_ != true && spinning_rates(i, 0)<0) */
+          /* spinning_rates(i,0) = 0; */
     }
     // save spinning rates in both cases for possible future dynamic reconfigure of feedforward control
+    
     spinning_rates_last_(i, 0) = spinning_rates_current_(i, 0);  // save last value
   }
 }

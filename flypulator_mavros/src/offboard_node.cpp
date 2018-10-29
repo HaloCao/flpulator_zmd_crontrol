@@ -14,10 +14,10 @@ bool drone_armed=false;
 
 float scaleControlOutputToActuators(float in)
 {float out;
-float upper_limit = 6000;
+float upper_limit = 100;
 float lower_limit = 0;
 
-out = 2*(abs(in)/6000)-1;
+out = 2*(abs(in)/upper_limit)-1;
 return out;
 }
 // define callback functions 
