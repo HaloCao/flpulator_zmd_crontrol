@@ -5,6 +5,19 @@ ControllerInterface::ControllerInterface()
 {
   // read drone parameters from ros parameter server
   readDroneParameterFromServer();
+ 
+  // read bidirectional property from ros parameter server
+  use_bidirectional_propeller_ = false;
+  if (ros::param::get("/controller/bidirectional", use_bidirectional_propeller_))
+  {
+    ROS_DEBUG("Bidirectional parameter read from file");
+  }
+  else
+  {
+    ROS_INFO("Bidirectional property cannot be read from file, take false");
+  }
+  ROS_DEBUG("use_bidirectional_propeller = %s", use_bidirectional_propeller_ ? "true" : "false");
+
 
   // read motor feedforward bool variable (use feedforward/dont use it)
   use_motor_ff_control_ = false;
@@ -143,8 +156,20 @@ void ControllerInterface::mapControlForceTorqueInputToPropellerRates(const PoseV
     }
     else
     {
-      spinning_rates_current_(i, 0) = -sqrt(-spinning_rates_current_(i, 0));
-    }
+        if (use_bidirectional_propeller_ != true)
+        {
+            ROS_INFO("The computed spinning rates are negative. Wait for valid pose.");
+            /* spinning_rates_current_(i,0) = (0); */    
+            spinning_rates_current_(i,0) = sqrt(spinning_rates_last_(i, 0));    
+
+
+        }
+        else
+        {
+            spinning_rates_current_(i, 0) = -sqrt(-spinning_rates_current_(i, 0));
+
+        }
+         }
   }
 };
 
