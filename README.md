@@ -47,7 +47,7 @@ The controller package (flypulator_control) provides a sliding mode controller f
 The *rosrun* command works as follows: `rosrun <package> <node>`
 Use the following command to start trajectory generator node:
 
-` rosrun flypulator_traj_generator trajetory_generator_server ` 
+` rosrun flypulator_traj_generator trajectory_generator_server ` 
 
 and to start controller node:
 

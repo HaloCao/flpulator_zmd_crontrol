@@ -1,23 +1,10 @@
-#include "flypulator_control/controller_interface.h"
+#include "flypulator_imp_control/controller_interface.h"
 
 // constructor
 ControllerInterface::ControllerInterface()
 {
   // read drone parameters from ros parameter server
   readDroneParameterFromServer();
- 
-  // read bidirectional property from ros parameter server
-  use_bidirectional_propeller_ = false;
-  if (ros::param::get("/controller/bidirectional", use_bidirectional_propeller_))
-  {
-    ROS_DEBUG("Bidirectional parameter read from file");
-  }
-  else
-  {
-    ROS_INFO("Bidirectional property cannot be read from file, take false");
-  }
-  ROS_DEBUG("use_bidirectional_propeller = %s", use_bidirectional_propeller_ ? "true" : "false");
-
 
   // read motor feedforward bool variable (use feedforward/dont use it)
   use_motor_ff_control_ = false;
@@ -64,9 +51,9 @@ ControllerInterface::ControllerInterface()
 
   // create controller object depending on desired controller type (in controller_type_, read from parameter in
   // readDroneParameterFromServer())
-  if (controller_type_.compare("ism") == 0)  // controller type ISM, create object of ism class
+  if (controller_type_.compare("imp") == 0)  // controller type IMP, create object of imp class
   {
-    controller_ = new SlidingModeController(mass, inertia, gravity);  // use new, otherwise object is destroyed after
+    controller_ = new ImpedanceModeController(mass, inertia, gravity);  // use new, otherwise object is destroyed after
                                                                       // this function and pointer is a dead pointer
                                                                       // see also
     // https://stackoverflow.com/questions/6337294/creating-an-object-with-or-without-new?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
@@ -115,23 +102,23 @@ void ControllerInterface::readDroneParameterFromServer()
     drone_parameter_["t_motor"] = 0.05;
   }
 
-  // get controller type and ensure valid type ("ism" or ...)
+  // get controller type and ensure valid type ("imp" or ...)
   if (ros::param::get("/controller/type", controller_type_))
   {
     ROS_INFO("Controller type = %s", controller_type_.c_str());
-    if (!(controller_type_.compare("ism") == 0))  // add new controller types here with ||
+    if (!(controller_type_.compare("imp") == 0))  // add new controller types here with ||
                                                   // !controller_type_.equals(<newControllerTypeAsString>)
     {
-      ROS_WARN("Controller type from parameter server not known! Taking ism as default");  // add "or
+      ROS_WARN("Controller type from parameter server not known! Taking imp as default");  // add "or
                                                                                            // <newControllerType>" for
                                                                                            // new controller type
-      controller_type_ = "ism";
+      controller_type_ = "imp";
     }
   }
   else
   {
-    ROS_WARN("Controller type could not be read from parameter server, taking ism as default");
-    controller_type_ = "ism";
+    ROS_WARN("Controller type could not be read from parameter server, taking imp as default");
+    controller_type_ = "imp";
   }
 };
 
@@ -156,19 +143,8 @@ void ControllerInterface::mapControlForceTorqueInputToPropellerRates(const PoseV
     }
     else
     {
-        if (use_bidirectional_propeller_ != true) // quickfix to account for unidirectional propellers
-        {
-            ROS_INFO("The computed spinning rates are negative. Wait for valid pose.");
-            spinning_rates_current_(i,0) = (0);    
-            /* spinning_rates_current_(i,0) = sqrt(spinning_rates_last_(i, 0)); */    
-
-
-        }
-        else
-        {
-            spinning_rates_current_(i, 0) = -sqrt(-spinning_rates_current_(i, 0));
-        } 
-         }
+      spinning_rates_current_(i, 0) = -sqrt(-spinning_rates_current_(i, 0));
+    }
   }
 };
 
@@ -181,10 +157,6 @@ void ControllerInterface::motorFeedForwardControl(Eigen::Matrix<float, 6, 1>& sp
     if (use_motor_ff_control_)
     {
       spinning_rates(i, 0) = 1 / k_ff_ * spinning_rates_current_(i, 0) - z_p_ff_ / k_ff_ * spinning_rates_last_(i, 0);
-        // quickfix to account for unidirectional propellers
-      if (use_bidirectional_propeller_ != true && spinning_rates(i, 0)<0)
-          spinning_rates(i,0) = 0;
-
     }
     else
     {
@@ -192,7 +164,6 @@ void ControllerInterface::motorFeedForwardControl(Eigen::Matrix<float, 6, 1>& sp
       spinning_rates(i, 0) = spinning_rates_current_(i, 0);
     }
     // save spinning rates in both cases for possible future dynamic reconfigure of feedforward control
-    
     spinning_rates_last_(i, 0) = spinning_rates_current_(i, 0);  // save last value
   }
 }
