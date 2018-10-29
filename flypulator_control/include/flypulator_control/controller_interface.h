@@ -68,6 +68,10 @@ private:
   float z_p_ff_;
   // use feedforward control parameter
   bool use_motor_ff_control_;
+  bool use_bidirectional_propeller_;
 };
 
 #endif  // CONTROLLER_INTERFACE_H
+
+
+

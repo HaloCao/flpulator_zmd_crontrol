@@ -8,6 +8,7 @@ To install GeographicLib which is needed for unit conversions:
 sudo apt install geographiclib-tools geographiclib-doc
 
 to install datasets:
+cd /usr/sbin
 sudo geographiclib-get-magnetic emm2015  
 sudo geographiclib-get-gravity egm96  
 sudo geographiclib-get-geoids egm96-5   
@@ -25,4 +26,13 @@ Stop the mavlink app:
 mavlink stop-all
 mavlink start -d /dev/ttyS1 -b 921600 -r 20000
 
-Not tested!!!
+To ssh to NUC
+broadcat network from pc
+connect to network with nuc
+run arp-scan -l to find ip of nuc // was 10.42.0.37
+ssh flypulator@10.42.0.37
+pw: IFA
+
+export ROS_MASTER_URI by IP address
+
+

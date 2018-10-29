@@ -22,10 +22,12 @@ sudo apt install mavros mavros-extras
 # for geographiclib:                    
 sudo apt install geographiclib-tools geographiclib-doc
                                           
-#install datasets:                     
+#install datasets: located in /usr/share                 
 sudo geographiclib-get-magnetic emm201
 sudo geographiclib-get-gravity egm96  
 sudo geographiclib-get-geoids egm96-5 
 
 echo "install dependencies for building packages"
 sudo apt-get -y install python-rosinstall python-rosinstall-generator python-wstool build-essential
+
+sudo usermod -a -G dialout $USER
