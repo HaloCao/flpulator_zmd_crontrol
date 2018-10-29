@@ -1,0 +1,19 @@
+<package format="2">
+  <name>flypulator_highlevel_command</name>
+  <version>1.0.0</version>
+  <description>Highlevel command for the robot e.g.:"take off", "landing", ...</description>
+
+  <author email="jinyao383@hotmail.com">J.Zhu</author>
+  <maintainer email="chao.yao@tu-dresden.de">Chao Yao</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+
+  <build_depend>message_generation</build_depend>
+  <exec_depend>message_runtime</exec_depend>
+
+</package>
