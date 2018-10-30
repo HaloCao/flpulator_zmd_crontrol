@@ -158,7 +158,7 @@ void ControllerInterface::mapControlForceTorqueInputToPropellerRates(const PoseV
     {
         if (use_bidirectional_propeller_ != true) // quickfix to account for unidirectional propellers
         {
-            ROS_INFO("The computed spinning rates are negative. Wait for valid pose.");
+            ROS_INFO("Negative spinrates detected and set to zero.");
             spinning_rates_current_(i,0) = (0);    
             /* spinning_rates_current_(i,0) = sqrt(spinning_rates_last_(i, 0)); */    
 

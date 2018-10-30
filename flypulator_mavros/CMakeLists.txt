@@ -140,7 +140,6 @@ include_directories(
 # add_executable(${PROJECT_NAME}_node src/flypulator_mavros_node.cpp)
 
 add_executable(offboard_node src/offboard_node.cpp)
-add_executable(test_latency src/test_latency.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -154,11 +153,9 @@ add_executable(test_latency src/test_latency.cpp)
 target_link_libraries(offboard_node
    ${catkin_LIBRARIES}
  )
-target_link_libraries(test_latency ${catkin_LIBRARIES})
 
 
 add_dependencies(offboard_node ${PROJECT_NAME}_gencfg ${catkin_EXPORTED_TARGETS})
-add_dependencies(test_latency ${PROJECT_NAME}_gencfg ${catkin_EXPORTED_TARGETS})
 #############
 ## Install ##
 #############
