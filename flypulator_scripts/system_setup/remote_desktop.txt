@@ -1,0 +1,15 @@
+To view the desktop of the NUC on local pc:
+log into flypulator:
+ssh flypulator@flypulator // the latter represents the IP of flypulator.
+password: IFA
+
+on flypulator terminal:
+x11vnc -display :0
+
+on local:
+run any vnc client. 
+Confirmed with Ubuntu's remote desktop.
+
+press connect->select vnc->type:flypulatorIP:0->press enter.
+
+The desktop of the NUC should open.
