@@ -20,7 +20,7 @@ bool test_signal;
 float scaleControlOutputToActuators(float in)
 {
     float out;
-    float upper_limit = 100;
+    float upper_limit = 600; // assumed max RPM 6000 -> 628 rad/s
     float lower_limit = 0;
     
     out = 2*(abs(in)/upper_limit)-1;

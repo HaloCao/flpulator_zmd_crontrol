@@ -1,0 +1,32 @@
+The following setup was used to connect the local computer to the NUC:
+
+(In this case roscore runs on the local computer, and the local computer is logged into the wifi
+hotspot broadcasted by the flypulator)
+
+What needs to be set up:
+- the machines must be able to ping each other and themselves by name.
+i.e on flypulator: ping flypulator works...
+- the computer not running roscore must get the ROS_MASTER_URI exported
+- The ROS_HOSTNAME must correspond to hostname so that they can ping each other.
+
+The hostname can be set in /etc/hostname.
+
+
+
+On the local computer:
+add to the bashrc:
+export ROS_HOSTNAME=<nameOfLocalPC>
+export ROS_MASTER_URI=http://<nameOfLocalPC>:11311
+
+add to /etc/hosts:
+10.42.0.1 flypulator // check that the IP is correct.
+
+On Flypulator:
+add to the bashrc:
+export ROS_HOSTNAME=flypulator
+export ROS_MASTER_URI=http://<nameOfLocalPC>:11311
+
+
+add to /etc/hosts:
+IP-localPC <nameOfLocalPC>
+
