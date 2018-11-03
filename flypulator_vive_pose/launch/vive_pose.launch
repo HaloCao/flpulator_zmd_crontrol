@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<launch>
+
+  <node name="flypulator_vive_pose" pkg="flypulator_vive_pose" type="vive_pose" output="screen">
+    <remap from="~/odom_msg" to="/vive/LHR_08DDEDC9_odom" />
+  </node>
+
+</launch>
+
