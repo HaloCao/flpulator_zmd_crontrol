@@ -12,8 +12,6 @@ ros::Publisher pub_pose_tracker;
 // ros::Publisher pub_angular_acc_tracker;
 ros::Publisher pub_uav_state;
 
-bool isTfInit = false;
-
 /**
  * 3d-vector subtraction
  */
@@ -57,6 +55,7 @@ geometry_msgs::Vector3 rotVect3(const geometry_msgs::Vector3 &in, const tf::Quat
 
 void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 {
+  static bool isTfInit = false;
   double current_time_stamp = msg->header.stamp.toSec();
   static double last_time_stamp;
   geometry_msgs::Pose pose = msg->pose.pose;
@@ -162,7 +161,7 @@ void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "vive_pose");
+  ros::init(argc, argv, "flypulator_vive_pose");
 
   ros::NodeHandle nh("~");
 
