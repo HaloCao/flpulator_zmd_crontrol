@@ -161,7 +161,7 @@ int main(int argc, char **argv)
        {if(current_state.armed)
            ac_msg.controls[i]=input[i];
         else
-            ac_msg.comtrols[i]=-1.0;
+            ac_msg.controls[i]=-1.0;
 
        }
 
