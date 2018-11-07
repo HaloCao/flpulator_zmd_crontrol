@@ -41,7 +41,7 @@ uav/delta_h: -0.0427 # [m]
 uav/length: 0.427 # [m] displacement between rotor and body centre
 
 # coefficients used for simple aerodynamic model
-uav/k: 0.0000513  # 0.0138  [N/(rad/s)²] , f=k*omega_i² 0.0138 0.000057
+uav/k: 0.0000513  # estimated from datasheet [N/(rad/s)²] , f=k*omega_i² 
 uav/b: 0.000022 # [Nm/(rad/s)²] , tau = b * omega_i² 0.00022  0.0000012
 uav/gravity: 9.81 # [m/s²] gravity acceleration constant
 uav/t_motor: 0.11 # [s] motor PT1 time constant 

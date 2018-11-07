@@ -20,7 +20,7 @@ bool test_signal;
 float scaleControlOutputToActuators(float in)
 {
     float out;
-    float upper_limit = 600; // assumed max RPM 6000 -> 628 rad/s
+    float upper_limit = 650; // assumed max RPM 6000 -> 628 rad/s
     float lower_limit = 0;
     
     out = 2*(abs(in)/upper_limit)-1;
@@ -62,7 +62,14 @@ input[5] = scaleControlOutputToActuators(msg.velocity[3]);
        if(config.drone_armed)
            arm_cmd.request.value = true;
        else
-           arm_cmd.request.value = false;
+       {    arm_cmd.request.value = false;
+           input[0] =-1.0; 
+           input[1] =-1.0;
+           input[2] =-1.0;
+           input[3] =-1.0;
+           input[4] =-1.0;
+           input[5] =-1.0;
+       }
 }
 
 
