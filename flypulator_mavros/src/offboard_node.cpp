@@ -58,6 +58,7 @@ input[5] = scaleControlOutputToActuators(msg.velocity[3]);
     }
     else
         ROS_INFO("Messages on topic /drone/rotor_cmd. Will not interfer");
+    test_signal=false;
 
        if(config.drone_armed)
            arm_cmd.request.value = true;
@@ -157,7 +158,13 @@ int main(int argc, char **argv)
        if (test_signal)
            ac_msg.controls[i]=signal_out;
        else
+       {if(current_state.armed)
            ac_msg.controls[i]=input[i];
+        else
+            ac_msg.comtrols[i]=-1.0;
+
+       }
+
     }
 
 
