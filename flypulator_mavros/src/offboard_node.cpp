@@ -15,13 +15,14 @@ mavros_msgs::CommandBool arm_cmd;
 bool last_arming_state;
 bool control_active;
 bool test_signal;
+float upper_limit;
 
 
 float scaleControlOutputToActuators(float in)
 {
     float out;
-    float upper_limit = 650; // assumed max RPM 6000 -> 628 rad/s
-    float lower_limit = 0;
+   // float upper_limit = 650; // assumed max RPM 6000 -> 628 rad/s
+    //float lower_limit = 0;
     
     out = 2*(abs(in)/upper_limit)-1;
     return out;
@@ -58,8 +59,8 @@ input[5] = scaleControlOutputToActuators(msg.velocity[3]);
     }
     else
         ROS_INFO("Messages on topic /drone/rotor_cmd. Will not interfer");
-    test_signal=false;
-
+        test_signal=false;
+        upper_limit = config.upper_limit;
        if(config.drone_armed)
            arm_cmd.request.value = true;
        else
