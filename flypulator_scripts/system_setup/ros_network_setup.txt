@@ -30,3 +30,6 @@ export ROS_MASTER_URI=http://<nameOfLocalPC>:11311
 add to /etc/hosts:
 IP-localPC <nameOfLocalPC>
 
+
+To start steamvr:
+type steamvr in terminal... this alias is defined in .bashrc
