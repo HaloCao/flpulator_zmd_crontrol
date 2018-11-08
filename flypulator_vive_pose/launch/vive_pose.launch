@@ -24,6 +24,7 @@
         <!-- <remap from="~/odom_msg" to="/vive/LHR_08DDEDC9_odom"/> -->
         <remap from="~/odom_msg" to="/LHR_08DDEDC9_odom"/>
     </node>
-
+    <node pkg ="tf" type="static_transform_publisher" name="base_link" args="0.0 -0.0825 -0.17 0.0 0.0 0.0 flypulator_tracker base_link 100" />
 </launch>
+
 
