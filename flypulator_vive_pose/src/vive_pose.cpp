@@ -5,17 +5,22 @@
 #include <tf/transform_broadcaster.h>
 #include <flypulator_common_msgs/UavStateStamped.h>
 
-ros::Publisher pub_pose_tracker;
+// ros::Publisher pub_pose_tracker;
 // ros::Publisher pub_linear_vel_tracker;
 // ros::Publisher pub_linear_acc_tracker;
 // ros::Publisher pub_angular_vel_tracker;
 // ros::Publisher pub_angular_acc_tracker;
 ros::Publisher pub_uav_state;
+// default frame ID
+std::string world_id = "world";
+std::string tracker_id = "tracker";
+std::string mcap_world_id = "vive_world";
 
-/**
+    /**
  * 3d-vector subtraction
  */
-geometry_msgs::Vector3 vec3Sub(const geometry_msgs::Vector3 &a, const geometry_msgs::Vector3 &b)
+    geometry_msgs::Vector3
+    vec3Sub(const geometry_msgs::Vector3 &a, const geometry_msgs::Vector3 &b)
 {
   geometry_msgs::Vector3 c;
   c.x = a.x - b.x;
@@ -55,6 +60,7 @@ geometry_msgs::Vector3 rotVect3(const geometry_msgs::Vector3 &in, const tf::Quat
 
 void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 {
+  static tf::TransformBroadcaster tf_br;
   static bool isTfInit = false;
   double current_time_stamp = msg->header.stamp.toSec();
   static double last_time_stamp;
@@ -100,9 +106,9 @@ void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
   last_time_stamp = current_time_stamp;
 
   // check if delta t is positive
-  if (delta_t <= 0){
+  if (delta_t <= 0)
+  {
     ROS_ERROR("vivo_pose: non-positive, delta t = %f !!!", delta_t);
-    return;
   }
   // transfrom twist into inital coordinate
   linear_vel = msg->twist.twist.linear;
@@ -150,13 +156,15 @@ void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 
   // publish all messages
 
-  pub_pose_tracker.publish(pub_pose);
+  // pub_pose_tracker.publish(pub_pose);
   // pub_linear_vel_tracker.publish(linear_vel);
   // pub_angular_vel_tracker.publish(angular_vel);
   // pub_linear_acc_tracker.publish(linear_acc);
   // pub_angular_acc_tracker.publish(angular_acc);
 
   pub_uav_state.publish(uav_state_msg);
+  tf_br.sendTransform(tf::StampedTransform(T_out, msg->header.stamp, world_id, tracker_id));
+  tf_br.sendTransform(tf::StampedTransform(T_init, msg->header.stamp, mcap_world_id, world_id));
 }
 
 int main(int argc, char **argv)
@@ -165,7 +173,16 @@ int main(int argc, char **argv)
 
   ros::NodeHandle nh("~");
 
-  pub_pose_tracker = nh.advertise<geometry_msgs::PoseStamped>("vive_pose", 10);
+  if (!nh.param("world_id", world_id, world_id))
+    ROS_WARN("[vive_pose] No World ID given, use default: %s.", world_id.c_str());
+
+  if (!nh.param("tracker_id", tracker_id, tracker_id))
+    ROS_WARN("[vive_pose] No Tracker ID given, use default: %s.", tracker_id.c_str());
+
+  if (!nh.param("mcap_world_id", mcap_world_id, mcap_world_id))
+    ROS_WARN("[vive_pose] No Mcap World ID given, use default: %s.", mcap_world_id.c_str());
+
+  // pub_pose_tracker = nh.advertise<geometry_msgs::PoseStamped>("vive_pose", 10);
   // pub_linear_vel_tracker = nh.advertise<geometry_msgs::Vector3>("vive_vel_linear", 10);
   // pub_linear_acc_tracker = nh.advertise<geometry_msgs::Vector3>("vive_acc_linear", 10);
   // pub_angular_vel_tracker = nh.advertise<geometry_msgs::Vector3>("vive_vel_angular", 10);
@@ -174,6 +191,7 @@ int main(int argc, char **argv)
   pub_uav_state = nh.advertise<flypulator_common_msgs::UavStateStamped>("meas_state", 10);
 ROS_INFO("running");
 ros::Subscriber sub_pose1 = nh.subscribe<nav_msgs::Odometry>("/vive/LHR_08DDEDC9_odom", 100, vive_odom_callback);
+  //ros::Subscriber sub_pose1 = nh.subscribe<nav_msgs::Odometry>("odom_msg", 100, vive_odom_callback);
   ros::spin();
 
   return 0;
