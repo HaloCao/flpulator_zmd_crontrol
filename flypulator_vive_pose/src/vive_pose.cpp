@@ -173,7 +173,7 @@ int main(int argc, char **argv)
 
   pub_uav_state = nh.advertise<flypulator_common_msgs::UavStateStamped>("meas_state", 10);
 ROS_INFO("running");
-ros::Subscriber sub_pose1 = nh.subscribe<nav_msgs::Odometry>("/LHR_08DDEDC9_odom", 100, vive_odom_callback);
+ros::Subscriber sub_pose1 = nh.subscribe<nav_msgs::Odometry>("/vive/LHR_08DDEDC9_odom", 100, vive_odom_callback);
   ros::spin();
 
   return 0;
