@@ -1,14 +1,29 @@
-<?xml version="1.0" encoding="UTF-8"?> 
+<?xml version="1.0" encoding="UTF-8"?>
 <launch>
-<rosparam command="load" file="$(find flypulator_description)/param/state_estimation_param.yaml" />
- <rosparam command="load" file="$(find flypulator_description)/param/drone_parameter.yaml" />
- <rosparam command="load" file="$(find flypulator_description)/param/aero_param.yaml" />
- <rosparam command="load" file="$(find flypulator_gazebo_plugin)/cfg/sim_parameter.yaml" />
+    <rosparam command="load" file="$(find flypulator_description)/param/state_estimation_param.yaml" />
+    <rosparam command="load" file="$(find flypulator_description)/param/drone_parameter.yaml" />
+    <rosparam command="load" file="$(find flypulator_description)/param/aero_param.yaml" />
+    <rosparam command="load" file="$(find flypulator_gazebo_plugin)/cfg/sim_parameter.yaml" />
 
 
-  <node name="flypulator_vive_pose" pkg="flypulator_vive_pose" type="vive_pose" output="screen">
-      <remap from="/flypulator_vive_pose/meas_state" to="/drone/meas_state" />
-  </node>
+    <node name="flypulator_vive_pose" pkg="flypulator_vive_pose" type="vive_pose" output="screen">
+
+        <!-- name of the world frame(reference coordinate) -->
+        <param name="world_id" type="string" value="flypulator_world" />
+
+        <!-- name of the tracker frame(tracker coordinate) -->
+        <param name="tracker_id" type="string" value="flypulator_tracker" />
+
+        <!-- name of the world frame of the motion capture system -->
+        <param name="mcap_world_id" type="string" value="vive_world" />
+
+        <!-- published uav state message -->
+        <remap from="~/meas_state" to="/drone/meas_state" />
+
+        <!-- subscribed odometry topics -->
+        <!-- <remap from="~/odom_msg" to="/vive/LHR_08DDEDC9_odom"/> -->
+        <remap from="~/odom_msg" to="/LHR_08DDEDC9_odom"/>
+    </node>
 
 </launch>
 
