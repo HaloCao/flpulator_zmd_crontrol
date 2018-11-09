@@ -31,7 +31,7 @@ urdf/controller_joint_names: ['blade_joint_1', 'blade_joint_2', 'blade_joint_3',
 urdf/controller_link_names: ['blade_link_1', 'blade_link_2', 'blade_link_3', 'blade_link_4', 'blade_link_5', 'blade_link_6', ]
 
 # UAV parameters for control, only double value is allowed for /uav
-uav/mass: 4.398 # [kg] 
+uav/mass: 4.850 # [kg] 
 uav/i_xx: 0.122 # [kg m²]
 uav/i_yy: 0.123 # [kg m²]
 uav/i_zz: 0.235 # [kg m²]
