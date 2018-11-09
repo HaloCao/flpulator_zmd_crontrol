@@ -153,7 +153,7 @@ void ControllerInterface::mapControlForceTorqueInputToPropellerRates(const PoseV
   {
     if (spinning_rates_current_(i, 0) >= deadband_)
     {
-      spinning_rates_current_(i, 0) = sqrt(spinning_rates_current_(i, 0));
+      spinning_rates_current_(i, 0) = sqrt(spinning_rates_current_(i, 0)-deadband_);
     }
     else
     {
