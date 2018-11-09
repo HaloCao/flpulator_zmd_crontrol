@@ -2,6 +2,7 @@
 #include "flypulator_control/controller_interface.h"  // performs all necessary includes
 #include "trajectory_msgs/MultiDOFJointTrajectoryPoint.h"
 #include "flypulator_common_msgs/UavStateStamped.h"
+#include "geometry_msgs/WrenchStamped.h"
 
 ControllerInterface* g_drone_controller_p;
 PoseVelocityAcceleration g_current_pose;
@@ -10,12 +11,16 @@ int g_rotor_vel_message_counter = 0;
 ros::Publisher* g_rotor_cmd_pub;
 Eigen::Matrix<float, 6, 1> g_spinning_rates;
 
+ros::Publisher* g_control_wrench_pub;
+
 void computeControlOutputAndPublish()
 {
+  Eigen::Matrix<float,6,1> control_wrench;
   // compute spinning rates
   ROS_DEBUG("Compute Control Output..");
   g_drone_controller_p->computeControlOutput(g_desired_pose, g_current_pose, g_spinning_rates);
   ROS_DEBUG("Control Output computed! Prepare rotor cmd message...");
+  control_wrench = g_drone_controller_p->getControlWrench();
   // build message
   flypulator_common_msgs::RotorVelStamped msg;
   msg.header.stamp = ros::Time::now();
@@ -26,6 +31,16 @@ void computeControlOutputAndPublish()
   }
   ROS_DEBUG("Send rotor cmd message..");
   g_rotor_cmd_pub->publish(msg);
+
+  geometry_msgs::WrenchStamped wrench_msg;
+  wrench_msg.header.stamp = ros::Time::now();
+  wrench_msg.wrench.force.x = control_wrench(0,0);
+  wrench_msg.wrench.force.y = control_wrench(1,0);
+  wrench_msg.wrench.force.z = control_wrench(2,0);
+  wrench_msg.wrench.torque.x = control_wrench(3,0);
+  wrench_msg.wrench.torque.y = control_wrench(4,0);
+  wrench_msg.wrench.torque.z = control_wrench(5,0);
+  g_control_wrench_pub->publish(wrench_msg);
 }
 
 template <class T>
@@ -137,6 +152,10 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "controller");
 
   ros::NodeHandle n;
+
+  // ready to publish controller wrench
+  ros::Publisher control_wrench_pub = n.advertise<geometry_msgs::WrenchStamped>("/drone/controller_wrench", 100);
+  g_control_wrench_pub = &control_wrench_pub;
 
   // suscribe to trajectory messages
   ros::Subscriber sub = n.subscribe("trajectory", 1000, trajectoryMessageCallback);

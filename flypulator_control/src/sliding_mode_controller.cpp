@@ -3,8 +3,8 @@
 void SlidingModeController::configCallback(flypulator_control::ism_parameterConfig& config, uint32_t level)
 {
     // set logger level
-  if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug))
-    ros::console::notifyLoggerLevelsChanged();
+//   if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug))
+//     ros::console::notifyLoggerLevelsChanged();
 
 
   ROS_INFO("Reconfigure Request: \n lambda_T = %f, \n k_T \t  = %f, \n k_T_I \t  = %f, \n lambda_R = %f, \n k_R \t  = "
@@ -60,7 +60,7 @@ void SlidingModeController::computeControlForceTorqueInput(const PoseVelocityAcc
   }
   // provide output through pass by reference
   control_force_and_torque.block(0, 0, 3, 1) =
-      0.0 * (u_T_ + u_T_I_);  // convert to force input by multiplying with mass (f=m*a)
+      mass_ * (u_T_ + u_T_I_);  // convert to force input by multiplying with mass (f=m*a)
 
   ROS_DEBUG("s_T_ = [%f,%f,%f]", s_T_.x(), s_T_.y(), s_T_.z());
   ROS_DEBUG("s_T_I_ = [%f,%f,%f]", s_T_I_.x(), s_T_I_.y(), s_T_I_.z());
