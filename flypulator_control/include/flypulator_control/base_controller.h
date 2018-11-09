@@ -28,7 +28,6 @@ struct PoseVelocityAcceleration
              q.y(), q.z(), omega.x(), omega.y(), omega.z(), omega_dot.x(), omega_dot.y(), omega_dot.z());
   }
 };
-
 // Abstract class, no objects from this class allowed, following http://cpp.nope.bz/pure_virtual.html
 // Superclass for all controller types
 class BaseController
@@ -41,6 +40,7 @@ public:
                                               Eigen::Matrix<float, 6, 1>& control_force_and_torque) = 0;
   // callback for dynamic reconfigure, sets dynamic parameters (controller gains)
   virtual void configCallback(flypulator_control::ism_parameterConfig& config, uint32_t level) = 0;
+ virtual float getDeadband() = 0;
 };
 
 #endif  // BASE_CONTROLLER_H

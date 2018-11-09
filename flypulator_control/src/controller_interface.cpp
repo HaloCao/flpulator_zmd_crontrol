@@ -139,7 +139,8 @@ void ControllerInterface::readDroneParameterFromServer()
 void ControllerInterface::mapControlForceTorqueInputToPropellerRates(const PoseVelocityAcceleration& x_current)
 {
   ROS_DEBUG("map control forces and torques to propeller rates...");
-
+  deadband_ = controller_->getDeadband();
+  // ROS_INFO("Deadband =  %f",deadband_);
   // [force, torqe] = ^B M * omega_spin
   // convert forces to body frame
   convert_force_part_to_b_.block(0, 0, 3, 3) = x_current.q.toRotationMatrix();
@@ -150,7 +151,7 @@ void ControllerInterface::mapControlForceTorqueInputToPropellerRates(const PoseV
   // calculate spinning rates with correct sign
   for (int i = 0; i < 6; i++)
   {
-    if (spinning_rates_current_(i, 0) >= 0)
+    if (spinning_rates_current_(i, 0) >= deadband_)
     {
       spinning_rates_current_(i, 0) = sqrt(spinning_rates_current_(i, 0));
     }
@@ -158,7 +159,7 @@ void ControllerInterface::mapControlForceTorqueInputToPropellerRates(const PoseV
     {
         if (use_bidirectional_propeller_ != true) // quickfix to account for unidirectional propellers
         {
-            ROS_INFO("Negative spinrates detected and set to zero.");
+            ROS_INFO("Spinrates within deadband, set to zero");
             spinning_rates_current_(i,0) = (0);    
             /* spinning_rates_current_(i,0) = sqrt(spinning_rates_last_(i, 0)); */    
 
