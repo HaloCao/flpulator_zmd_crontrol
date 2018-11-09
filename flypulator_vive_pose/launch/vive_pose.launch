@@ -25,7 +25,7 @@
     </node>
     <node pkg ="tf" type="static_transform_publisher" name="base_link" args="0.0 -0.0825 -0.17 0.0 0.0 0.0 flypulator_tracker base_link 100" />
 
-    <include file="$(find vive_tracker)/launch/vive_tracker.launch">
+    <include file="$(find vive_tracker)/launch/vive_tracker.launch"/>
 </launch>
 
 
