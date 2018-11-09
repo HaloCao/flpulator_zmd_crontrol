@@ -34,6 +34,9 @@ public:
   {
     return controller_;
   }
+  
+  // return the control force and torque
+  Eigen::Matrix<float, 6, 1> getControlWrench();
 
 private:
   // read uav parameter from ros parameter server

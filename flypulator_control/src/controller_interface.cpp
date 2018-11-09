@@ -229,3 +229,8 @@ void ControllerInterface::computeMappingMatrix()
     map_matrix_.block(3, i, 3, 1) = mom;
   }
 }
+
+Eigen::Matrix<float, 6, 1> ControllerInterface::getControlWrench()
+{
+  return control_force_and_torque_;
+}
