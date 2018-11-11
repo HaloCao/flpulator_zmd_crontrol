@@ -1,5 +1,5 @@
 # flupulator_vive_pose
-publish pose, velocity and acceleration of the VIVE traker.
+publish pose, velocity and acceleration of the flypulator, w.r.t. the inital coordinate.
 ## Subscribe topics
 **/vive/LHR_08DDEDC9_odom**  
 TYPE: nav_msgs::odometry  
