@@ -17,13 +17,25 @@
         <!-- name of the world frame of the motion capture system -->
         <param name="mcap_world_id" type="string" value="vive_world" />
 
+        <!-- name of the body frame -->
+        <param name="body_id" type="string" value="base_link" />
+
         <!-- published uav state message -->
         <remap from="~/meas_state" to="/drone/meas_state" />
 
+        <!-- transformation between sensor(S) frame and body(B) frame w.r.t. sensor(S) frame -->
+        <param name="T_S_B_tx" type="double" value="0.0"/>
+        <param name="T_S_B_ty" type="double" value="-0.0825"/>
+        <param name="T_S_B_tz" type="double" value="-0.17"/>
+        <param name="T_S_B_qx" type="double" value="0.0"/>
+        <param name="T_S_B_qy" type="double" value="0.0"/>
+        <param name="T_S_B_qz" type="double" value="0.0"/>
+        <param name="T_S_B_qw" type="double" value="1.0"/>
+
         <!-- subscribed odometry topics -->
-        <!-- <remap from="~/odom_msg" to="/vive/LHR_08DDEDC9_odom"/> -->
+        <remap from="~/odom_msg" to="/vive/LHR_08DDEDC9_odom"/>
     </node>
-    <node pkg ="tf" type="static_transform_publisher" name="base_link" args="0.0 -0.0825 -0.17 0.0 0.0 0.0 flypulator_tracker base_link 100" />
+    <!-- <node pkg ="tf" type="static_transform_publisher" name="base_link" args="0.0 -0.0825 -0.17 0.0 0.0 0.0 flypulator_tracker base_link 100" /> -->
 
     <include file="$(find vive_tracker)/launch/vive_tracker.launch"/>
 </launch>
