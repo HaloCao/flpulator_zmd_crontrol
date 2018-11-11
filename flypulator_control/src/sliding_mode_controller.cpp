@@ -8,12 +8,13 @@ void SlidingModeController::configCallback(flypulator_control::ism_parameterConf
 
 
   ROS_INFO("Reconfigure Request: \n lambda_T = %f, \n k_T \t  = %f, \n k_T_I \t  = %f, \n lambda_R = %f, \n k_R \t  = "
-           "%f, \n k_R_I \t  = %f",
+           "%f, \n k_R_I \t  = %f, \n deadband \t = %f",
            config.ism_lambda_T, config.ism_k_T, config.ism_k_T_I, config.ism_lambda_R, config.ism_k_R,
-           config.ism_k_R_I);
+           config.ism_k_R_I, config.w_deadband);
   // set new values to class variables
   lambda_T_ = (float)config.ism_lambda_T;
   lambda_R_ = (float)config.ism_lambda_R;
+  omega_deadband_ = config.w_deadband;
   K_T_ << config.ism_k_T, 0, 0, 0, config.ism_k_T, 0, 0, 0, config.ism_k_T;
   K_T_I_ << config.ism_k_T_I, 0, 0, 0, config.ism_k_T_I, 0, 0, 0, config.ism_k_T_I;
   K_R_ << config.ism_k_R, 0, 0, 0,  // K_R_ is 4x4
@@ -145,3 +146,7 @@ void SlidingModeController::computeControlForceTorqueInput(const PoseVelocityAcc
   ROS_DEBUG("u_R =[%f, %f, %f], u_R_I = [%f, %f, %f]", u_R_.x(), u_R_.y(), u_R_.z(), u_R_I_.x(), u_R_I_.y(),
             u_R_I_.z());
 };
+float SlidingModeController::getDeadband()
+{
+    return omega_deadband_;
+}
