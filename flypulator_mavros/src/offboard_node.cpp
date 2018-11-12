@@ -50,12 +50,12 @@ input[5] = scaleControlOutputToActuators(msg.velocity[2]);
     if (!control_active)
     {
         test_signal = config.generate_test_signal;
-        input[0] = config.motor2_speed; //drone motor 6
-        input[1] = config.motor5_speed; // drone motor 3
-        input[2] = config.motor1_speed; // drone motor 2
-        input[3] = config.motor4_speed; // drone motor 1
-        input[4] = config.motor6_speed; // drone motor 5
-        input[5] = config.motor3_speed; //drone motor 4
+        input[0] = config.motor2_speed; //drone motor 2
+        input[1] = config.motor5_speed; // drone motor 5
+        input[2] = config.motor1_speed; // drone motor 1
+        input[3] = config.motor4_speed; // drone motor 4
+        input[4] = config.motor6_speed; // drone motor 6
+        input[5] = config.motor3_speed; //drone motor 3
     }
     else
         ROS_INFO("Messages on topic /drone/rotor_cmd. Will not interfer");
