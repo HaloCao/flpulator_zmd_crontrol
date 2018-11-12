@@ -8,6 +8,7 @@ ControllerInterface* g_drone_controller_p;
 PoseVelocityAcceleration g_current_pose;
 PoseVelocityAcceleration g_desired_pose;
 int g_rotor_vel_message_counter = 0;
+bool g_traj_received = false;
 ros::Publisher* g_rotor_cmd_pub;
 Eigen::Matrix<float, 6, 1> g_spinning_rates;
 
@@ -118,6 +119,7 @@ void encodeStateMsg(const flypulator_common_msgs::UavStateStamped::ConstPtr& msg
 // receive trajectory message
 void trajectoryMessageCallback(const trajectory_msgs::MultiDOFJointTrajectoryPoint::ConstPtr& msg)
 {
+    g_traj_received = true;
   // encode trajectory message to PoseVelocityAcceleration object
   encodeTrajectoryMsg(msg, g_desired_pose);
 
@@ -143,12 +145,26 @@ void stateMessageCallback(const flypulator_common_msgs::UavStateStamped::ConstPt
   // ROS_DEBUG("    Time from start: %f s", duration.toSec());
 
   // compute control output to updated state information
+  if (g_traj_received)
   computeControlOutputAndPublish();
+  else
+      ROS_INFO("no trajectory received");
 }
 
 int main(int argc, char** argv)
 {
+  // set inital pose.
+  // for real drone
+  g_desired_pose.p = Eigen::Vector3f(0, 0, 0);
+  g_desired_pose.q = Eigen::Quaternionf(1.0,0.0,0.0,0.0); 
+
+  g_current_pose.q = Eigen::Quaternionf(1.0,0.0,0.0,0.0); 
+  g_current_pose.p = Eigen::Vector3f(0, 0, 0);
+  // for simulation in Gazebo
+  /* g_desired_pose.p = Eigen::Vector3f(0, 0, 0.23f); */
+  /* g_current_pose.p = Eigen::Vector3f(0, 0, 0.22f); */
   // initialize node
+  //
   ros::init(argc, argv, "controller");
 
   ros::NodeHandle n;
@@ -179,9 +195,6 @@ int main(int argc, char** argv)
                    _2);  // set callback of controller object
   dr_srv.setCallback(cb);
 
-  // set inital pose
-  g_desired_pose.p = Eigen::Vector3f(0, 0, 0.23f);
-  g_current_pose.p = Eigen::Vector3f(0, 0, 0.22f);
 
   ros::spin();
 
