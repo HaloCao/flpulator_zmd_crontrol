@@ -36,12 +36,12 @@ float scaleControlOutputToActuators(float in)
 {
 
 control_active = true; //to prevent use of test parameters when flying.
-input[0] = scaleControlOutputToActuators(msg.velocity[2]);
-input[1] = scaleControlOutputToActuators(msg.velocity[5]); 
-input[2] = scaleControlOutputToActuators(msg.velocity[1]); 
-input[3] = scaleControlOutputToActuators(msg.velocity[4]); 
-input[4] = scaleControlOutputToActuators(msg.velocity[6]); 
-input[5] = scaleControlOutputToActuators(msg.velocity[3]); 
+input[0] = scaleControlOutputToActuators(msg.velocity[1]);
+input[1] = scaleControlOutputToActuators(msg.velocity[4]); 
+input[2] = scaleControlOutputToActuators(msg.velocity[0]); 
+input[3] = scaleControlOutputToActuators(msg.velocity[3]); 
+input[4] = scaleControlOutputToActuators(msg.velocity[5]); 
+input[5] = scaleControlOutputToActuators(msg.velocity[2]); 
 
 }
 
