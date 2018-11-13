@@ -21,8 +21,8 @@ float upper_limit;
 float scaleControlOutputToActuators(float in)
 {
     float out;
-   // float upper_limit = 650; // assumed max RPM 6000 -> 628 rad/s
-    //float lower_limit = 0;
+    // Upper limit is set through dynamic reconfigure.  
+    // assumed max RPM 6000 -> 628 rad/s
     
     out = 2*(abs(in)/upper_limit)-1;
     return out;
@@ -36,6 +36,10 @@ float scaleControlOutputToActuators(float in)
 {
 
 control_active = true; //to prevent use of test parameters when flying.
+
+// The matching of motors to input channels is dependent on the wiring on the UAV and the
+// programming of the ESCs. The matching cen be tested by altering the motor speed of individual
+// motors in dynamic reconfigure.
 input[0] = scaleControlOutputToActuators(msg.velocity[1]);
 input[1] = scaleControlOutputToActuators(msg.velocity[4]); 
 input[2] = scaleControlOutputToActuators(msg.velocity[0]); 
@@ -58,13 +62,26 @@ input[5] = scaleControlOutputToActuators(msg.velocity[2]);
         input[5] = config.motor3_speed; //drone motor 3
     }
     else
+    {
         ROS_INFO("Messages on topic /drone/rotor_cmd. Will not interfer");
         test_signal=false;
-        upper_limit = config.upper_limit;
+
+    }         
+    
+       upper_limit = config.upper_limit;
        if(config.drone_armed)
            arm_cmd.request.value = true;
+       // to avoid that stored values are published.. could lead to bursting props on start. 
+       // Effect of setting input to min here must be evaluated...
+           input[0] =-1.0; 
+           input[1] =-1.0;
+           input[2] =-1.0;
+           input[3] =-1.0;
+           input[4] =-1.0;
+           input[5] =-1.0;
        else
-       {    arm_cmd.request.value = false;
+       {   
+           arm_cmd.request.value = false;
            input[0] =-1.0; 
            input[1] =-1.0;
            input[2] =-1.0;
@@ -101,7 +118,7 @@ int main(int argc, char **argv)
         param_srv.setCallback(cb);
 
     // the rate must be higher than 2 Hz    
-        ros::Rate loop_rate(50);
+        ros::Rate loop_rate(90);
         ros::Rate wait_rate(10);
         mavros_msgs::SetMode offb_set_mode;
         offb_set_mode.request.custom_mode = "OFFBOARD";
