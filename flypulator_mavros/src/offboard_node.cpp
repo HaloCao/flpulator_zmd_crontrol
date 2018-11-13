@@ -70,6 +70,7 @@ input[5] = scaleControlOutputToActuators(msg.velocity[2]);
     
        upper_limit = config.upper_limit;
        if(config.drone_armed)
+       {
            arm_cmd.request.value = true;
        // to avoid that stored values are published.. could lead to bursting props on start. 
        // Effect of setting input to min here must be evaluated...
@@ -79,6 +80,8 @@ input[5] = scaleControlOutputToActuators(msg.velocity[2]);
            input[3] =-1.0;
            input[4] =-1.0;
            input[5] =-1.0;
+       }
+
        else
        {   
            arm_cmd.request.value = false;

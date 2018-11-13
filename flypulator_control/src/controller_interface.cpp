@@ -20,6 +20,17 @@ ControllerInterface::ControllerInterface()
 
 
   // read motor feedforward bool variable (use feedforward/dont use it)
+  vel_max_ = 630.0;
+  if (ros::param::get("/controller/rotor_vel_max", vel_max_))
+  {
+    ROS_DEBUG("Maximum rotor velocity read from file");
+  }
+  else
+  {
+    ROS_INFO("Maximum rotor velocity cannot be read from file");
+  }
+
+  // read motor feedforward bool variable (use feedforward/dont use it)
   use_motor_ff_control_ = false;
   if (ros::param::get("/controller/use_motor_ff", use_motor_ff_control_))
   {
@@ -177,23 +188,30 @@ void ControllerInterface::mapControlForceTorqueInputToPropellerRates(const PoseV
 void ControllerInterface::motorFeedForwardControl(Eigen::Matrix<float, 6, 1>& spinning_rates)
 {
   // U(z) / Y(z) = k_ff * z / (z - z_p_ff); Y.. output, u.. input; -> y[k] = - z_p_ff/k_ff_ * u[k-1] + 1/k_ff * u[k]
+    Eigen::Matrix<float, 6, 1> spinning_rates_tmp; //to evaluate if they exceed max rpm
   for (int i = 0; i < 6; i++)
   {
     if (use_motor_ff_control_)
     {
-      spinning_rates(i, 0) = 1 / k_ff_ * spinning_rates_current_(i, 0) - z_p_ff_ / k_ff_ * spinning_rates_last_(i, 0);
+
+      spinning_rates_tmp(i, 0) = 1 / k_ff_ * spinning_rates_current_(i, 0) - z_p_ff_ / k_ff_ * spinning_rates_last_(i, 0);
         // quickfix to account for unidirectional propellers
-      if (use_bidirectional_propeller_ != true && spinning_rates(i, 0)<deadband_)
-          spinning_rates(i,0) = 0;
+      if (use_bidirectional_propeller_ != true && spinning_rates_tmp(i, 0)<deadband_)
+          spinning_rates_tmp(i,0) = 0;
 
     }
     else
     {
       // save to output variable
-      spinning_rates(i, 0) = spinning_rates_current_(i, 0);
+      spinning_rates_tmp(i, 0) = spinning_rates_current_(i, 0);
     }
-    // save spinning rates in both cases for possible future dynamic reconfigure of feedforward control
+      // test if spinning_rates exceed maximum rotor velocity
+    if(spinning_rates_tmp(1,0) < vel_max_)
+        spinning_rates(i,0) = spinning_rates_tmp(i,0);
+    else
+        spinning_rates(i,0) = vel_max_;
     
+    // save spinning rates in both cases for possible future dynamic reconfigure of feedforward control
     spinning_rates_last_(i, 0) = spinning_rates_current_(i, 0);  // save last value
   }
 }

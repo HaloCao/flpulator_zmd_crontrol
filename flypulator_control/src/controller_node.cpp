@@ -44,7 +44,7 @@ void computeControlOutputAndPublish()
   g_control_wrench_pub->publish(wrench_msg);
 
   flypulator_common_msgs::UavStateStamped g_desired_pose_msg;
-  //g_desired_pose_msg.header.stamp = msg->header.stamp;
+  g_desired_pose_msg.header.stamp = ros::Time::now();
   //pose
   g_desired_pose_msg.pose.position.x = g_desired_pose.p.x(); 
   g_desired_pose_msg.pose.position.y = g_desired_pose.p.y();
