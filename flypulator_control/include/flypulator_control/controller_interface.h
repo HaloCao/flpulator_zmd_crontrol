@@ -73,6 +73,7 @@ private:
   bool use_motor_ff_control_;
   bool use_bidirectional_propeller_;
   float deadband_;
+  float vel_max_;
 };
 
 #endif  // CONTROLLER_INTERFACE_H
