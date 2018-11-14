@@ -182,14 +182,9 @@ void stateMessageCallback(const flypulator_common_msgs::UavStateStamped::ConstPt
 
   // compute control output to updated state information
 
-    
       g_controller_running = true;
-  //    ROS_INFO("running = true");
+  //  ROS_INFO("running = true");
       computeControlOutputAndPublish();
-
-  
-
-
 }
 
 int main(int argc, char** argv)
