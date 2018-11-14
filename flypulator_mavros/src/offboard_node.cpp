@@ -63,7 +63,7 @@ input[5] = scaleControlOutputToActuators(msg.velocity[2]);
     }
     else
     {
-        ROS_INFO("Messages on topic /drone/rotor_cmd. Will not interfer");
+       // ROS_INFO("Messages on topic /drone/rotor_cmd. Will not interfer");
         test_signal=false;
 
     }         
@@ -96,10 +96,10 @@ int main(int argc, char **argv)
     
 // add subscribers for topics state and control output
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>("mavros/state", 10, stateMessageCallback);
-    ros::Subscriber control_sub = nh.subscribe<flypulator_common_msgs::RotorVelStamped>("/drone/rotor_cmd", 100, controlMessageCallback);
+    ros::Subscriber control_sub = nh.subscribe<flypulator_common_msgs::RotorVelStamped>("/drone/rotor_cmd", 1, controlMessageCallback);
     
 // add publisher for actuator commands
-    ros::Publisher pub = nh.advertise<mavros_msgs::ActuatorControl>("mavros/actuator_control", 100); 
+    ros::Publisher pub = nh.advertise<mavros_msgs::ActuatorControl>("mavros/actuator_control", 1); 
     
     
   // add service clients for arming and mode setting
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
         param_srv.setCallback(cb);
 
     // the rate must be higher than 2 Hz    
-        ros::Rate loop_rate(90);
+        ros::Rate loop_rate(100);
         ros::Rate wait_rate(10);
         mavros_msgs::SetMode offb_set_mode;
         offb_set_mode.request.custom_mode = "OFFBOARD";
@@ -155,10 +155,10 @@ int main(int argc, char **argv)
                             input[i] = -1.0;
                         }
                         ROS_INFO("Vehicle disarmed");
-                        last_state = current_state;
 
                     }
                         
+                        last_state = current_state;
                 }
 
 
