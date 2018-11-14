@@ -195,6 +195,7 @@ void ControllerInterface::motorFeedForwardControl(Eigen::Matrix<float, 6, 1>& sp
     {
 
       spinning_rates_tmp(i, 0) = 1 / k_ff_ * spinning_rates_current_(i, 0) - z_p_ff_ / k_ff_ * spinning_rates_last_(i, 0);
+      //
         // quickfix to account for unidirectional propellers
       if (use_bidirectional_propeller_ != true && spinning_rates_tmp(i, 0)<deadband_)
           spinning_rates_tmp(i,0) = 0;
@@ -209,8 +210,10 @@ void ControllerInterface::motorFeedForwardControl(Eigen::Matrix<float, 6, 1>& sp
     if(spinning_rates_tmp(1,0) < vel_max_)
         spinning_rates(i,0) = spinning_rates_tmp(i,0);
     else
+    {
         spinning_rates(i,0) = vel_max_;
-    
+        ROS_INFO("Maximum spinrate reached");
+    }       
     // save spinning rates in both cases for possible future dynamic reconfigure of feedforward control
     spinning_rates_last_(i, 0) = spinning_rates_current_(i, 0);  // save last value
   }

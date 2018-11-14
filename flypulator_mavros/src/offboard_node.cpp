@@ -72,14 +72,7 @@ input[5] = scaleControlOutputToActuators(msg.velocity[2]);
        if(config.drone_armed)
        {
            arm_cmd.request.value = true;
-       // to avoid that stored values are published.. could lead to bursting props on start. 
-       // Effect of setting input to min here must be evaluated...
-           input[0] =-1.0; 
-           input[1] =-1.0;
-           input[2] =-1.0;
-           input[3] =-1.0;
-           input[4] =-1.0;
-           input[5] =-1.0;
+             
        }
 
        else
@@ -156,8 +149,16 @@ int main(int argc, char **argv)
                     if(current_state.armed == true)
                         ROS_INFO("Vehicle armed");
                     else
+                    {
+                        for (int i = 0; i<6;i++)
+                        {
+                            input[i] = -1.0;
+                        }
                         ROS_INFO("Vehicle disarmed");
-                    last_state = current_state;
+                        last_state = current_state;
+
+                    }
+                        
                 }
 
 
@@ -167,21 +168,23 @@ int main(int argc, char **argv)
 
     ac_msg.header.stamp = ros::Time::now();
 
-           if(flank>0)
-               flank -=1;
-           else
-           { signal_out *=-1;
-               flank = 20;
-           } 
+         //  if(flank>0)
+         //      flank -=1;
+         //  else
+         //  { signal_out *=-1;
+         //      flank = 20;
+         //  } 
 
 
-   for (int i =0; i<6; i++){
+   for (int i =0; i<6; i++)
+   {
        if (test_signal)
            ac_msg.controls[i]=signal_out;
        else
-       {if(current_state.armed)
+       {
+           if(current_state.armed)
            ac_msg.controls[i]=input[i];
-        else
+           else
             ac_msg.controls[i]=-1.0;
 
        }
