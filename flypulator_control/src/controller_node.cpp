@@ -3,6 +3,8 @@
 #include "trajectory_msgs/MultiDOFJointTrajectoryPoint.h"
 #include "flypulator_common_msgs/UavStateStamped.h"
 #include "geometry_msgs/WrenchStamped.h"
+#include "flypulator_common_msgs/PoseXYZRPYStamped.h"
+#include "flypulator_common_msgs/UavStateRPYStamped.h"
 
 ControllerInterface* g_drone_controller_p;
 PoseVelocityAcceleration g_current_pose;
@@ -12,11 +14,12 @@ bool g_traj_received = false;
 ros::Publisher* g_rotor_cmd_pub;
 Eigen::Matrix<float, 6, 1> g_spinning_rates;
 ros::Publisher* g_desired_pose_pub;
+ros::Publisher* g_pose_error_pub;
 ros::Publisher* g_control_wrench_pub;
 
 void computeControlOutputAndPublish()
 {
-  Eigen::Matrix<float,6,1> control_wrench;
+  Eigen::Matrix<float, 6, 1> control_wrench;
   // compute spinning rates
   ROS_DEBUG("Compute Control Output..");
   g_drone_controller_p->computeControlOutput(g_desired_pose, g_current_pose, g_spinning_rates);
@@ -35,35 +38,32 @@ void computeControlOutputAndPublish()
 
   geometry_msgs::WrenchStamped wrench_msg;
   wrench_msg.header.stamp = ros::Time::now();
-  wrench_msg.wrench.force.x = control_wrench(0,0);
-  wrench_msg.wrench.force.y = control_wrench(1,0);
-  wrench_msg.wrench.force.z = control_wrench(2,0);
-  wrench_msg.wrench.torque.x = control_wrench(3,0);
-  wrench_msg.wrench.torque.y = control_wrench(4,0);
-  wrench_msg.wrench.torque.z = control_wrench(5,0);
+  wrench_msg.wrench.force.x = control_wrench(0, 0);
+  wrench_msg.wrench.force.y = control_wrench(1, 0);
+  wrench_msg.wrench.force.z = control_wrench(2, 0);
+  wrench_msg.wrench.torque.x = control_wrench(3, 0);
+  wrench_msg.wrench.torque.y = control_wrench(4, 0);
+  wrench_msg.wrench.torque.z = control_wrench(5, 0);
   g_control_wrench_pub->publish(wrench_msg);
 
-  flypulator_common_msgs::UavStateStamped g_desired_pose_msg;
+  flypulator_common_msgs::UavStateRPYStamped g_desired_pose_msg;
+  Eigen::Vector3f desired_rpy = g_desired_pose.q.toRotationMatrix().eulerAngles(0, 1, 2);
   g_desired_pose_msg.header.stamp = ros::Time::now();
-  //pose
-  g_desired_pose_msg.pose.position.x = g_desired_pose.p.x(); 
-  g_desired_pose_msg.pose.position.y = g_desired_pose.p.y();
-  g_desired_pose_msg.pose.position.z = g_desired_pose.p.z();
-  
-  g_desired_pose_msg.pose.orientation.w = g_desired_pose.q.w();
-  g_desired_pose_msg.pose.orientation.x = g_desired_pose.q.x();
-  g_desired_pose_msg.pose.orientation.y = g_desired_pose.q.y();
-  g_desired_pose_msg.pose.orientation.z = g_desired_pose.q.z();
-  //velocity
+  // pose
+  g_desired_pose_msg.pose.x = g_desired_pose.p.x();
+  g_desired_pose_msg.pose.y = g_desired_pose.p.y();
+  g_desired_pose_msg.pose.z = g_desired_pose.p.z();
+  g_desired_pose_msg.pose.roll = desired_rpy[0];
+  g_desired_pose_msg.pose.pitch = desired_rpy[1];
+  g_desired_pose_msg.pose.yaw = desired_rpy[2];
+  // velocity
   g_desired_pose_msg.velocity.linear.x = g_desired_pose.p_dot.x();
   g_desired_pose_msg.velocity.linear.y = g_desired_pose.p_dot.y();
   g_desired_pose_msg.velocity.linear.z = g_desired_pose.p_dot.z();
-
   g_desired_pose_msg.velocity.angular.x = g_desired_pose.omega.x();
   g_desired_pose_msg.velocity.angular.y = g_desired_pose.omega.y();
   g_desired_pose_msg.velocity.angular.z = g_desired_pose.omega.z();
-  //acceleration
-
+  // acceleration
   g_desired_pose_msg.acceleration.linear.x = g_desired_pose.p_ddot.x();
   g_desired_pose_msg.acceleration.linear.y = g_desired_pose.p_ddot.y();
   g_desired_pose_msg.acceleration.linear.z = g_desired_pose.p_ddot.z();
@@ -71,8 +71,19 @@ void computeControlOutputAndPublish()
   g_desired_pose_msg.acceleration.angular.y = g_desired_pose.omega_dot.y();
   g_desired_pose_msg.acceleration.angular.z = g_desired_pose.omega_dot.z();
   g_desired_pose_pub->publish(g_desired_pose_msg);
-}
 
+  flypulator_common_msgs::PoseXYZRPYStamped pose_error_msg;
+  pose_error_msg.header.stamp = ros::Time::now();
+  pose_error_msg.x = g_desired_pose.p.x() - g_current_pose.p.x();
+  pose_error_msg.y = g_desired_pose.p.y() - g_current_pose.p.y();
+  pose_error_msg.z = g_desired_pose.p.z() - g_current_pose.p.z();
+  Eigen::Vector3f rpy_desired = g_desired_pose.q.toRotationMatrix().eulerAngles(0, 1, 2);
+  Eigen::Vector3f rpy_current = g_current_pose.q.toRotationMatrix().eulerAngles(0, 1, 2);
+  pose_error_msg.roll = rpy_desired[0] - rpy_current[0];
+  pose_error_msg.pitch = rpy_desired[1] - rpy_current[1];
+  pose_error_msg.yaw = rpy_desired[2] - rpy_current[2];
+  g_pose_error_pub->publish(pose_error_msg);
+}
 template <class T>
 T GetMax(T a, T b)
 {
@@ -112,8 +123,6 @@ void encodeTrajectoryMsg(const trajectory_msgs::MultiDOFJointTrajectoryPoint::Co
   pose_dest.omega = omega_des;
   pose_dest.p_ddot = p_ddot_des;
   pose_dest.omega_dot = omega_dot_des;
-
-
 }
 
 void encodeStateMsg(const flypulator_common_msgs::UavStateStamped::ConstPtr& msg, PoseVelocityAcceleration& pose_dest)
@@ -150,7 +159,7 @@ void encodeStateMsg(const flypulator_common_msgs::UavStateStamped::ConstPtr& msg
 // receive trajectory message
 void trajectoryMessageCallback(const trajectory_msgs::MultiDOFJointTrajectoryPoint::ConstPtr& msg)
 {
-    g_traj_received = true;
+  g_traj_received = true;
   // encode trajectory message to PoseVelocityAcceleration object
   encodeTrajectoryMsg(msg, g_desired_pose);
 
@@ -176,9 +185,9 @@ void stateMessageCallback(const flypulator_common_msgs::UavStateStamped::ConstPt
   // ROS_DEBUG("    Time from start: %f s", duration.toSec());
 
   // compute control output to updated state information
-  //if (g_traj_received)
+  // if (g_traj_received)
   computeControlOutputAndPublish();
-  //else
+  // else
   //    ROS_INFO("no trajectory received");
 }
 
@@ -187,9 +196,9 @@ int main(int argc, char** argv)
   // set inital pose.
   // for real drone
   g_desired_pose.p = Eigen::Vector3f(0, 0, 0);
-  g_desired_pose.q = Eigen::Quaternionf(1.0,0.0,0.0,0.0); 
+  g_desired_pose.q = Eigen::Quaternionf(1.0, 0.0, 0.0, 0.0);
 
-  g_current_pose.q = Eigen::Quaternionf(1.0,0.0,0.0,0.0); 
+  g_current_pose.q = Eigen::Quaternionf(1.0, 0.0, 0.0, 0.0);
   g_current_pose.p = Eigen::Vector3f(0, 0, 0);
   // for simulation in Gazebo
   /* g_desired_pose.p = Eigen::Vector3f(0, 0, 0.23f); */
@@ -203,9 +212,15 @@ int main(int argc, char** argv)
   // ready to publish controller wrench
   ros::Publisher control_wrench_pub = n.advertise<geometry_msgs::WrenchStamped>("/drone/controller_wrench", 100);
   g_control_wrench_pub = &control_wrench_pub;
- // publish the desired pose
-  ros::Publisher desired_pose_pub = n.advertise<flypulator_common_msgs::UavStateStamped>("/drone/desired_pose",100);
+
+  // publish the desired pose (orientation in rpy)
+  ros::Publisher desired_pose_pub = n.advertise<flypulator_common_msgs::UavStateRPYStamped>("/drone/desired_pose", 100);
   g_desired_pose_pub = &desired_pose_pub;
+
+  // publish the pose error (orientation in rpy)
+  ros::Publisher pose_error_pub = n.advertise<flypulator_common_msgs::PoseXYZRPYStamped>("/drone/pose_error", 100);
+  g_pose_error_pub = &pose_error_pub;
+
   // suscribe to trajectory messages
   ros::Subscriber sub = n.subscribe("trajectory", 1000, trajectoryMessageCallback);
 
@@ -227,7 +242,6 @@ int main(int argc, char** argv)
   cb = boost::bind(&BaseController::configCallback, g_drone_controller_p->getControllerReference(), _1,
                    _2);  // set callback of controller object
   dr_srv.setCallback(cb);
-
 
   ros::spin();
 

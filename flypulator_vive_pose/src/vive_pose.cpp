@@ -3,7 +3,10 @@
 #include <geometry_msgs/Pose.h>
 #include <nav_msgs/Odometry.h>
 #include <tf/transform_broadcaster.h>
+#include <tf/transform_datatypes.h>
+#include <tf/LinearMath/Matrix3x3.h>
 #include <flypulator_common_msgs/UavStateStamped.h>
+#include "flypulator_common_msgs/UavStateRPYStamped.h"
 
 struct T_TWIST
 {
@@ -21,17 +24,18 @@ struct T_TWIST
 // ros::Publisher pub_angular_vel_tracker;
 // ros::Publisher pub_angular_acc_tracker;
 ros::Publisher pub_uav_state;
+ros::Publisher pub_uav_state_rpy;  // publish orientation in rpy representation
 
-/** 
+/**
  * Frame abbreviation
  * W: (flypulator)world, or inital body frame.
  * L: lighthouse system, vive_world.
  * S: sensor, the tracker.
  * B: body.
- * E.G. T_LS, transformation between L and S (w.r.t. L frame). 
+ * E.G. T_LS, transformation between L and S (w.r.t. L frame).
  */
 
-tf::Transform T_S_B; // transformation between tracker(S) and body(B) w.r.t. tracker(S)
+tf::Transform T_S_B;  // transformation between tracker(S) and body(B) w.r.t. tracker(S)
 
 // default frame ID
 std::string world_id = "world";
@@ -64,7 +68,7 @@ geometry_msgs::Vector3 vec3Div(const geometry_msgs::Vector3 &a, double b)
 }
 
 /**
- * rotate a 3d-vector with a quaternion 
+ * rotate a 3d-vector with a quaternion
  */
 tf::Vector3 rotVect3(const tf::Quaternion &q, const tf::Vector3 &in)
 {
@@ -92,8 +96,7 @@ tf::Vector3 skewSymMul(tf::Vector3 w, tf::Vector3 a)
 /**
  * transform twist from vive_world(L) to world(W)
  */
-T_TWIST transfromTwist(tf::Transform &T_WL, tf::Transform &T_SB,
-                       tf::Transform &T_LS, T_TWIST twist_in)
+T_TWIST transfromTwist(tf::Transform &T_WL, tf::Transform &T_SB, tf::Transform &T_LS, T_TWIST twist_in)
 {
   tf::Vector3 v;
   tf::Vector3 omega;
@@ -106,8 +109,7 @@ T_TWIST transfromTwist(tf::Transform &T_WL, tf::Transform &T_SB,
 
   tf::Vector3 p_S_SB = T_SB.getOrigin();
   // TODO: check correctness.
-  tf::Vector3 v_W_WB = rotVect3(T_WL.getRotation(),
-                                skewSymMul(omega, rotVect3(T_LS.getRotation(), p_S_SB)) + v);
+  tf::Vector3 v_W_WB = rotVect3(T_WL.getRotation(), skewSymMul(omega, rotVect3(T_LS.getRotation(), p_S_SB)) + v);
   tf::Vector3 omega_W_WB = rotVect3(T_WL.getRotation(), omega);
 
   T_TWIST twist_out;
@@ -144,13 +146,13 @@ void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
   if (isTfInit == false)
   {
     isTfInit = true;
-    T_LW = T_LS * T_S_B;   // initial body pose w.r.t. vive_world, T_LW
-    T_WL = T_LW.inverse(); // T_WL
+    T_LW = T_LS * T_S_B;    // initial body pose w.r.t. vive_world, T_LW
+    T_WL = T_LW.inverse();  // T_WL
   }
 
   // get pose with reference to the inital coordinate(initial pose)
   geometry_msgs::PoseStamped pub_pose;
-  tf::Transform T_out = T_WL * T_LS * T_S_B; // body pose w.r.t. drone's world
+  tf::Transform T_out = T_WL * T_LS * T_S_B;  // body pose w.r.t. drone's world
   // pub_pose.header.stamp = msg->header.stamp;
   // pub_pose.header.frame_id = world_id;
   // pub_pose.pose.position.x = T_out.getOrigin().getX();
@@ -206,16 +208,26 @@ void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 
   // load UavStateStamped message
   flypulator_common_msgs::UavStateStamped uav_state_msg;
+  flypulator_common_msgs::UavStateRPYStamped uav_state_rpy_msg;
+
   uav_state_msg.header.stamp = msg->header.stamp;
   // pose
   uav_state_msg.pose.position.x = T_out.getOrigin().getX();
   uav_state_msg.pose.position.y = T_out.getOrigin().getY();
   uav_state_msg.pose.position.z = T_out.getOrigin().getZ();
-
   uav_state_msg.pose.orientation.w = T_out.getRotation().getW();
   uav_state_msg.pose.orientation.x = T_out.getRotation().getX();
   uav_state_msg.pose.orientation.y = T_out.getRotation().getY();
   uav_state_msg.pose.orientation.z = T_out.getRotation().getZ();
+
+  uav_state_rpy_msg.pose.x = T_out.getOrigin().getX();
+  uav_state_rpy_msg.pose.y = T_out.getOrigin().getY();
+  uav_state_rpy_msg.pose.z = T_out.getOrigin().getZ();
+  double current_roll, current_pitch, current_yaw;
+  tf::Matrix3x3(T_out.getRotation()).getRPY(current_roll, current_pitch, current_yaw);
+  uav_state_rpy_msg.pose.roll = current_roll;
+  uav_state_rpy_msg.pose.pitch = current_pitch;
+  uav_state_rpy_msg.pose.yaw = current_yaw;
 
   // velocity
   uav_state_msg.velocity.linear.x = linear_vel.x;
@@ -224,6 +236,13 @@ void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
   uav_state_msg.velocity.angular.x = angular_vel.x;
   uav_state_msg.velocity.angular.y = angular_vel.y;
   uav_state_msg.velocity.angular.z = angular_vel.z;
+
+  uav_state_rpy_msg.velocity.linear.x = linear_vel.x;
+  uav_state_rpy_msg.velocity.linear.y = linear_vel.y;
+  uav_state_rpy_msg.velocity.linear.z = linear_vel.z;
+  uav_state_rpy_msg.velocity.angular.x = angular_vel.x;
+  uav_state_rpy_msg.velocity.angular.y = angular_vel.y;
+  uav_state_rpy_msg.velocity.angular.z = angular_vel.z;
   // acceleration
   uav_state_msg.acceleration.linear.x = linear_acc.x;
   uav_state_msg.acceleration.linear.y = linear_acc.y;
@@ -231,6 +250,13 @@ void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
   uav_state_msg.acceleration.angular.x = angular_acc.x;
   uav_state_msg.acceleration.angular.y = angular_acc.y;
   uav_state_msg.acceleration.angular.z = angular_acc.z;
+
+  uav_state_rpy_msg.acceleration.linear.x = linear_acc.x;
+  uav_state_rpy_msg.acceleration.linear.y = linear_acc.y;
+  uav_state_rpy_msg.acceleration.linear.z = linear_acc.z;
+  uav_state_rpy_msg.acceleration.angular.x = angular_acc.x;
+  uav_state_rpy_msg.acceleration.angular.y = angular_acc.y;
+  uav_state_rpy_msg.acceleration.angular.z = angular_acc.z;
 
   // publish all messages
 
@@ -241,6 +267,7 @@ void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
   // pub_angular_acc_tracker.publish(angular_acc);
 
   pub_uav_state.publish(uav_state_msg);
+  pub_uav_state_rpy.publish(uav_state_rpy_msg);
   tf_br.sendTransform(tf::StampedTransform(T_LW, msg->header.stamp, mcap_world_id, world_id));
   tf_br.sendTransform(tf::StampedTransform(T_out, msg->header.stamp, world_id, body_id));
   tf_br.sendTransform(tf::StampedTransform(T_S_B.inverse(), msg->header.stamp, body_id, tracker_id));
