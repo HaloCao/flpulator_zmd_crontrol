@@ -201,19 +201,19 @@ int main(int argc, char** argv)
   ros::NodeHandle n;
 
   // ready to publish controller wrench
-  ros::Publisher control_wrench_pub = n.advertise<geometry_msgs::WrenchStamped>("/drone/controller_wrench", 100);
+  ros::Publisher control_wrench_pub = n.advertise<geometry_msgs::WrenchStamped>("/drone/controller_wrench", 10);
   g_control_wrench_pub = &control_wrench_pub;
  // publish the desired pose
-  ros::Publisher desired_pose_pub = n.advertise<flypulator_common_msgs::UavStateStamped>("/drone/desired_pose",100);
+  ros::Publisher desired_pose_pub = n.advertise<flypulator_common_msgs::UavStateStamped>("/drone/desired_pose",10);
   g_desired_pose_pub = &desired_pose_pub;
   // suscribe to trajectory messages
-  ros::Subscriber sub = n.subscribe("trajectory", 1000, trajectoryMessageCallback);
+  ros::Subscriber sub = n.subscribe("trajectory", 10, trajectoryMessageCallback);
 
   // suscribe to state estimation messages
-  ros::Subscriber sub_2 = n.subscribe("/drone/meas_state", 1000, stateMessageCallback);
+  ros::Subscriber sub_2 = n.subscribe("/drone/meas_state", 10, stateMessageCallback);
 
   // ready to publish rotor command messages
-  ros::Publisher rotor_cmd_pub = n.advertise<flypulator_common_msgs::RotorVelStamped>("/drone/rotor_cmd", 1000);
+  ros::Publisher rotor_cmd_pub = n.advertise<flypulator_common_msgs::RotorVelStamped>("/drone/rotor_cmd", 10);
   g_rotor_cmd_pub = &rotor_cmd_pub;
 
   // create controller
