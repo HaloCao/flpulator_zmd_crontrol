@@ -211,6 +211,7 @@ void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
   flypulator_common_msgs::UavStateRPYStamped uav_state_rpy_msg;
 
   uav_state_msg.header.stamp = msg->header.stamp;
+  uav_state_rpy_msg.header.stamp = msg->header.stamp;
   // pose
   uav_state_msg.pose.position.x = T_out.getOrigin().getX();
   uav_state_msg.pose.position.y = T_out.getOrigin().getY();
