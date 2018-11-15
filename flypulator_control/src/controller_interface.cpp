@@ -99,7 +99,32 @@ void ControllerInterface::computeControlOutput(const PoseVelocityAcceleration& x
   // map control force and torque to spinning velocities of the propellers resp. rotors
   mapControlForceTorqueInputToPropellerRates(x_current);
   // perform feedforward control
+  if (use_motor_ff_control_)
   motorFeedForwardControl(spinning_rates);
+  else
+      spinning_rates = spinning_rates_current_;
+  //limit spinning rate
+  for (int i = 0 ; i < 6 ; i++)
+  {
+      if(spinning_rates(i, 0) > vel_max_)
+      {
+        spinning_rates(i, 0) = vel_max_;
+        ROS_INFO("Maximum positive spinrate reached");
+    } 
+      if(spinning_rates(i, 0) < -vel_max_)
+      {
+        spinning_rates(i, 0) = -vel_max_;
+        ROS_INFO("Maximum negative spinrate reached");
+    }             
+  
+  // quickfix to account for unidirectional propellers
+ if (use_bidirectional_propeller_ != true && spinning_rates(i, 0)<deadband_)
+          spinning_rates(i, 0) = 0;
+
+
+
+  }
+ 
 };
 
 void ControllerInterface::readDroneParameterFromServer()
@@ -172,9 +197,6 @@ void ControllerInterface::mapControlForceTorqueInputToPropellerRates(const PoseV
         {
             ROS_INFO("Spinrates within deadband, set to zero");
             spinning_rates_current_(i,0) = (0);    
-            /* spinning_rates_current_(i,0) = sqrt(spinning_rates_last_(i, 0)); */    
-
-
         }
         else
         {
@@ -190,28 +212,10 @@ void ControllerInterface::motorFeedForwardControl(Eigen::Matrix<float, 6, 1>& sp
   // U(z) / Y(z) = k_ff * z / (z - z_p_ff); Y.. output, u.. input; -> y[k] = - z_p_ff/k_ff_ * u[k-1] + 1/k_ff * u[k]
   for (int i = 0; i < 6; i++)
   {
-    if (use_motor_ff_control_)
-    {
-
       spinning_rates(i, 0) = 1 / k_ff_ * spinning_rates_current_(i, 0) - z_p_ff_ / k_ff_ * spinning_rates_last_(i, 0);
-      //
-        // quickfix to account for unidirectional propellers
-      if (use_bidirectional_propeller_ != true && spinning_rates(i, 0)<deadband_)
-          spinning_rates(i, 0) = 0;
-
-    }
-    else
-    {
-      // save to output variable
-      spinning_rates(i, 0) = spinning_rates_current_(i, 0);
-    }
-      // test if spinning_rates exceed maximum rotor velocity
-    if(spinning_rates(1, 0) > vel_max_)
-    {
-        spinning_rates(i, 0) = vel_max_;
-        ROS_INFO("Maximum spinrate reached");
-    }       
-    // save spinning rates in both cases for possible future dynamic reconfigure of feedforward control
+      
+         
+       // save spinning rates in both cases for possible future dynamic reconfigure of feedforward control
     spinning_rates_last_(i, 0) = spinning_rates_current_(i, 0);  // save last value
   }
 }
