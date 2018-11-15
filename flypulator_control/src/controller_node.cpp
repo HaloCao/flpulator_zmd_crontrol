@@ -80,11 +80,11 @@ void computeControlOutputAndPublish()
   pose_error_msg.x = g_desired_pose.p.x() - g_current_pose.p.x();
   pose_error_msg.y = g_desired_pose.p.y() - g_current_pose.p.y();
   pose_error_msg.z = g_desired_pose.p.z() - g_current_pose.p.z();
-  Eigen::Vector3f rpy_desired = g_desired_pose.q.toRotationMatrix().eulerAngles(0, 1, 2);
-  Eigen::Vector3f rpy_current = g_current_pose.q.toRotationMatrix().eulerAngles(0, 1, 2);
-  pose_error_msg.roll = rpy_desired[0] - rpy_current[0];
-  pose_error_msg.pitch = rpy_desired[1] - rpy_current[1];
-  pose_error_msg.yaw = rpy_desired[2] - rpy_current[2];
+  Eigen::Quaternionf q_diff = g_current_pose.q * g_desired_pose.q.inverse();
+  Eigen::Vector3f rpy_diff = q_diff.toRotationMatrix().eulerAngles(0, 1, 2);
+  pose_error_msg.roll = rpy_diff[0];
+  pose_error_msg.pitch = rpy_diff[1];
+  pose_error_msg.yaw = rpy_diff[2];
   g_pose_error_pub->publish(pose_error_msg);
 }
 template <class T>
