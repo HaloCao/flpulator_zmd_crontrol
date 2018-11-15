@@ -316,6 +316,7 @@ int main(int argc, char **argv)
   // pub_angular_acc_tracker = nh.advertise<geometry_msgs::Vector3>("vive_acc_angular", 10);
 
   pub_uav_state = nh.advertise<flypulator_common_msgs::UavStateStamped>("meas_state", 10);
+  pub_uav_state_rpy = nh.advertise<flypulator_common_msgs::UavStateRPYStamped>("meas_state_rpy", 10);
   ROS_INFO("running");
   // ros::Subscriber sub_pose1 = nh.subscribe<nav_msgs::Odometry>("/vive/LHR_08DDEDC9_odom", 100, vive_odom_callback);
   ros::Subscriber sub_pose1 = nh.subscribe<nav_msgs::Odometry>("odom_msg", 100, vive_odom_callback);

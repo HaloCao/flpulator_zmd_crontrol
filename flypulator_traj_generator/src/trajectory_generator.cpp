@@ -1,3 +1,9 @@
+/**
+ * @file trajectory_generator.cpp
+ * @brief calculate trajectory
+ *
+ */
+
 #include "flypulator_traj_generator/trajectory_generator.h"
 
 // create Trajectory and send it periodically
@@ -50,15 +56,15 @@ bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& 
         a[dim][0] = pose_start[dim];
         a[dim][1] = 0.0f;
         a[dim][2] = 0.0f;
-        a[dim][3] = 10 * (pose_end[dim] - pose_start[dim]) / pow(duration, 3);
-        a[dim][4] = -15 * (pose_end[dim] - pose_start[dim]) / pow(duration, 4);
-        a[dim][5] = 6 * (pose_end[dim] - pose_start[dim]) / pow(duration, 5);
+        a[dim][3] = 10 * (pose_end[dim] - pose_start[dim]) / powf(duration, 3);
+        a[dim][4] = -15 * (pose_end[dim] - pose_start[dim]) / powf(duration, 4);
+        a[dim][5] = 6 * (pose_end[dim] - pose_start[dim]) / powf(duration, 5);
       }
       ROS_INFO("Start polynomial trajectory..");
       break;
 
     default:
-      ROS_ERROR("Polynom type not well defined! Must follow enumeration");
+      ROS_ERROR("trajectory type not well defined! Must follow enumeration");
   }
 
   const ros::Time t_start = ros::Time::now();  // Take ros time - sync with "use_sim_time" parameter over /clock topic
@@ -69,7 +75,7 @@ bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& 
   ROS_DEBUG("Start Time: %f", t.toSec());
 
   // take update rate from parameter file
-  float update_rate;
+  double update_rate;
   if (ros::param::get("/trajectory/update_rate", update_rate))
   {
     ROS_DEBUG("Update Rate = %f from parameter server", update_rate);
@@ -77,7 +83,7 @@ bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& 
   else
   {
     ROS_DEBUG("Update Rate = 10, default value (/trajectory/update_rate not available on parameter server)");
-    update_rate = 10.0f;
+    update_rate = 10.0;
   }
 
   ros::Rate r(update_rate);
@@ -90,15 +96,15 @@ bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& 
     if (traj_type == trajectory_types::Linear || traj_type == trajectory_types::Polynomial)
     {
       // linear trajectory is also a polynomial trajectory with different coeffiencts (set before)
-      float dt = (float)(t.toSec() - t_start.toSec());
+      float dt = float(t.toSec() - t_start.toSec());
       for (int dim = 0; dim < 6; dim++)
       {
-        pose_current[dim] = a[dim][0] + a[dim][1] * dt + a[dim][2] * pow(dt, 2) + a[dim][3] * pow(dt, 3) +
-                            a[dim][4] * pow(dt, 4) + a[dim][5] * pow(dt, 5);
-        vel_current[dim] = a[dim][1] + 2 * a[dim][2] * dt + 3 * a[dim][3] * pow(dt, 2) + 4 * a[dim][4] * pow(dt, 3) +
-                           5 * a[dim][5] * pow(dt, 4);
+        pose_current[dim] = a[dim][0] + a[dim][1] * dt + a[dim][2] * powf(dt, 2) + a[dim][3] * powf(dt, 3) +
+                            a[dim][4] * powf(dt, 4) + a[dim][5] * powf(dt, 5);
+        vel_current[dim] = a[dim][1] + 2 * a[dim][2] * dt + 3 * a[dim][3] * powf(dt, 2) + 4 * a[dim][4] * powf(dt, 3) +
+                           5 * a[dim][5] * powf(dt, 4);
         acc_current[dim] =
-            2 * a[dim][2] + 6 * a[dim][3] * dt + 12 * a[dim][4] * pow(dt, 2) + 20 * a[dim][5] * pow(dt, 3);
+            2 * a[dim][2] + 6 * a[dim][3] * dt + 12 * a[dim][4] * powf(dt, 2) + 20 * a[dim][5] * powf(dt, 3);
       }
     }
     // add other trajectory types here
