@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <vector>
 //include for dynamic reconfigure
-#include <flypulator_mavros/offb_parameterConfig.h>
+#include <flypulator_physical/offb_parameterConfig.h>
 #include <dynamic_reconfigure/server.h>
 //include message structs
 #include <mavros_msgs/SetMode.h>
