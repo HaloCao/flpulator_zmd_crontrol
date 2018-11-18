@@ -16,6 +16,7 @@ add_message_files(FILES
   UavStateStamped.msg
   PoseXYZRPYStamped.msg
   UavStateRPYStamped.msg
+  DelayStamped.msg
 )
 
 generate_messages(DEPENDENCIES std_msgs sensor_msgs geometry_msgs)

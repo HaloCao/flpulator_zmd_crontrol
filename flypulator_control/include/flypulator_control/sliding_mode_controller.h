@@ -33,7 +33,8 @@ public:
 
   // callback for dynamic reconfigure, sets dynamic parameters (controller gains)
   void configCallback(flypulator_control::ism_parameterConfig& config, uint32_t level);
-float getDeadband(); 
+  float getDeadband();
+
 private:
   float mass_;
   Eigen::Matrix3f inertia_;
@@ -80,7 +81,9 @@ private:
   ros::Time t_current_;
   ros::Duration t_delta_;
   bool control_started_;
-float omega_deadband_;
+  float omega_deadband_;
+  float anti_windup_threshold_T;
+  float anti_windup_threshold_R;
   // sign function without zero (sgn(x) <0 or sgn(x) > 0, there is NO x such that sgn(x) = 0)
   float sgn(float x)
   {
