@@ -42,6 +42,7 @@ void publishDelay()
   delay_msg.wrenchToRotorCmd = t3_step.toSec() - t2_step.toSec();
   delay_msg.rotorCmdToActuatorCmd = t4_step.toSec() - t3_step.toSec();
   delay_msg.actuatorCmdToPwm = t5_step.toSec() - t4_step.toSec();
+  delay_msg.desiredPoseToPwm = t5_step.toSec() - t1_step.toSec();
 
   g_delay_pub->publish(delay_msg);
 }
