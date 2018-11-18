@@ -1,57 +1,127 @@
 /**
  * @file latency_node.cpp
- * A node to test the latency between different signals in the control system
+ * A node to test the latency between different points in the control system
  */
 #include <ros/ros.h>
 // necessary includes are performed in header
 #include "latency_node.h"
 ros::Publisher* g_trajectory_pub;
-int last_motor_pwm_;
-int current_motor_pwm_;
-int buffer = 50;  // empirical value to filter out fluctuations in rpm.
-ros::Time last_rpm_time;
-ros::Time current_rpm_time;
+ros::Publisher* g_delay_pub;
+
+// std::vector<float> delay_times;
 ros::Time t0;
-float current_wrench_z_;
+ros::Time t1_step;
+ros::Time t2_step;
+ros::Time t3_step;
+ros::Time t4_step;
+ros::Time t5_step;
 
+ros::Time last_time_pose;
+ros::Time last_time_wrench;
+ros::Time last_time_rotor;
+ros::Time last_time_actuator;
+ros::Time last_time_motor;
+
+float last_desired_pose_z_;
 float last_wrench_z_;
+float last_rotor_vel;
+float last_actuator_ctrl;
+int last_motor_pwm_;
 
-float current_desired_pose_z_;
-float last_desired_pose_z;
-bool end_of_loop;
 bool high = false;
-
-void motorCallback(const mavros_msgs::RCOut::ConstPtr& msg)
-{  // detect step response
-  current_motor_pwm_ = msg->channels[0];
-  current_rpm_time = msg->header.stamp;
-
-  if (current_motor_pwm_ > (last_motor_pwm_ + buffer))
-  {
-    end_of_loop = true;
-    ROS_INFO("motor step detected. current rpm : %i last rpm %i", current_motor_pwm_, last_motor_pwm_);
-    ROS_INFO("motor step detected. Duration: %f", (current_rpm_time.toSec() - last_rpm_time.toSec()));
-    ROS_INFO("delay: %f", (current_rpm_time.toSec() - t0.toSec()));
-  }
-
-  last_motor_pwm_ = current_motor_pwm_;
-  last_rpm_time = current_rpm_time;
-}
-
-void wrenchCallback(const geometry_msgs::WrenchStamped::ConstPtr& msg)
-{  // detect step response
-   // store variable
-   // ROS_INFO("wrench callback");
-}
-
-void desired_poseCallback(const flypulator_common_msgs::UavStateRPYStamped::ConstPtr& msg)
-{  // detect step response
-
-  // ROS_INFO("desired pose callback");
-}
+float last_step_z;
 
 void publishDelay()
-{  // publish the delay of the messages.
+{
+  flypulator_common_msgs::DelayStamped delay_msg;
+  delay_msg.header.stamp = ros::Time::now();
+  float start = t0.toSec();
+
+  delay_msg.trajToDesiredPose = t1_step.toSec() - start;
+  delay_msg.desiredPoseToWrench = t2_step.toSec() - t1_step.toSec();
+  delay_msg.wrenchToRotorCmd = t3_step.toSec() - t2_step.toSec();
+  delay_msg.rotorCmdToActuatorCmd = t4_step.toSec() - t3_step.toSec();
+  delay_msg.actuatorCmdToPwm = t5_step.toSec() - t4_step.toSec();
+
+  g_delay_pub->publish(delay_msg);
+}
+
+
+void desired_poseCallback(const flypulator_common_msgs::UavStateRPYStamped::ConstPtr& msg)
+{
+  float current_desired_pose_z_ = msg->pose.z;
+  ros::Time t1 = msg->header.stamp;
+  if (current_desired_pose_z_ != last_desired_pose_z_)
+  {
+    t1_step = last_time_pose;
+    ROS_INFO("flank in des pose");
+  }
+  last_desired_pose_z_ = current_desired_pose_z_;
+  last_time_pose = t1;
+}
+void wrenchCallback(const geometry_msgs::WrenchStamped::ConstPtr& msg)
+{  // detect step response
+  float buffer = 1.0;
+  ros::Time t2 = msg->header.stamp;
+  float current_wrench_z_ = msg->wrench.force.z;
+  // ROS_INFO("delay desired pose - wrench: %f \n", (t2.toSec() - t1.toSec()));
+  if ((last_wrench_z_ + buffer) < current_wrench_z_ | (last_wrench_z_ - buffer) > current_wrench_z_)
+  {
+    ROS_INFO("positive flanke wrench \n");
+    t2_step = last_time_wrench;
+  }
+  last_wrench_z_ = current_wrench_z_;
+  last_time_wrench = t2;
+}
+
+void rotorCallback(const flypulator_common_msgs::RotorVelStamped::ConstPtr& msg)
+{
+  float buffer = 1.0;
+  float current_rotor_vel = msg->velocity[1];
+
+  ros::Time t3 = msg->header.stamp;
+
+  if ((last_rotor_vel + buffer) < current_rotor_vel | (last_rotor_vel - buffer) > current_rotor_vel)
+  {
+    t3_step = last_time_rotor;
+    ROS_INFO("flank in rotor vel");
+  }
+  last_rotor_vel = current_rotor_vel;
+  last_time_rotor = t3;
+}
+
+void actuatorCtrlCallback(const mavros_msgs::ActuatorControl::ConstPtr& msg)
+{
+  float buffer = 0.05;
+  float current_actuator_ctrl = msg->controls[1];
+  ros::Time t4 = msg->header.stamp;
+
+  if ((last_actuator_ctrl + buffer) < current_actuator_ctrl | (last_actuator_ctrl - buffer) > current_actuator_ctrl)
+  {
+    t4_step = last_time_actuator;
+    ROS_INFO("flank in actuator control");
+  }
+  last_actuator_ctrl = current_actuator_ctrl;
+  last_time_actuator = t4;
+}
+
+void motorCallback(const mavros_msgs::RCOut::ConstPtr& msg)
+{  
+  int buffer = 10;
+  int current_motor_pwm = msg->channels[1];
+  ros::Time t5 = msg->header.stamp;
+
+  if (current_motor_pwm > (last_motor_pwm_ + buffer) | current_motor_pwm < (last_motor_pwm_ - buffer))
+  {
+    //  ROS_INFO("motor step detected. current rpm : %i last rpm %i", current_motor_pwm_, last_motor_pwm_);
+    // ROS_INFO("motor step detected. Duration: %f", (t5.toSec() - last_rpm_time.toSec()));
+    // ROS_INFO("delay from desired pose: %f", (last_rpm_time.toSec() - t1_step.toSec()));
+    // ROS_INFO("delay from wrench: %f \n", (last_rpm_time.toSec() - t2_step.toSec()));
+    t5_step = last_time_motor;
+    publishDelay();
+  }
+  last_motor_pwm_ = current_motor_pwm;
+  last_time_motor = t5;
 }
 
 void sendStep(float step_z)
@@ -100,59 +170,72 @@ void sendStep(float step_z)
   accelerations_msg.linear = p_ddot_msg;
   accelerations_msg.angular = omega_dot_msg;
 
-  ros::Duration traj_duration(0, 0);
   // pack toghether in trajectory message
+
+  ros::Duration traj_duration(0, 0);
   trajectory_msgs::MultiDOFJointTrajectoryPoint trajectory_msg;
   trajectory_msg.transforms.push_back(transform_msg);
   trajectory_msg.velocities.push_back(velocities_msg);
   trajectory_msg.accelerations.push_back(accelerations_msg);
   trajectory_msg.time_from_start = traj_duration;
-  t0 = ros::Time::now();
-  end_of_loop = false;
+  if (last_step_z != step_z)
+  {
+    last_step_z = step_z;
+    t0 = ros::Time::now();
+  }
+
   g_trajectory_pub->publish(trajectory_msg);
 }
 
+void timerCallback(const ros::TimerEvent& event)
+{
+  if (high)
+    high = false;
+  else
+    high = true;
+}
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "latency_node");
   ros::NodeHandle nh;
 
   // add subscribers
-  ros::Subscriber motor_sub = nh.subscribe<mavros_msgs::RCOut>("/mavros/rc/out", 1, motorCallback);
-
-  ros::Subscriber wrench_sub =
-      nh.subscribe<geometry_msgs::WrenchStamped>("/drone/controller_wrench", 1, wrenchCallback);
 
   ros::Subscriber desired_pose_sub =
       nh.subscribe<flypulator_common_msgs::UavStateRPYStamped>("/drone/desired_pose", 1, desired_poseCallback);
 
+  ros::Subscriber wrench_sub =
+      nh.subscribe<geometry_msgs::WrenchStamped>("/drone/controller_wrench", 1, wrenchCallback);
+
+  ros::Subscriber rotor_sub =
+      nh.subscribe<flypulator_common_msgs::RotorVelStamped>("/drone/rotor_cmd", 1, rotorCallback);
+
+  ros::Subscriber actuatorCtrl_sub =
+      nh.subscribe<mavros_msgs::ActuatorControl>("/mavros/actuator_control", 1, actuatorCtrlCallback);
+
+  ros::Subscriber motor_sub = nh.subscribe<mavros_msgs::RCOut>("/mavros/rc/out", 1, motorCallback);
+
   // add publisher for delay msg
+  ros::Publisher delay_pub = nh.advertise<flypulator_common_msgs::DelayStamped>("/drone/delay", 10);
+  g_delay_pub = &delay_pub;
+
   ros::Publisher trajectory_pub = nh.advertise<trajectory_msgs::MultiDOFJointTrajectoryPoint>("trajectory", 10);
   g_trajectory_pub = &trajectory_pub;
 
-  // add service client for trajectory
-  //    ros::ServiceClient trajectory_client = nh.serviceClient<mavros_msgs::CommandBool>("trajectory");
-  // set up callbacks for dynamic reconfigure
-
+  ros::Timer timer = nh.createTimer(ros::Duration(1.0), timerCallback);
   ros::Rate loop_rate(100);
-
-  ros::Time last_request = ros::Time::now();
-  //  loop to handle vehicle states
 
   while (ros::ok())
   {
-    if (end_of_loop)
+    if (high)
     {
-      if (high)
-      {
-        sendStep(200.0);
-        high = false;
-      }
-      else
-      {
-        sendStep(0.0);
-      }
+      sendStep(200.0);
     }
+    else
+    {
+      sendStep(0.0);
+    }
+
     ros::spinOnce();
     loop_rate.sleep();
   }

@@ -156,7 +156,8 @@ target_link_libraries(offboard_node  ${catkin_LIBRARIES})
 target_link_libraries(latency_node  ${catkin_LIBRARIES})
 
 
-add_dependencies(offboard_node  latency_node ${PROJECT_NAME}_gencfg ${catkin_EXPORTED_TARGETS})
+add_dependencies(offboard_node  ${PROJECT_NAME}_gencfg ${catkin_EXPORTED_TARGETS})
+add_dependencies(latency_node ${PROJECT_NAME}_gencfg ${catkin_EXPORTED_TARGETS})
 #############
 ## Install ##
 #############
