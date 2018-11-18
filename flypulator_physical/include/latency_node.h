@@ -5,15 +5,14 @@
 #include <ros/ros.h>
 #include <stdlib.h>
 //#include <vector>
-// include for dynamic reconfigure
-//#include <flypulator_mavros/offb_parameterConfig.h>
-//#include <dynamic_reconfigure/server.h>
 // include message structs
 #include <geometry_msgs/WrenchStamped.h>                   //for controller_wrench
 #include <trajectory_msgs/MultiDOFJointTrajectoryPoint.h>  //for trajectory
-//#include <std_msgs/> // for delay
+#include <flypulator_common_msgs/DelayStamped.h>
 #include <mavros_msgs/RCOut.h>                          //for motor PWM signals
+#include <mavros_msgs/ActuatorControl.h>                          //for motor PWM signals
 #include <flypulator_common_msgs/UavStateRPYStamped.h>  // for desired_pose
+#include <flypulator_common_msgs/RotorVelStamped.h>  // for desired_pose
 
 class Latency
 {
@@ -27,6 +26,7 @@ private:
 
   void desired_poseCallback(const flypulator_common_msgs::UavStateRPYStamped::ConstPtr& msg);
 
+void publishDelay();
   int last_motor_pwm_;
   int current_motor_pwm_;
 

@@ -19,36 +19,6 @@ ros::Publisher* g_control_wrench_pub;
 
 void computeControlOutputAndPublish()
 {
-  Eigen::Matrix<float, 6, 1> control_wrench;
-  // compute spinning rates
-  ROS_DEBUG("Compute Control Output..");
-  g_drone_controller_p->computeControlOutput(g_desired_pose, g_current_pose, g_spinning_rates);
-  ROS_DEBUG("Control Output computed! Prepare rotor cmd message...");
-  control_wrench = g_drone_controller_p->getControlWrench();
-  // build message
-  flypulator_common_msgs::RotorVelStamped msg;
-  msg.header.stamp = ros::Time::now();
-  for (int i = 0; i < 6; i++)
-  {
-    msg.velocity.push_back(g_spinning_rates(i, 0));
-    msg.name.push_back(std::string("blade_joint") + std::to_string(i));
-  }
-  ROS_DEBUG("Send rotor cmd message..");
-  g_rotor_cmd_pub->publish(msg);
-  // end of controller block. setting flag.
-  g_controller_running = false;
-  // ROS_INFO("running = false;");
-
-  geometry_msgs::WrenchStamped wrench_msg;
-  wrench_msg.header.stamp = ros::Time::now();
-  wrench_msg.wrench.force.x = control_wrench(0, 0);
-  wrench_msg.wrench.force.y = control_wrench(1, 0);
-  wrench_msg.wrench.force.z = control_wrench(2, 0);
-  wrench_msg.wrench.torque.x = control_wrench(3, 0);
-  wrench_msg.wrench.torque.y = control_wrench(4, 0);
-  wrench_msg.wrench.torque.z = control_wrench(5, 0);
-  g_control_wrench_pub->publish(wrench_msg);
-
   flypulator_common_msgs::UavStateRPYStamped g_desired_pose_msg;
   Eigen::Vector3f desired_rpy = g_desired_pose.q.toRotationMatrix().eulerAngles(0, 1, 2);
   g_desired_pose_msg.header.stamp = ros::Time::now();
@@ -86,6 +56,37 @@ void computeControlOutputAndPublish()
   pose_error_msg.pitch = rpy_diff[1];
   pose_error_msg.yaw = rpy_diff[2];
   g_pose_error_pub->publish(pose_error_msg);
+
+
+  Eigen::Matrix<float, 6, 1> control_wrench;
+  // compute spinning rates
+  ROS_DEBUG("Compute Control Output..");
+  g_drone_controller_p->computeControlOutput(g_desired_pose, g_current_pose, g_spinning_rates);
+  ROS_DEBUG("Control Output computed! Prepare rotor cmd message...");
+  control_wrench = g_drone_controller_p->getControlWrench();
+  // build message
+  flypulator_common_msgs::RotorVelStamped msg;
+  msg.header.stamp = ros::Time::now();
+  for (int i = 0; i < 6; i++)
+  {
+    msg.velocity.push_back(g_spinning_rates(i, 0));
+    msg.name.push_back(std::string("blade_joint") + std::to_string(i));
+  }
+  ROS_DEBUG("Send rotor cmd message..");
+  g_rotor_cmd_pub->publish(msg);
+  // end of controller block. setting flag.
+  g_controller_running = false;
+  // ROS_INFO("running = false;");
+
+  geometry_msgs::WrenchStamped wrench_msg;
+  wrench_msg.header.stamp = ros::Time::now();
+  wrench_msg.wrench.force.x = control_wrench(0, 0);
+  wrench_msg.wrench.force.y = control_wrench(1, 0);
+  wrench_msg.wrench.force.z = control_wrench(2, 0);
+  wrench_msg.wrench.torque.x = control_wrench(3, 0);
+  wrench_msg.wrench.torque.y = control_wrench(4, 0);
+  wrench_msg.wrench.torque.z = control_wrench(5, 0);
+  g_control_wrench_pub->publish(wrench_msg);
 }
 template <class T>
 T GetMax(T a, T b)

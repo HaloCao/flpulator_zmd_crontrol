@@ -1,20 +1,22 @@
 #include "flypulator_control/sliding_mode_controller.h"
-  // callback for dynamic reconfigure, sets dynamic parameters (controller gains)
+// callback for dynamic reconfigure, sets dynamic parameters (controller gains)
 void SlidingModeController::configCallback(flypulator_control::ism_parameterConfig& config, uint32_t level)
 {
-    // set logger level
-//   if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug))
-//     ros::console::notifyLoggerLevelsChanged();
+  // set logger level
+  //   if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug))
+  //     ros::console::notifyLoggerLevelsChanged();
 
-
-  ROS_INFO("Reconfigure Request: \n lambda_T = %f, \n k_T \t  = %f, \n k_T_I \t  = %f, \n lambda_R = %f, \n k_R \t  = "
-           "%f, \n k_R_I \t  = %f, \n deadband \t = %f",
-           config.ism_lambda_T, config.ism_k_T, config.ism_k_T_I, config.ism_lambda_R, config.ism_k_R,
-           config.ism_k_R_I, config.w_deadband);
+  ROS_INFO("Reconfigure Request: \n lambda_T = %f, \n k_T \t  = %f, \n k_T_I \t  = %f, \n I_max_R "
+           "\t  = %f, \n lambda_R = %f, \n k_R \t  = "
+           "%f, \n k_R_I \t  = %f, \n I_max_T \t  = %f, \n deadband \t = %f",
+           config.ism_lambda_T, config.ism_k_T, config.ism_k_T_I, config.ism_I_max_R, config.ism_lambda_R,
+           config.ism_k_R, config.ism_k_R_I, config.ism_I_max_T, config.w_deadband);
   // set new values to class variables
-  lambda_T_ = (float)config.ism_lambda_T;
-  lambda_R_ = (float)config.ism_lambda_R;
-  omega_deadband_ = config.w_deadband;
+  lambda_T_ = float(config.ism_lambda_T);
+  lambda_R_ = float(config.ism_lambda_R);
+  omega_deadband_ = float(config.w_deadband);
+  anti_windup_threshold_T = float(config.ism_I_max_T);
+  anti_windup_threshold_R = float(config.ism_I_max_R);
   K_T_ << config.ism_k_T, 0, 0, 0, config.ism_k_T, 0, 0, 0, config.ism_k_T;
   K_T_I_ << config.ism_k_T_I, 0, 0, 0, config.ism_k_T_I, 0, 0, 0, config.ism_k_T_I;
   K_R_ << config.ism_k_R, 0, 0, 0,  // K_R_ is 4x4
@@ -57,6 +59,14 @@ void SlidingModeController::computeControlForceTorqueInput(const PoseVelocityAcc
   {
     s_T_I_ = s_T_ - integral_T_;
     integral_T_ = integral_T_ - 2.0f / M_PI * K_T_ * (atan(s_T_.array())).matrix() * t_delta_.toSec();
+
+    // anti-windup
+    for (int i = 0; i < 3; ++i)
+    {
+      if (integral_T_(i) > anti_windup_threshold_T)
+        integral_T_(i) = anti_windup_threshold_T;
+    }
+
     u_T_I_ = -2 / M_PI * K_T_I_ * (atan(s_T_I_.array())).matrix();
   }
   // provide output through pass by reference
@@ -131,6 +141,12 @@ void SlidingModeController::computeControlForceTorqueInput(const PoseVelocityAcc
     // calculate integral sliding surface
     s_R_I_ = s_R_ + integral_R_;
     integral_R_ = integral_R_ + 2.0f / M_PI * K_R_ * (atan(s_R_.array())).matrix() * t_delta_.toSec();
+    // anti-windup
+    for (int i = 0; i < 4; ++i)
+    {
+      if (integral_R_(i) > anti_windup_threshold_R)
+        integral_R_(i) = anti_windup_threshold_R;
+    }
     // calculate integral output
     u_R_I_ = -K_R_I_ * 2.0f / M_PI *
              (atan((0.5f * (matrix_g_transposed_ * inertia_inv_).transpose() * s_R_I_).array())).matrix();
@@ -148,5 +164,5 @@ void SlidingModeController::computeControlForceTorqueInput(const PoseVelocityAcc
 };
 float SlidingModeController::getDeadband()
 {
-    return omega_deadband_;
+  return omega_deadband_;
 }
