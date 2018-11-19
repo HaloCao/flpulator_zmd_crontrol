@@ -10,6 +10,7 @@ project(flypulator_traj_generator)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
+  rviz
   message_generation
   geometry_msgs
 )
@@ -17,6 +18,23 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(Eigen3 REQUIRED)
+
+## This plugin includes Qt widgets, so we must include Qt.
+## We'll use the version that rviz used so they are compatible.
+if(rviz_QT_VERSION VERSION_LESS "5")
+  message(STATUS "Using Qt4 based on the rviz_QT_VERSION: ${rviz_QT_VERSION}")
+  find_package(Qt4 ${rviz_QT_VERSION} EXACT REQUIRED QtCore QtGui)
+  ## pull in all required include dirs, define QT_LIBRARIES, etc.
+  include(${QT_USE_FILE})
+else()
+  message(STATUS "Using Qt5 based on the rviz_QT_VERSION: ${rviz_QT_VERSION}")
+  find_package(Qt5 ${rviz_QT_VERSION} EXACT REQUIRED Core Widgets)
+  ## make target_link_libraries(${QT_LIBRARIES}) pull in all required dependencies
+  set(QT_LIBRARIES Qt5::Widgets)
+endif()
+
+## Q_SLOTS and Q_Signals may conflict with boost signals, so define QT_NO_KEYWORDS here.
+add_definitions(-DQT_NO_KEYWORDS)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -111,6 +129,10 @@ catkin_package(
 #  DEPENDS system_lib
 )
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+## This setting causes Qt's "MOC" generation to happen automatically.
+set(CMAKE_AUTOMOC ON)
+
 ###########
 ## Build ##
 ###########
@@ -121,6 +143,13 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
+)
+
+## Here we specify the list of source files.
+## The generated MOC files are included automatically as headers.
+set(SRC_FILES
+  src/trajectory_designer.cpp
+  src/main.cpp
 )
 
 ## Declare a C++ library
@@ -136,8 +165,8 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
- add_executable(trajectory_generator_server src/trajectory_generator_server.cpp src/trajectory_generator.cpp)
-
+## add_executable(trajectory_generator_server src/trajectory_generator_server.cpp src/trajectory_generator.cpp)
+ add_executable(trajectory_designer ${SRC_FILES})
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -147,14 +176,15 @@ include_directories(
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(trajectory_generator_server flypulator_traj_generator_gencpp)
+## add_dependencies(trajectory_generator_server flypulator_traj_generator_gencpp)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
 
-target_link_libraries(trajectory_generator_server ${catkin_LIBRARIES}) # follow ros tutorial "Write Service Client"
+##target_link_libraries(trajectory_generator_server ${catkin_LIBRARIES}) # follow ros tutorial "Write Service Client"
+target_link_libraries(trajectory_designer ${QT_LIBRARIES} ${catkin_LIBRARIES})
 
 #############
 ## Install ##
@@ -162,6 +192,7 @@ target_link_libraries(trajectory_generator_server ${catkin_LIBRARIES}) # follow 
 
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
+install(TARGETS trajectory_designer DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
