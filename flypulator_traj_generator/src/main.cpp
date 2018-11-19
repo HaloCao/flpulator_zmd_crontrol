@@ -1,5 +1,6 @@
 /*
- * The main() function initializes ROS, creates a QApplication, creates the top-level widget (of type "TrajectoryDesigner"), shows it, and runs the Qt event loop.
+ * The main() function initializes ROS, creates a QApplication, creates the top-level widget (of type
+ * "TrajectoryDesigner"), shows it, and runs the Qt event loop.
  * @author Nils Dunkelberg
  */
 
@@ -10,20 +11,20 @@
 
 #include "trajectory_designer.h"
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-    if( !ros::isInitialized() )
-    {
-        ros::init( argc, argv, "trajectory_designer", ros::init_options::AnonymousName );
-    }
+  if (!ros::isInitialized())
+  {
+    ros::init(argc, argv, "trajectory_designer", ros::init_options::AnonymousName);
+  }
 
-    QApplication app( argc, argv );
+  QApplication app(argc, argv);
 
-    TrajectoryDesigner* td = new TrajectoryDesigner();
-    td->setWindowTitle("Flypulator - Trajectory Designer");
-    td->showMaximized();
+  TrajectoryDesigner* td = new TrajectoryDesigner();
+  td->setWindowTitle("Flypulator - Trajectory Designer");
+  td->showMaximized();
 
-    app.exec();
+  app.exec();
 
-    delete td;
+  delete td;
 }
