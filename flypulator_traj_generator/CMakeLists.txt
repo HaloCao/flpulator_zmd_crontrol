@@ -129,9 +129,6 @@ catkin_package(
 #  DEPENDS system_lib
 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-## This setting causes Qt's "MOC" generation to happen automatically.
-set(CMAKE_AUTOMOC ON)
 
 ###########
 ## Build ##
@@ -145,11 +142,17 @@ include_directories(
   ${EIGEN3_INCLUDE_DIRS}
 )
 
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+## This setting causes Qt's "MOC" generation to happen automatically.
+set(CMAKE_AUTOMOC ON)
+
 ## Here we specify the list of source files.
 ## The generated MOC files are included automatically as headers.
 set(SRC_FILES
-  src/trajectory_designer.cpp
   src/main.cpp
+  src/trajectory_designer.cpp
+  include/trajectory_designer.h
 )
 
 ## Declare a C++ library

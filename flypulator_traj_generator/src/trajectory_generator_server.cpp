@@ -1,7 +1,7 @@
 #include "ros/ros.h"
-#include "flypulator_traj_generator/linear_trajectory.h"
-#include "flypulator_traj_generator/polynomial_trajectory.h"
-#include "flypulator_traj_generator/trajectory_generator.h"
+#include "linear_trajectory.h"
+#include "polynomial_trajectory.h"
+#include "trajectory_generator.h"
 // add additional service headers here
 
 // global variable for trajectory generator class object

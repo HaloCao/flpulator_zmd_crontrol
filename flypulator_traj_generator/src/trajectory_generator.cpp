@@ -1,4 +1,4 @@
-#include "flypulator_traj_generator/trajectory_generator.h"
+#include "trajectory_generator.h"
 
 // create Trajectory and send it periodically
 bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& x_start,
