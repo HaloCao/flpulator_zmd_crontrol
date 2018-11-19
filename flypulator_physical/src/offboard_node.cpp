@@ -11,6 +11,7 @@
 // internal variables:
 mavros_msgs::State current_state;
 mavros_msgs::State last_state;
+ros::Publisher* g_pub;
 float input[6];
 mavros_msgs::CommandBool arm_cmd;
 bool last_arming_state;
@@ -34,6 +35,7 @@ void stateMessageCallback(const mavros_msgs::State::ConstPtr &msg)
 }
 void controlMessageCallback(const flypulator_common_msgs::RotorVelStamped msg)
 {
+  mavros_msgs::ActuatorControl ac_msg;
   control_active = true;  // to prevent use of test parameters when flying.
 
   // The matching of motors to input channels is dependent on the wiring on the UAV and the
@@ -45,6 +47,17 @@ void controlMessageCallback(const flypulator_common_msgs::RotorVelStamped msg)
   input[3] = scaleControlOutputToActuators(msg.velocity[3]);
   input[4] = scaleControlOutputToActuators(msg.velocity[5]);
   input[5] = scaleControlOutputToActuators(msg.velocity[2]);
+  ac_msg.header.stamp = ros::Time::now();
+
+  for (int i = 0; i < 6; i++)
+  {
+    if (current_state.armed)
+      ac_msg.controls[i] = input[i];
+    else
+      ac_msg.controls[i] = -1.0;
+  }
+
+  g_pub->publish(ac_msg);
 }
 
 void dynamicParamCallback(flypulator_mavros::offb_parameterConfig &config, uint32_t level)
@@ -95,6 +108,8 @@ int main(int argc, char **argv)
 
   // add publisher for actuator commands
   ros::Publisher pub = nh.advertise<mavros_msgs::ActuatorControl>("mavros/actuator_control", 1);
+  g_pub = &pub;
+  
 
   // add service clients for arming and mode setting
   ros::ServiceClient arming_client = nh.serviceClient<mavros_msgs::CommandBool>("mavros/cmd/arming");
@@ -107,16 +122,10 @@ int main(int argc, char **argv)
 
   // the rate must be higher than 2 Hz
   ros::Rate loop_rate(100);
-  ros::Rate wait_rate(10);
   mavros_msgs::SetMode offb_set_mode;
   offb_set_mode.request.custom_mode = "OFFBOARD";
-  mavros_msgs::ActuatorControl ac_msg;
 
-  ros::Time last_request = ros::Time::now();
   //  loop to handle vehicle states
-
-  int signal_out = 1;
-  int flank = 20;
 
   while (ros::ok())
   {
@@ -153,22 +162,18 @@ int main(int argc, char **argv)
       }
     }
 
-    ac_msg.header.stamp = ros::Time::now();
+    /* ac_msg.header.stamp = ros::Time::now(); */
 
-    for (int i = 0; i < 6; i++)
-    {
-      if (test_signal)
-        ac_msg.controls[i] = signal_out;
-      else
-      {
-        if (current_state.armed)
-          ac_msg.controls[i] = input[i];
-        else
-          ac_msg.controls[i] = -1.0;
-      }
-    }
+    /* for (int i = 0; i < 6; i++) */
+    /* { */
+    /*     if (current_state.armed) */
+    /*       ac_msg.controls[i] = input[i]; */
+    /*     else */
+    /*       ac_msg.controls[i] = -1.0; */
 
-    pub.publish(ac_msg);
+    /* } */
+
+    /* pub.publish(ac_msg); */
     ros::spinOnce();
     loop_rate.sleep();
   }
