@@ -54,7 +54,7 @@ void desired_poseCallback(const flypulator_common_msgs::UavStateRPYStamped::Cons
   if (current_desired_pose_z_ != last_desired_pose_z_)
   {
     t1_step = last_time_pose;
-    ROS_INFO("flank in des pose");
+    ROS_INFO("step response des_pose");
   }
   last_desired_pose_z_ = current_desired_pose_z_;
   last_time_pose = t1;
@@ -67,7 +67,7 @@ void wrenchCallback(const geometry_msgs::WrenchStamped::ConstPtr& msg)
   // ROS_INFO("delay desired pose - wrench: %f \n", (t2.toSec() - t1.toSec()));
   if ((last_wrench_z_ + buffer) < current_wrench_z_ | (last_wrench_z_ - buffer) > current_wrench_z_)
   {
-    ROS_INFO(" flanke in  wrench ");
+    ROS_INFO("step response wrench ");
     t2_step = last_time_wrench;
   }
   last_wrench_z_ = current_wrench_z_;
@@ -76,7 +76,7 @@ void wrenchCallback(const geometry_msgs::WrenchStamped::ConstPtr& msg)
 
 void rotorCallback(const flypulator_common_msgs::RotorVelStamped::ConstPtr& msg)
 {
-  float buffer = 10.0;
+  float buffer = 30.0;
   float current_rotor_vel = msg->velocity[1];
 
   ros::Time t3 = msg->header.stamp;
@@ -84,7 +84,7 @@ void rotorCallback(const flypulator_common_msgs::RotorVelStamped::ConstPtr& msg)
   if ((last_rotor_vel + buffer) < current_rotor_vel | (last_rotor_vel - buffer) > current_rotor_vel)
   {
     t3_step = last_time_rotor;
-    ROS_INFO("flank in rotor vel");
+    ROS_INFO("step response rotor_vel. last :%f current; %f", last_rotor_vel, current_rotor_vel);
   }
   last_rotor_vel = current_rotor_vel;
   last_time_rotor = t3;
@@ -99,7 +99,7 @@ void actuatorCtrlCallback(const mavros_msgs::ActuatorControl::ConstPtr& msg)
   if ((last_actuator_ctrl + buffer) < current_actuator_ctrl | (last_actuator_ctrl - buffer) > current_actuator_ctrl)
   {
     t4_step = last_time_actuator;
-    ROS_INFO("flank in actuator control");
+    ROS_INFO("step response actuator control");
   }
   last_actuator_ctrl = current_actuator_ctrl;
   last_time_actuator = t4;
@@ -113,7 +113,7 @@ void motorCallback(const mavros_msgs::RCOut::ConstPtr& msg)
 
   if (current_motor_pwm > (last_motor_pwm_ + buffer) | current_motor_pwm < (last_motor_pwm_ - buffer))
   {
-    ROS_INFO("motor step detected. current rpm : %i last rpm %i \n", current_motor_pwm, last_motor_pwm_);
+    ROS_INFO("step response motor PWM. last pwm : %i current pwm %i \n", last_motor_pwm_, current_motor_pwm);
     // ROS_INFO("motor step detected. Duration: %f", (t5.toSec() - last_rpm_time.toSec()));
     // ROS_INFO("delay from desired pose: %f", (last_rpm_time.toSec() - t1_step.toSec()));
     // ROS_INFO("delay from wrench: %f \n", (last_rpm_time.toSec() - t2_step.toSec()));

@@ -55,6 +55,7 @@ void computeControlOutputAndPublish()
   pose_error_msg.roll = rpy_diff[0];
   pose_error_msg.pitch = rpy_diff[1];
   pose_error_msg.yaw = rpy_diff[2];
+
   g_pose_error_pub->publish(pose_error_msg);
 
 
@@ -231,7 +232,7 @@ int main(int argc, char** argv)
   ros::Subscriber sub = n.subscribe("trajectory", 10, trajectoryMessageCallback);
 
   // suscribe to state estimation messages
-  ros::Subscriber sub_2 = n.subscribe("/drone/meas_state", 1, stateMessageCallback);
+  ros::Subscriber sub_2 = n.subscribe("/drone/meas_state", 10, stateMessageCallback);
 
   // ready to publish rotor command messages
   ros::Publisher rotor_cmd_pub = n.advertise<flypulator_common_msgs::RotorVelStamped>("/drone/rotor_cmd", 10);
