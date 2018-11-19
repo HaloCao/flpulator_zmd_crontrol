@@ -11,8 +11,8 @@
 	<arg name="respawn_mavros" default="false" />
 
 	<include file="$(find mavros)/launch/node.launch">
-		<arg name="pluginlists_yaml" value="$(find flypulator_mavros)/cfg/px4_pluginlists.yaml" />
-		<arg name="config_yaml" value="$(find flypulator_mavros)/cfg/px4_config.yaml" />
+		<arg name="pluginlists_yaml" value="$(find flypulator_physical)/cfg/px4_pluginlists.yaml" />
+		<arg name="config_yaml" value="$(find flypulator_physical)/cfg/px4_config.yaml" />
 
 		<arg name="fcu_url" value="$(arg fcu_url)" />
 		<arg name="gcs_url" value="$(arg gcs_url)" />
@@ -22,4 +22,5 @@
 		<arg name="fcu_protocol" value="$(arg fcu_protocol)" />
 		<arg name="respawn_mavros" default="$(arg respawn_mavros)" />
 	</include>
+<node name="offboard_node" pkg="flypulator_physical" type="offboard_node" output="screen"></node>
 </launch>
