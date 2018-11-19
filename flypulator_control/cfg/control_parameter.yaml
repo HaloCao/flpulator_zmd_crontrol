@@ -1,5 +1,5 @@
 controller/type: "ism" #controller type, "ism" for integral sliding mode
-controller/use_motor_ff: false # enable or disable feedforward motor control
+controller/use_motor_ff: true # enable or disable feedforward motor control
 trajectory/update_rate: 200 # [Hz] update rate for trajectory generator, set according to state estimation rate?
 controller/bidirectional: false # set property bidirectional propellers 
 controller/rotor_vel_max: 630.0 # [rad/s] = 6016 RPM. 

@@ -51,10 +51,10 @@ void controlMessageCallback(const flypulator_common_msgs::RotorVelStamped msg)
 
   for (int i = 0; i < 6; i++)
   {
-    if (current_state.armed)
+   // if (current_state.armed)
       ac_msg.controls[i] = input[i];
-    else
-      ac_msg.controls[i] = -1.0;
+   // else
+   //   ac_msg.controls[i] = -1.0;
   }
 
   g_pub->publish(ac_msg);
@@ -104,10 +104,10 @@ int main(int argc, char **argv)
   // add subscribers for topics state and control output
   ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>("mavros/state", 10, stateMessageCallback);
   ros::Subscriber control_sub =
-      nh.subscribe<flypulator_common_msgs::RotorVelStamped>("/drone/rotor_cmd", 1, controlMessageCallback);
+      nh.subscribe<flypulator_common_msgs::RotorVelStamped>("/drone/rotor_cmd", 10, controlMessageCallback);
 
   // add publisher for actuator commands
-  ros::Publisher pub = nh.advertise<mavros_msgs::ActuatorControl>("mavros/actuator_control", 1);
+  ros::Publisher pub = nh.advertise<mavros_msgs::ActuatorControl>("mavros/actuator_control", 10);
   g_pub = &pub;
   
 
@@ -161,19 +161,7 @@ int main(int argc, char **argv)
         last_state = current_state;
       }
     }
-
-    /* ac_msg.header.stamp = ros::Time::now(); */
-
-    /* for (int i = 0; i < 6; i++) */
-    /* { */
-    /*     if (current_state.armed) */
-    /*       ac_msg.controls[i] = input[i]; */
-    /*     else */
-    /*       ac_msg.controls[i] = -1.0; */
-
-    /* } */
-
-    /* pub.publish(ac_msg); */
+    
     ros::spinOnce();
     loop_rate.sleep();
   }
