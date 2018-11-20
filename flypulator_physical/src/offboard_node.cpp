@@ -64,7 +64,6 @@ void dynamicParamCallback(flypulator_mavros::offb_parameterConfig &config, uint3
 {
   if (!control_active)
   {
-    test_signal = config.generate_test_signal;
     input[0] = config.motor2_speed;  // drone motor 2
     input[1] = config.motor5_speed;  // drone motor 5
     input[2] = config.motor1_speed;  // drone motor 1
@@ -75,7 +74,6 @@ void dynamicParamCallback(flypulator_mavros::offb_parameterConfig &config, uint3
   else
   {
     // ROS_INFO("Messages on topic /drone/rotor_cmd. Will not interfer");
-    test_signal = false;
   }
 
   upper_limit = config.upper_limit;
@@ -131,7 +129,7 @@ int main(int argc, char **argv)
     if (current_state.mode != "OFFBOARD")
     {
       if (set_mode_client.call(offb_set_mode) && offb_set_mode.response.mode_sent)
-        ROS_INFO("Connecting...");
+        ROS_INFO("Waiting for controller..");
     }
     else
     {

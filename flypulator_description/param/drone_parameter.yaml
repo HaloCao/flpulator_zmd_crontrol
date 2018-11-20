@@ -44,7 +44,7 @@ uav/length: 0.427 # [m] displacement between rotor and body centre
 uav/k: 0.0000513  # estimated from datasheet [N/(rad/s)²] , f=k*omega_i² 
 uav/b: 0.000022 # [Nm/(rad/s)²] , tau = b * omega_i² 0.00022  0.0000012
 uav/gravity: 9.81 # [m/s²] gravity acceleration constant
-uav/t_motor: 0.0015 # 0.11 old [s] motor PT1 time constant 
+uav/t_motor: 0.040 # 0.11 old [s] motor PT1 time constant 
 uav/rotor_vel_min: 0.01 # [rpm] min. rotor velocity
 uav/rotor_vel_max: 6000.0 # [rpm] max. rotor velocity
 urdf/bidirectional: false # thrust inversible in gazebo
