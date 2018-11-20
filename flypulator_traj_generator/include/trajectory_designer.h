@@ -52,7 +52,7 @@ private:
 
   rviz::Display* grid_;  ///< Displays a finite 2D grid in 3D render space
 
-  TrajectoryUI *ui_panel_;
+  TrajectoryUI* ui_panel_;
 };
 
 #endif  // TRAJECTORYDESIGNER_H

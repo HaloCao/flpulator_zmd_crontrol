@@ -17,9 +17,7 @@
 
 #include "trajectory_designer.h"
 
-TrajectoryDesigner::TrajectoryDesigner(QWidget *parent) :
-    QWidget(parent),
-    ui_panel_(new TrajectoryUI(this))
+TrajectoryDesigner::TrajectoryDesigner(QWidget *parent) : QWidget(parent), ui_panel_(new TrajectoryUI(this))
 
 {
   // updates the ROS-Spin at 50 Hz (necessary for node communication) and listens to ros-shutdown
@@ -53,7 +51,7 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent) :
   // show grid
   grid_ = manager_->createDisplay("rviz/Grid", "base grid", true);
   ROS_ASSERT(grid_ != NULL);
-  grid_->subProp("Color")->setValue(QColor(Qt::black));
+  grid_->subProp("Color")->setValue(QColor(Qt::white));
 
   // apply keypresses
   qApp->installEventFilter(this);
@@ -120,4 +118,3 @@ TrajectoryDesigner::~TrajectoryDesigner()
 {
   delete manager_;
 }
-

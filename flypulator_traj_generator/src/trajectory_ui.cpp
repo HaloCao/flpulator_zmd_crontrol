@@ -5,7 +5,9 @@
 
 #include <QApplication>
 #include <QGridLayout>
+#include <QHBoxLayout>
 #include <QGroupBox>
+#include <QPushButton>
 #include <QSpacerItem>
 
 #include "ros/ros.h"
@@ -13,98 +15,227 @@
 #include "trajectory_ui.h"
 
 TrajectoryUI::TrajectoryUI(QWidget *parent)
-    : QWidget(parent),
-      start_pose_mapper_ (new QSignalMapper(this)),
-      target_pose_mapper_ (new QSignalMapper(this))
+  : QWidget(parent)
+  , start_slide_mapper_(new QSignalMapper(this))
+  , target_slide_mapper_(new QSignalMapper(this))
+  , start_spin_mapper_(new QSignalMapper(this))
+  , target_spin_mapper_(new QSignalMapper(this))
 
 {
-    // main layout of the trajectory user interface
-    main_layout_ = new QVBoxLayout();
+  // main layout of the trajectory user interface
+  main_layout_ = new QVBoxLayout();
 
-    // set title of pose panel structure to set user interface title dynamically
-    start_pose_panel_.title_ = "Start Pose";
-    target_pose_panel_.title_ = "Target Pose";
+  // set title of pose panel structure to set user interface title dynamically
+  start_pose_panel_.title_ = "Start Pose";
+  target_pose_panel_.title_ = "Target Pose";
 
-    // add panels with interface for setting start and target pose of the desired trajectory
-    initPosePanel(start_pose_panel_, *start_pose_mapper_);
-    initPosePanel(target_pose_panel_, *target_pose_mapper_);
+  // add panels with interface for setting start and target pose of the desired trajectory
+  initPosePanel(start_pose_panel_, *start_slide_mapper_, *start_spin_mapper_);
+  initPosePanel(target_pose_panel_, *target_slide_mapper_, *target_spin_mapper_);
 
-    // connect the signal mapper to the slider callbacks
-    connect(start_pose_mapper_, SIGNAL(mapped (int)), this, SLOT( startpose_slider_callback(int)));
-    connect(target_pose_mapper_, SIGNAL(mapped (int)), this, SLOT( targetpose_slider_callback(int)));
+  // connect the signal mapper to the slider as well as spin box callbacks
+  connect(start_slide_mapper_, SIGNAL(mapped(int)), this, SLOT(startposeSliderCallback(int)));
+  connect(target_slide_mapper_, SIGNAL(mapped(int)), this, SLOT(targetposeSliderCallback(int)));
 
-    // apply vertical spacer to push items to the top
-    QSpacerItem *v_spacer = new QSpacerItem(10, 100, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    main_layout_->addSpacerItem(v_spacer);
+  connect(start_spin_mapper_, SIGNAL(mapped(int)), this, SLOT(startposeSpinbCallback(int)));
+  connect(target_spin_mapper_, SIGNAL(mapped(int)), this, SLOT(targetposeSpinbCallback(int)));
 
-    setLayout(main_layout_);
+  // add panel to adjust flight time
+  initFlightTimePanel();
+
+  // add reset and start buttons and connect them to their callbacks
+  QPushButton *reset_btn = new QPushButton("Reset Poses");
+  QPushButton *start_btn = new QPushButton("Start Trajectory Tracking");
+
+  connect(reset_btn, SIGNAL(clicked()), this, SLOT(resetPoseConfigurations()));
+  connect(start_btn, SIGNAL(clicked()), this, SLOT(startTrajectoryTracking()));
+
+  // add buttons to horizontal layout and to main layout finally
+  QHBoxLayout *start_reset_layout = new QHBoxLayout();
+  start_reset_layout->addWidget(reset_btn);
+  start_reset_layout->addWidget(start_btn);
+  QWidget *container = new QWidget();
+  container->setLayout(start_reset_layout);
+  main_layout_->addWidget(container);
+
+  // apply vertical spacer to push items to the top
+  QSpacerItem *v_spacer = new QSpacerItem(10, 100, QSizePolicy::Minimum, QSizePolicy::Expanding);
+  main_layout_->addSpacerItem(v_spacer);
+
+  // remove the padding of the buttons within the Spin boxes (no additional buttons used)
+  qApp->setStyleSheet("QDoubleSpinBox::up-button {width: 0px;}  QDoubleSpinBox::down-button {width: 0px;}"
+                      "QSpinBox::up-arrow {width: 0px;} QSpinBox::up-arrow {width: 0px;}");
+
+  setLayout(main_layout_);
+
+  // set initial pose configuration
+  resetPoseConfigurations();
 }
 
-void TrajectoryUI::initPosePanel(PosePanel &pose_panel, QSignalMapper &mapper) {
-    // store start pose panel in a groupbox
-    QGroupBox *pose_panel_gbox = new QGroupBox(pose_panel.title_);
+void TrajectoryUI::initPosePanel(PosePanel &pose_panel, QSignalMapper &slide_mapper, QSignalMapper &spin_mapper)
+{
+  // store start pose panel in a groupbox
+  QGroupBox *pose_panel_gbox = new QGroupBox(pose_panel.title_);
 
-    // grid layout of the group box
-    QGridLayout *gbox_layout = new QGridLayout();
+  // grid layout of the group box
+  QGridLayout *gbox_layout = new QGridLayout();
 
-    // Define the label of the pose components and its units
-    QString pose_ids[6] = {"x", "y", "z", QChar(0xC6, 0x03), QChar(0x98, 0x03), QChar(0xA8, 0x03)};
-    QString pose_units[6] = {" m", " m", " m", " °", " °", " °"};
+  // Define the label of the pose components and its units
+  QString pose_ids[6] = {"x", "y", "z", QChar(0xC6, 0x03), QChar(0x98, 0x03), QChar(0xA8, 0x03)};
+  QString pose_units[6] = {" m", " m", " m", " °", " °", " °"};
 
-    // Define the maximum absolute values of each pose component
-    // (multiplied by 100 to obtain higher precision after double conversion)
-    int max_pose[6] = { 5000, 5000, 5000, 1500, 1500, 18000};
+  // Define the maximum absolute values of each pose component
+  // (multiplied by 100 to obtain higher precision after double conversion)
+  int max_pose[6] = {5000, 5000, 5000, 1500, 1500, 18000};
 
-    // for each pose component apply label, slider and its unit
-    for (int i = 0; i < 6; i++) {
-        // intialize slider and its properties
-        pose_panel.sliders_[i] = new QSlider(Qt::Horizontal, this);
-        pose_panel.sliders_[i]->setRange(-max_pose[i], max_pose[i]);
-        pose_panel.sliders_[i]->setTickInterval(max_pose[i] / 5);
-        pose_panel.sliders_[i]->setTickPosition(QSlider::TicksBelow);
+  // for each pose component apply label, slider and its unit
+  for (int i = 0; i < 6; i++)
+  {
+    // initialize pose component label
+    pose_panel.pose_labels_[i] = new QLabel(pose_ids[i]);
 
-        // initialize pose component label
-        pose_panel.pose_labels_[i] = new QLabel(pose_ids[i]);
+    // intialize slider as well as the spinbox containing the current pose component's value and unit
+    pose_panel.sliders_[i] = new QSlider(Qt::Horizontal, this);
+    pose_panel.pose_values_[i] = new QDoubleSpinBox();
 
-        // initialize the spinbox containing the current pose component's value and unit
-        pose_panel.pose_values_[i] = new QDoubleSpinBox();
-        pose_panel.pose_values_[i]->setFixedWidth(80);
-        pose_panel.pose_values_[i]->setButtonSymbols(QAbstractSpinBox::NoButtons);
-        pose_panel.pose_values_[i]->setSuffix(pose_units[i]);
-        pose_panel.pose_values_[i]->setMaximum(max_pose[i]);
-        pose_panel.pose_values_[i]->setMinimum(-max_pose[i]);
-        pose_panel.pose_values_[i]->setDecimals(2);
-        pose_panel.pose_values_[i]->setAlignment(Qt::AlignRight);
-        pose_panel.pose_values_[i]->setValue(pose_panel.sliders_[i]->value() / (double) pose_panel.multiplier);
+    // specifiy their properties
+    initPoseCompSlider(*(pose_panel.sliders_[i]), *(pose_panel.pose_values_[i]), pose_units[i], pose_panel.multiplier,
+                       max_pose[i]);
 
-        // dynamically connect each slider's valueChanged signal to the signal mapper's mapping-Slot
-        // everytime a slider is manipulated, the corresponding slider callback is triggered and given the index of the active slider
-        connect(pose_panel.sliders_[i], SIGNAL(valueChanged(int)), &mapper, SLOT(map()));
-        mapper.setMapping(pose_panel.sliders_[i], i);
+    // dynamically connect each slider's and spin box's valueChanged signal to the signal mapper's mapping-Slot
+    // everytime a slider/ spin box is manipulated, the corresponding slider/ spin box callback is triggered and given
+    // the index of the active slider/ spin box
+    connect(pose_panel.sliders_[i], SIGNAL(valueChanged(int)), &slide_mapper, SLOT(map()));
+    connect(pose_panel.pose_values_[i], SIGNAL(valueChanged(double)), &spin_mapper, SLOT(map()));
+    slide_mapper.setMapping(pose_panel.sliders_[i], i);
+    spin_mapper.setMapping(pose_panel.pose_values_[i], i);
 
-        //for each pose component add all required widgets as a new row to the groupbox (grid) layout
-        gbox_layout->addWidget(pose_panel.pose_labels_[i], i, 0);
-        gbox_layout->addWidget(pose_panel.sliders_[i], i, 1);
-        gbox_layout->addWidget(pose_panel.pose_values_[i], i, 2);
-    }
+    // for each pose component add all required widgets as a new row to the groupbox (grid) layout
+    gbox_layout->addWidget(pose_panel.pose_labels_[i], i, 0);
+    gbox_layout->addWidget(pose_panel.sliders_[i], i, 1);
+    gbox_layout->addWidget(pose_panel.pose_values_[i], i, 2);
+  }
 
-    // apply newly created layout to the pose panel group box and the pose panel to the main layout
-    pose_panel_gbox->setLayout(gbox_layout);
-    main_layout_->addWidget(pose_panel_gbox);
-
+  // apply newly created layout to the pose panel group box and the pose panel to the main layout
+  pose_panel_gbox->setLayout(gbox_layout);
+  main_layout_->addWidget(pose_panel_gbox);
 }
 
-void TrajectoryUI::startpose_slider_callback(int id) {
-    // since qslider do not support doubles per default, they hold each value multiplied by a constant factor
-    // to obtain higher precision of the actual pose component values
-    double cur_val = start_pose_panel_.sliders_[id]->value() / (double) start_pose_panel_.multiplier;
-    start_pose_panel_.pose_values_[id]->setValue(cur_val);
+void TrajectoryUI::initPoseCompSlider(QSlider &slider, QDoubleSpinBox &spinbox, QString unit, int multiplier,
+                                      double maximum)
+{
+  // slider properties
+  slider.setRange(-maximum, maximum);
+  slider.setTickInterval(maximum / 5);
+  slider.setTickPosition(QSlider::TicksBelow);
+
+  // spinbox properties
+  spinbox.setFixedWidth(70);
+  spinbox.setButtonSymbols(QAbstractSpinBox::NoButtons);
+  spinbox.setSuffix(unit);
+  spinbox.setMaximum(maximum / (double)multiplier);
+  spinbox.setMinimum(-maximum / (double)multiplier);
+  spinbox.setDecimals(2);
+  spinbox.setAlignment(Qt::AlignRight);
+  spinbox.setValue(slider.value() / (double)multiplier);
 }
 
-void TrajectoryUI::targetpose_slider_callback(int id) {
-    // see startpose_slider_callback(int id)
-    double cur_val = target_pose_panel_.sliders_[id]->value() / (double) target_pose_panel_.multiplier;
-    target_pose_panel_.pose_values_[id]->setValue(cur_val);
+void TrajectoryUI::initFlightTimePanel()
+{
+  // set common properties
+  int max_duration = 5000;
+  QString unit = " s";
+  QString label = "T";
+  int multiplier = start_pose_panel_.multiplier;
+
+  // initialize gbox widget and layout
+  QGroupBox *dur_gbox = new QGroupBox("Duration");
+  QHBoxLayout *dur_gbox_layout = new QHBoxLayout();
+
+  // create spin box and slider
+  dur_slider_ = new QSlider(Qt::Horizontal, this);
+  dur_value_ = new QDoubleSpinBox();
+  initPoseCompSlider(*dur_slider_, *dur_value_, unit, multiplier, max_duration);
+
+  // correct minimums
+  dur_slider_->setMinimum(0);
+  dur_value_->setMinimum(0);
+
+  // add widgets to group box layout
+  dur_gbox_layout->addWidget(new QLabel(label));
+  dur_gbox_layout->addWidget(dur_slider_);
+  dur_gbox_layout->addWidget(dur_value_);
+
+  // add to group box and main layout
+  dur_gbox->setLayout(dur_gbox_layout);
+
+  main_layout_->addWidget(dur_gbox);
+
+  // connect spin box and slider to their callbacks
+  connect(dur_slider_, SIGNAL(valueChanged(int)), this, SLOT(durationSliderCallback(int)));
+  connect(dur_value_, SIGNAL(valueChanged(double)), this, SLOT(durationSpinbCallback(double)));
 }
 
+void TrajectoryUI::startposeSliderCallback(int id)
+{
+  // since qslider do not support doubles per default, they hold each value multiplied by a constant factor
+  // to obtain higher precision of the actual pose component values
+  double new_val = start_pose_panel_.sliders_[id]->value() / (double)start_pose_panel_.multiplier;
+  start_pose_panel_.pose_values_[id]->setValue(new_val);
+}
 
+void TrajectoryUI::targetposeSliderCallback(int id)
+{
+  // see startpose_slider_callback(int id)
+  double cur_val = target_pose_panel_.sliders_[id]->value() / (double)target_pose_panel_.multiplier;
+  target_pose_panel_.pose_values_[id]->setValue(cur_val);
+}
+
+void TrajectoryUI::startposeSpinbCallback(int id)
+{
+  // retrieve current value from spin box and apply it to corresponding slider
+  double new_val = start_pose_panel_.pose_values_[id]->value();
+  start_pose_panel_.sliders_[id]->setValue((int)(start_pose_panel_.multiplier * new_val));
+}
+
+void TrajectoryUI::targetposeSpinbCallback(int id)
+{
+  // retrieve current value from spin box and apply it to corresponding slider
+  double new_val = target_pose_panel_.pose_values_[id]->value();
+  target_pose_panel_.sliders_[id]->setValue((int)(target_pose_panel_.multiplier * new_val));
+}
+
+void TrajectoryUI::durationSliderCallback(int new_val)
+{
+  // divide slider value by common multiplier to retrieve it as double
+  duration_ = (double)new_val / (double)start_pose_panel_.multiplier;
+  dur_value_->setValue(duration_);
+}
+
+void TrajectoryUI::durationSpinbCallback(double new_val)
+{
+  // store new duration and set slider accordingly
+  duration_ = new_val;
+  dur_slider_->setValue(start_pose_panel_.multiplier * duration_);
+}
+
+void TrajectoryUI::resetPoseConfigurations()
+{
+  ROS_INFO("Reset Pose Configurations");
+  for (int i = 0; i < 6; i++)
+  {
+      start_pose_panel_.pose_values_[i]->setValue(0);
+      target_pose_panel_.pose_values_[i]->setValue(0);
+  }
+
+  // set all pose components to zero except target z-Position to 10m
+  target_pose_panel_.pose_values_[2]->setValue(10);
+
+  //initial duration is 5 seconds
+  dur_value_->setValue(5);
+}
+
+void TrajectoryUI::startTrajectoryTracking()
+{
+  ROS_INFO("Start Trajectory Tracking");
+}
