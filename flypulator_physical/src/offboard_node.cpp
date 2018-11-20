@@ -11,7 +11,7 @@
 // internal variables:
 mavros_msgs::State current_state;
 mavros_msgs::State last_state;
-ros::Publisher* g_pub;
+ros::Publisher *g_pub;
 float input[6];
 mavros_msgs::CommandBool arm_cmd;
 bool last_arming_state;
@@ -51,10 +51,10 @@ void controlMessageCallback(const flypulator_common_msgs::RotorVelStamped msg)
 
   for (int i = 0; i < 6; i++)
   {
-   // if (current_state.armed)
+    if (current_state.armed)
       ac_msg.controls[i] = input[i];
-   // else
-   //   ac_msg.controls[i] = -1.0;
+    else
+      ac_msg.controls[i] = -1.0;
   }
 
   g_pub->publish(ac_msg);
@@ -109,7 +109,6 @@ int main(int argc, char **argv)
   // add publisher for actuator commands
   ros::Publisher pub = nh.advertise<mavros_msgs::ActuatorControl>("mavros/actuator_control", 10);
   g_pub = &pub;
-  
 
   // add service clients for arming and mode setting
   ros::ServiceClient arming_client = nh.serviceClient<mavros_msgs::CommandBool>("mavros/cmd/arming");
@@ -161,11 +160,23 @@ int main(int argc, char **argv)
         last_state = current_state;
       }
     }
-    
-    ros::spinOnce();
-    loop_rate.sleep();
-  }
+// to enable individual motor control through dynamic reconfigure
+    if (!control_active)
+    {
+      mavros_msgs::ActuatorControl ac_msg;
+      ac_msg.header.stamp = ros::Time::now();
+      for (int i = 0; i < 6; i++)
+      {
+        ac_msg.controls[i] = input[i];
+      }
 
-  return 0;
+      g_pub->publish(ac_msg);
+    }
+  
+  ros::spinOnce();
+  loop_rate.sleep();
+}
+
+return 0;
 }
 

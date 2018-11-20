@@ -8,20 +8,19 @@
 ros::Publisher* g_trajectory_pub;
 ros::Publisher* g_delay_pub;
 
-// std::vector<float> delay_times;
 ros::Time t0;
-ros::Time t1_step; //step in desired pose
-ros::Time t2_step; //step in wrench
-ros::Time t3_step; //step in rotor velocity
-ros::Time t4_step; //step in actuator commands
-ros::Time t5_step; //step in observed pwm
-
+ros::Time t1_step;  // step in desired pose
+ros::Time t2_step;  // step in wrench
+ros::Time t3_step;  // step in rotor velocity
+ros::Time t4_step;  // step in actuator commands
+ros::Time t5_step;  // step in observed pwm
+// preserve last timestamp as start of step.
 ros::Time last_time_pose;
 ros::Time last_time_wrench;
 ros::Time last_time_rotor;
 ros::Time last_time_actuator;
 ros::Time last_time_motor;
-
+// preserver last value to detect step
 float last_desired_pose_z_;
 float last_wrench_z_;
 float last_rotor_vel;
@@ -59,12 +58,12 @@ void desired_poseCallback(const flypulator_common_msgs::UavStateRPYStamped::Cons
   last_desired_pose_z_ = current_desired_pose_z_;
   last_time_pose = t1;
 }
+
 void wrenchCallback(const geometry_msgs::WrenchStamped::ConstPtr& msg)
-{  
+{
   float buffer = 1.0;
   ros::Time t2 = msg->header.stamp;
   float current_wrench_z_ = msg->wrench.force.z;
-  // ROS_INFO("delay desired pose - wrench: %f \n", (t2.toSec() - t1.toSec()));
   if ((last_wrench_z_ + buffer) < current_wrench_z_ | (last_wrench_z_ - buffer) > current_wrench_z_)
   {
     ROS_INFO("step response wrench ");
@@ -114,9 +113,6 @@ void motorCallback(const mavros_msgs::RCOut::ConstPtr& msg)
   if (current_motor_pwm > (last_motor_pwm_ + buffer) | current_motor_pwm < (last_motor_pwm_ - buffer))
   {
     ROS_INFO("step response motor PWM. last pwm : %i current pwm %i \n", last_motor_pwm_, current_motor_pwm);
-    // ROS_INFO("motor step detected. Duration: %f", (t5.toSec() - last_rpm_time.toSec()));
-    // ROS_INFO("delay from desired pose: %f", (last_rpm_time.toSec() - t1_step.toSec()));
-    // ROS_INFO("delay from wrench: %f \n", (last_rpm_time.toSec() - t2_step.toSec()));
     t5_step = last_time_motor;
     publishDelay();
   }
@@ -215,13 +211,13 @@ int main(int argc, char** argv)
 
   ros::Subscriber motor_sub = nh.subscribe<mavros_msgs::RCOut>("/mavros/rc/out", 1, motorCallback);
 
-  // add publisher for delay msg
+  // add publishers
   ros::Publisher delay_pub = nh.advertise<flypulator_common_msgs::DelayStamped>("/drone/delay", 10);
   g_delay_pub = &delay_pub;
 
   ros::Publisher trajectory_pub = nh.advertise<trajectory_msgs::MultiDOFJointTrajectoryPoint>("trajectory", 10);
   g_trajectory_pub = &trajectory_pub;
-
+// add timer to control step frequency
   ros::Timer timer = nh.createTimer(ros::Duration(0.5), timerCallback);
   ros::Rate loop_rate(100);
 
