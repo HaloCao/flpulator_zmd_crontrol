@@ -152,7 +152,9 @@ set(CMAKE_AUTOMOC ON)
 set(SRC_FILES
   src/main.cpp
   src/trajectory_designer.cpp
+  src/trajectory_ui.cpp
   include/trajectory_designer.h
+  include/trajectory_ui.h
 )
 
 ## Declare a C++ library

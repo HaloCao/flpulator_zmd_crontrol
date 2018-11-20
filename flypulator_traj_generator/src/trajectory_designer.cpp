@@ -17,24 +17,18 @@
 
 #include "trajectory_designer.h"
 
-void TrajectoryDesigner::ros_update()
-{
-  if (ros::ok())
-  {
-    ros::spinOnce();
-  }
-  else
-  {
-    QApplication::quit();
-  }
-}
+TrajectoryDesigner::TrajectoryDesigner(QWidget *parent) :
+    QWidget(parent),
+    ui_panel_(new TrajectoryUI(this))
 
-TrajectoryDesigner::TrajectoryDesigner(QWidget *parent) : QWidget(parent)
 {
   // updates the ROS-Spin at 50 Hz (necessary for node communication) and listens to ros-shutdown
   QTimer *t = new QTimer(this);
-  QObject::connect(t, SIGNAL(timeout()), this, SLOT(ros_update()));
+  QObject::connect(t, SIGNAL(timeout()), this, SLOT(rosUpdate()));
   t->start(20);
+
+  // set user interface panel to fixed width
+  ui_panel_->setFixedWidth(500);
 
   // Create render panel widget to hold ogre-rendered scene
   render_panel_ = new rviz::RenderPanel();
@@ -43,6 +37,8 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent) : QWidget(parent)
   main_layout->setSpacing(0);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
+  // add user interface panel and the 3D View
+  main_layout->addWidget(ui_panel_);
   main_layout->addWidget(render_panel_);
 
   // Set the top-level layout for this TrajectoryDesigner widget.
@@ -63,10 +59,16 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent) : QWidget(parent)
   qApp->installEventFilter(this);
 }
 
-// Destructor.
-TrajectoryDesigner::~TrajectoryDesigner()
+void TrajectoryDesigner::rosUpdate()
 {
-  delete manager_;
+  if (ros::ok())
+  {
+    ros::spinOnce();
+  }
+  else
+  {
+    QApplication::quit();
+  }
 }
 
 bool TrajectoryDesigner::eventFilter(QObject *object, QEvent *event)
@@ -112,3 +114,10 @@ bool TrajectoryDesigner::eventFilter(QObject *object, QEvent *event)
   }
   return false;
 }
+
+// Destructor.
+TrajectoryDesigner::~TrajectoryDesigner()
+{
+  delete manager_;
+}
+

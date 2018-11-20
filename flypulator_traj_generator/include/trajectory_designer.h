@@ -11,6 +11,8 @@
 #include "rviz/view_controller.h"
 #include <ros/ros.h>
 
+#include "trajectory_ui.h"
+
 namespace rviz
 {
 class Display;
@@ -27,7 +29,7 @@ public:
 
 protected:
   /**
-   * @brief Callback for a key event.
+   * \brief Callback for a key event.
    * Key Declarations:
    * F ~ Toggle Fullscreen
    * M ~ Toggle Maximize/Minimize
@@ -39,18 +41,18 @@ protected:
 private Q_SLOTS:
 
   /**
-   * @brief Will be excecuted periodicly for spinning the ros-node.
+   * \brief Will be excecuted periodicly for spinning the ros-node.
    * Shuts down the main window if ros stopped running.
    */
-  void ros_update();
+  void rosUpdate();
 
 private:
   rviz::VisualizationManager* manager_;  ///< Central manager of rviz, holding displays, viewcontrollers etc.
   rviz::RenderPanel* render_panel_;      ///< Widget which shows OGRE-rendered scene in RViz
 
-  ros::NodeHandle nh_;  ///< interface to register standard ros components
-
   rviz::Display* grid_;  ///< Displays a finite 2D grid in 3D render space
+
+  TrajectoryUI *ui_panel_;
 };
 
 #endif  // TRAJECTORYDESIGNER_H
