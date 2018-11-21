@@ -13,6 +13,8 @@
 #include <QDoubleSpinBox>
 #include <QSignalMapper>
 
+#include <Eigen/Dense>
+
 #include <ros/ros.h>
 
 /**
@@ -27,12 +29,27 @@ struct PosePanel
   int multiplier = 100;  ///< The factor by which the slider value is multiplied w.r.t. the actual pose component value.
 };
 
+/**
+ * \typedef Vector6f Eigen/Matrix which holds a 6D-Pose (x,y,z,r,p,y).
+ */
+namespace Eigen {
+   typedef Eigen::Matrix<float, 6, 1> Vector6f;
+}
+
 class TrajectoryUI : public QWidget
 {
   Q_OBJECT
 
 public:
   TrajectoryUI(QWidget *parent = nullptr);
+
+public:
+  Q_SIGNALS:
+
+  /**
+   * \brief poseUpdate Informs trajectory designer about manipulation of start or target pose.
+   */
+  void poseUpdate();
 
 protected:
   /**
@@ -128,6 +145,9 @@ private:
   double duration_;            ///< The desired flight time of trajectory tracking
   QDoubleSpinBox *dur_value_;  ///< Spinbox holding the current value of the desired flight time
   QSlider *dur_slider_;        ///< QSlider for setting the desired flight time
+
+  Eigen::Vector6f start_pose_;  ///< 6D-Vector holding the components of the start pose.
+  Eigen::Vector6f target_pose_; ///< 6D-Vector holding the components of the target pose
 };
 
 #endif  // TRAJECTORYUI_H

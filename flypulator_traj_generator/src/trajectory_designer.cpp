@@ -17,7 +17,9 @@
 
 #include "trajectory_designer.h"
 
-TrajectoryDesigner::TrajectoryDesigner(QWidget *parent) : QWidget(parent), ui_panel_(new TrajectoryUI(this))
+TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
+    : QWidget(parent),
+      ui_panel_(new TrajectoryUI(this))
 
 {
   // updates the ROS-Spin at 50 Hz (necessary for node communication) and listens to ros-shutdown

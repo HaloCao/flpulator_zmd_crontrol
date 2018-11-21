@@ -34,7 +34,6 @@ protected:
    * F ~ Toggle Fullscreen
    * M ~ Toggle Maximize/Minimize
    * Q ~ Quit Application
-   *
    */
   bool eventFilter(QObject* object, QEvent* event);
 
@@ -52,7 +51,7 @@ private:
 
   rviz::Display* grid_;  ///< Displays a finite 2D grid in 3D render space
 
-  TrajectoryUI* ui_panel_;
+  TrajectoryUI* ui_panel_; ///< User interface to set the parametrization of a desired trajectory
 };
 
 #endif  // TRAJECTORYDESIGNER_H
