@@ -46,6 +46,12 @@ private Q_SLOTS:
    */
   void rosUpdate();
 
+  /**
+   * \brief Will be executed whenever the user manipulates the trajectory set-up.
+   */
+  void callTrajectoryGenerator();
+
+
 private:
   rviz::VisualizationManager* manager_;  ///< Central manager of rviz, holding displays, viewcontrollers etc.
   rviz::RenderPanel* render_panel_;      ///< Widget which shows OGRE-rendered scene in RViz.

@@ -19,13 +19,12 @@ public:
 
 
 protected:
-
+  /**
+   * \brief plotActuatorEvolution Plots the current evolution of the hexacopter propellers to the custom plot widget.
+   */
   void plotActuatorEvolution();
 
-
 private Q_SLOTS:
-
-
 
 private:
   QCustomPlot *actuator_plot_;

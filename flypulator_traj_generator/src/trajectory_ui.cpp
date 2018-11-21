@@ -66,6 +66,7 @@ TrajectoryUI::TrajectoryUI(QWidget *parent)
   QGroupBox *log_gbox = new QGroupBox("Log");
   QVBoxLayout *log_layout = new QVBoxLayout();
   log_panel_ = new QTextEdit();
+  log_panel_->setReadOnly(true);
   log_layout->addWidget(log_panel_);
   log_gbox->setLayout(log_layout);
   main_layout_->addWidget(log_gbox);
@@ -236,6 +237,13 @@ void TrajectoryUI::durationSpinbCallback(double new_val)
   duration_ = new_val;
   dur_slider_->setValue(start_pose_panel_.multiplier * duration_);
   Q_EMIT poseUpdate();
+}
+
+void TrajectoryUI::getTrajectorySetup(Eigen::Vector6f &start_pose, Eigen::Vector6f &target_pose, double &duration) {
+    // Write the references
+    start_pose = start_pose_;
+    target_pose = target_pose_;
+    duration = duration_;
 }
 
 void TrajectoryUI::resetPoseConfigurations()

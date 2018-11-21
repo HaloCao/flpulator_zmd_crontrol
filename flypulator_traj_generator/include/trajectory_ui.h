@@ -44,6 +44,15 @@ class TrajectoryUI : public QWidget
 public:
   TrajectoryUI(QWidget *parent = nullptr);
 
+  /**
+   * \brief getTrajectorySetup Creates references to the trajectories set-up.
+   * Used by parent widget to retrieve the trajectory setup and call the generator service.
+   * \param start_pose Reference to the trajectory's start pose
+   * \param target_pose Reference to the trajectory's target pose
+   * \param duration Reference to the trajectory's duration
+   */
+  void getTrajectorySetup(Eigen::Vector6f &start_pose, Eigen::Vector6f &target_pose, double &duration);
+
 public:
   Q_SIGNALS:
 

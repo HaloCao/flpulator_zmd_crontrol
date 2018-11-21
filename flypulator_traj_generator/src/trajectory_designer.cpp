@@ -60,6 +60,9 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
 
   // apply keypresses
   qApp->installEventFilter(this);
+
+  // connect ui_panel poseupdate signal to local slot to get informed about updates in the trajectory set-up
+  connect(ui_panel_, SIGNAL(poseUpdate()), this, SLOT(callTrajectoryGenerator()));
 }
 
 void TrajectoryDesigner::rosUpdate()
@@ -116,6 +119,17 @@ bool TrajectoryDesigner::eventFilter(QObject *object, QEvent *event)
     }
   }
   return false;
+}
+
+void TrajectoryDesigner::callTrajectoryGenerator() {
+    // Create references to retrieve the current trajectory setup from user interface
+    Eigen::Vector6f start_pose;
+    Eigen::Vector6f target_pose;
+    double duration;
+
+    // Write references
+    ui_panel_->getTrajectorySetup(start_pose, target_pose, duration);
+
 }
 
 // Destructor.
