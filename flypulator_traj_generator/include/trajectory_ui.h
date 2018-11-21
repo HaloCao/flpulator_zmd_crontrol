@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QDoubleSpinBox>
 #include <QSignalMapper>
+#include <QTextEdit>
 
 #include <Eigen/Dense>
 
@@ -136,6 +137,8 @@ private:
 
   PosePanel start_pose_panel_;   ///< Structure containing the graphical components of the start pose panel
   PosePanel target_pose_panel_;  ///< Structure containing the graphical components of the target pose panel
+
+  QTextEdit *log_panel_; ///< Displays log messages delivering information about system status.
 
   QSignalMapper *start_slide_mapper_;   ///< Dynamically maps every slider signal of a pose panel to one slider callback
   QSignalMapper *target_slide_mapper_;  ///< Dynamically maps every slider signal of a pose panel to one slider callback

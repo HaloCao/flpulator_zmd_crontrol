@@ -29,12 +29,14 @@ if(rviz_QT_VERSION VERSION_LESS "5")
 else()
   message(STATUS "Using Qt5 based on the rviz_QT_VERSION: ${rviz_QT_VERSION}")
   find_package(Qt5 ${rviz_QT_VERSION} EXACT REQUIRED Core Widgets)
+  find_package(Qt5PrintSupport REQUIRED)
+
   ## make target_link_libraries(${QT_LIBRARIES}) pull in all required dependencies
-  set(QT_LIBRARIES Qt5::Widgets)
+  set(QT_LIBRARIES Qt5::Widgets Qt5::PrintSupport)
 endif()
 
 ## Q_SLOTS and Q_Signals may conflict with boost signals, so define QT_NO_KEYWORDS here.
-add_definitions(-DQT_NO_KEYWORDS)
+#add_definitions(-DQT_NO_KEYWORDS)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -153,8 +155,13 @@ set(SRC_FILES
   src/main.cpp
   src/trajectory_designer.cpp
   src/trajectory_ui.cpp
+  src/actuator_plot.cpp
+  src/qcustomplot.cpp
   include/trajectory_designer.h
   include/trajectory_ui.h
+  include/actuator_plot.h
+  include/qcustomplot.h
+  
 )
 
 ## Declare a C++ library

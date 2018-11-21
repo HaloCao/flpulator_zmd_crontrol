@@ -58,9 +58,18 @@ TrajectoryUI::TrajectoryUI(QWidget *parent)
   container->setLayout(start_reset_layout);
   main_layout_->addWidget(container);
 
-  // apply vertical spacer to push items to the top
-  QSpacerItem *v_spacer = new QSpacerItem(10, 100, QSizePolicy::Minimum, QSizePolicy::Expanding);
-  main_layout_->addSpacerItem(v_spacer);
+//  // apply vertical spacer to push items to the top
+//  QSpacerItem *v_spacer = new QSpacerItem(10, 100, QSizePolicy::Minimum, QSizePolicy::Expanding);
+//  main_layout_->addSpacerItem(v_spacer);
+
+  // add panel for log messages
+  QGroupBox *log_gbox = new QGroupBox("Log");
+  QVBoxLayout *log_layout = new QVBoxLayout();
+  log_panel_ = new QTextEdit();
+  log_layout->addWidget(log_panel_);
+  log_gbox->setLayout(log_layout);
+  main_layout_->addWidget(log_gbox);
+
 
   // remove the padding of the buttons within the Spin boxes (no additional buttons used)
   qApp->setStyleSheet("QDoubleSpinBox::up-button {width: 0px;}  QDoubleSpinBox::down-button {width: 0px;}"

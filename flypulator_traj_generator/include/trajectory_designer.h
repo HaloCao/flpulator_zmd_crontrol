@@ -12,6 +12,7 @@
 #include <ros/ros.h>
 
 #include "trajectory_ui.h"
+#include "actuator_plot.h"
 
 namespace rviz
 {
@@ -47,11 +48,12 @@ private Q_SLOTS:
 
 private:
   rviz::VisualizationManager* manager_;  ///< Central manager of rviz, holding displays, viewcontrollers etc.
-  rviz::RenderPanel* render_panel_;      ///< Widget which shows OGRE-rendered scene in RViz
+  rviz::RenderPanel* render_panel_;      ///< Widget which shows OGRE-rendered scene in RViz.
 
-  rviz::Display* grid_;  ///< Displays a finite 2D grid in 3D render space
+  rviz::Display* grid_;  ///< Displays a finite 2D grid in 3D render space.
 
-  TrajectoryUI* ui_panel_; ///< User interface to set the parametrization of a desired trajectory
+  TrajectoryUI *ui_panel_; ///< User interface to set the parametrization of a desired trajectory.
+  ActuatorPlot *actuator_plot_; ///< holds a qCustomPlot widget which plots the behaviour of the rotor velocities.
 };
 
 #endif  // TRAJECTORYDESIGNER_H

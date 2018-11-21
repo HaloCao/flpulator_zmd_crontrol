@@ -4,7 +4,7 @@
  */
 
 #include <QColor>
-#include <QHBoxLayout>
+#include <QGridLayout>
 #include <QEvent>
 #include <QKeyEvent>
 #include <QApplication>
@@ -19,7 +19,8 @@
 
 TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
     : QWidget(parent),
-      ui_panel_(new TrajectoryUI(this))
+      ui_panel_(new TrajectoryUI(this)),
+      actuator_plot_(new ActuatorPlot(this))
 
 {
   // updates the ROS-Spin at 50 Hz (necessary for node communication) and listens to ros-shutdown
@@ -27,19 +28,21 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
   QObject::connect(t, SIGNAL(timeout()), this, SLOT(rosUpdate()));
   t->start(20);
 
-  // set user interface panel to fixed width
+  // set user interface panel to fixed width and actuator plot widget to fixed height
   ui_panel_->setFixedWidth(500);
+  actuator_plot_->setFixedHeight(400);
 
   // Create render panel widget to hold ogre-rendered scene
   render_panel_ = new rviz::RenderPanel();
-  QHBoxLayout *main_layout = new QHBoxLayout;
+  QGridLayout *main_layout = new QGridLayout;
 
   main_layout->setSpacing(0);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
   // add user interface panel and the 3D View
-  main_layout->addWidget(ui_panel_);
-  main_layout->addWidget(render_panel_);
+  main_layout->addWidget(ui_panel_, 0, 0, 2, 1);
+  main_layout->addWidget(render_panel_, 0, 1);
+  main_layout->addWidget(actuator_plot_, 1, 1);
 
   // Set the top-level layout for this TrajectoryDesigner widget.
   setLayout(main_layout);
