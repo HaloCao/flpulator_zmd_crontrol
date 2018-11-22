@@ -11,6 +11,8 @@
 #include "rviz/view_controller.h"
 #include <ros/ros.h>
 
+#include "flypulator_traj_generator/polynomial_trajectory.h"
+
 #include "trajectory_ui.h"
 #include "actuator_plot.h"
 
@@ -20,6 +22,11 @@ class Display;
 class RenderPanel;
 class VisualizationManager;
 }  // namespace rviz
+
+/**
+ * \typedef polynomial_trajectory Simplify service expression.
+ */
+typedef flypulator_traj_generator::polynomial_trajectory polynomial_trajectory;
 
 class TrajectoryDesigner : public QWidget
 {
@@ -52,7 +59,12 @@ private Q_SLOTS:
   void callTrajectoryGenerator();
 
 
-private:
+private:  
+
+  ros::NodeHandle nh_;  ///< Interface to register standard ros components
+
+  ros::ServiceClient polynomial_traj_client_; ///< Service client which calls ros-service to create polynomial trajectories.
+
   rviz::VisualizationManager* manager_;  ///< Central manager of rviz, holding displays, viewcontrollers etc.
   rviz::RenderPanel* render_panel_;      ///< Widget which shows OGRE-rendered scene in RViz.
 

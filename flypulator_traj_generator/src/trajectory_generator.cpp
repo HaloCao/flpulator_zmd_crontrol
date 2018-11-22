@@ -1,8 +1,8 @@
 #include "trajectory_generator.h"
 
 // create Trajectory and send it periodically
-bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& x_start,
-                                                  const geometry_msgs::Vector3& x_end,
+bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& p_start,
+                                                  const geometry_msgs::Vector3& p_end,
                                                   const geometry_msgs::Vector3& rpy_start,
                                                   const geometry_msgs::Vector3& rpy_end, const float duration,
                                                   const trajectory_types::Type traj_type)
@@ -10,10 +10,10 @@ bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& 
   // TODO: check if trajectory is feasible? (vel and acc to high, duration to low)
   // save input values in 6D array
   float pose_start[6];
-  convertTo6DArray(x_start, rpy_start, pose_start);
+  convertTo6DArray(p_start, rpy_start, pose_start);
   float pose_end[6];
-  convertTo6DArray(x_end, rpy_end, pose_end);
-  // float duration = req.delta_t; // trajectory duration time
+  convertTo6DArray(p_end, rpy_end, pose_end);
+  // float duration = req.duration; // trajectory duration time
 
   float pose_current[6];  // array for 6D pose
   float vel_current[6];   // array for 6D velocities
@@ -81,6 +81,8 @@ bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& 
   }
 
   ros::Rate r(update_rate);
+
+  return true;
 
   // start continous message publishing
   while (t <= t_start + trajDuration)

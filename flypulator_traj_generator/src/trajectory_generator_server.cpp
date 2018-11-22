@@ -1,6 +1,6 @@
 #include "ros/ros.h"
-#include "linear_trajectory.h"
-#include "polynomial_trajectory.h"
+#include "flypulator_traj_generator/linear_trajectory.h"
+#include "flypulator_traj_generator/polynomial_trajectory.h"
 #include "trajectory_generator.h"
 // add additional service headers here
 
@@ -11,7 +11,7 @@ TrajectoryGenerator *g_generator_p;
 bool createPolynomialTrajectoryCB(flypulator_traj_generator::polynomial_trajectory::Request &req,
                                   flypulator_traj_generator::polynomial_trajectory::Response &res)
 {
-  res.finished = g_generator_p->createAndSendTrajectory(req.x_start, req.x_end, req.rpy_start, req.rpy_end, req.delta_t,
+  res.finished = g_generator_p->createAndSendTrajectory(req.p_start, req.p_end, req.rpy_start, req.rpy_end, req.duration,
                                                         trajectory_types::Polynomial);
   return true;
 }
@@ -20,7 +20,7 @@ bool createPolynomialTrajectoryCB(flypulator_traj_generator::polynomial_trajecto
 bool createLinearTrajectoryCB(flypulator_traj_generator::linear_trajectory::Request &req,
                               flypulator_traj_generator::linear_trajectory::Response &res)
 {
-  res.finished = g_generator_p->createAndSendTrajectory(req.x_start, req.x_end, req.rpy_start, req.rpy_end, req.delta_t,
+  res.finished = g_generator_p->createAndSendTrajectory(req.p_start, req.p_end, req.rpy_start, req.rpy_end, req.duration,
                                                         trajectory_types::Linear);
   return true;
 }

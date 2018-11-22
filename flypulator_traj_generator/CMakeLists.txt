@@ -177,8 +177,8 @@ set(SRC_FILES
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-## add_executable(trajectory_generator_server src/trajectory_generator_server.cpp src/trajectory_generator.cpp)
- add_executable(trajectory_designer ${SRC_FILES})
+add_executable(trajectory_generator_server src/trajectory_generator_server.cpp src/trajectory_generator.cpp)
+add_executable(trajectory_designer ${SRC_FILES})
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -188,14 +188,14 @@ set(SRC_FILES
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-## add_dependencies(trajectory_generator_server flypulator_traj_generator_gencpp)
+add_dependencies(trajectory_generator_server flypulator_traj_generator_gencpp)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
 
-##target_link_libraries(trajectory_generator_server ${catkin_LIBRARIES}) # follow ros tutorial "Write Service Client"
+target_link_libraries(trajectory_generator_server ${catkin_LIBRARIES}) # follow ros tutorial "Write Service Client"
 target_link_libraries(trajectory_designer ${QT_LIBRARIES} ${catkin_LIBRARIES})
 
 #############

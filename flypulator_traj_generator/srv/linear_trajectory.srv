@@ -1,8 +1,8 @@
-geometry_msgs/Vector3 x_start
-geometry_msgs/Vector3 x_end
+geometry_msgs/Vector3 p_start
+geometry_msgs/Vector3 p_end
 # roll pitch yaw angles in degree!
 geometry_msgs/Vector3 rpy_start
 geometry_msgs/Vector3 rpy_end
-float64 delta_t
+float64 duration
 ---
 bool finished

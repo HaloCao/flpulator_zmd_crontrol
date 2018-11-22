@@ -33,7 +33,7 @@ public:  // constructor takes publisher to publish message
   }
 
   // create and send trajectory with pose estimation frequency
-  bool createAndSendTrajectory(const geometry_msgs::Vector3& x_start, const geometry_msgs::Vector3& x_end,
+  bool createAndSendTrajectory(const geometry_msgs::Vector3& p_start, const geometry_msgs::Vector3& p_end,
                                const geometry_msgs::Vector3& rpy_start, const geometry_msgs::Vector3& rpy_end,
                                const float duration, const trajectory_types::Type traj_type);
 

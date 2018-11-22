@@ -140,7 +140,6 @@ private Q_SLOTS:
   void startTrajectoryTracking();
 
 private:
-  ros::NodeHandle nh_;  ///< Interface to register standard ros components
 
   QVBoxLayout *main_layout_;  ///< The main layout of the trajectory-ui-widget
 

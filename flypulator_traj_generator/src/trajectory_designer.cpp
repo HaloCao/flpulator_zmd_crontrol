@@ -63,6 +63,9 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
 
   // connect ui_panel poseupdate signal to local slot to get informed about updates in the trajectory set-up
   connect(ui_panel_, SIGNAL(poseUpdate()), this, SLOT(callTrajectoryGenerator()));
+
+  //register ros service client for polynomial trajectory generation service+
+  polynomial_traj_client_ = nh_.serviceClient<polynomial_trajectory>("polynomial_trajectory");
 }
 
 void TrajectoryDesigner::rosUpdate()
@@ -129,6 +132,32 @@ void TrajectoryDesigner::callTrajectoryGenerator() {
 
     // Write references
     ui_panel_->getTrajectorySetup(start_pose, target_pose, duration);
+
+    // create service
+    polynomial_trajectory pt_srv;
+    // fill service parameters
+    pt_srv.request.p_start.x = start_pose[0];
+    pt_srv.request.p_start.y = start_pose[1];
+    pt_srv.request.p_start.z = start_pose[2];
+    pt_srv.request.rpy_start.x = start_pose[3];
+    pt_srv.request.rpy_start.y = start_pose[4];
+    pt_srv.request.rpy_start.z = start_pose[5];
+
+    pt_srv.request.p_end.x = target_pose[0];
+    pt_srv.request.p_end.y = target_pose[1];
+    pt_srv.request.p_end.z = target_pose[2];
+    pt_srv.request.rpy_end.x = target_pose[3];
+    pt_srv.request.rpy_end.y = target_pose[4];
+    pt_srv.request.rpy_end.z = target_pose[5];
+
+    pt_srv.request.duration = duration;
+
+    if (polynomial_traj_client_.call(pt_srv)) {
+        ROS_INFO("[flypulator_traj_generator] Successfully called polynomial trajectory service.");
+    }
+    else {
+        ROS_ERROR("[flypulator_traj_generator] Failed to call polynomial trajectory service.");
+    }
 
 }
 
