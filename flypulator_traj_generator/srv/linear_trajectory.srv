@@ -1,8 +1,14 @@
-geometry_msgs/Vector3 p_start
-geometry_msgs/Vector3 p_end
-# roll pitch yaw angles in degree!
-geometry_msgs/Vector3 rpy_start
-geometry_msgs/Vector3 rpy_end
-float64 duration
+# This service calculates a linear trajectory based on the forwarded setup 
+# The calculated trajectory gets published instantly, if demanded (see field "start_tracking")
+# For feasibility checks, the service returns the evolution of pose accelerations over time
+
+geometry_msgs/Vector3 p_start   # starting position (xyz -- in meters) 
+geometry_msgs/Vector3 p_end     # target position (xyz -- in meters)
+geometry_msgs/Vector3 rpy_start # starting orientation (roll, pitch, yaw -- in degree!)
+geometry_msgs/Vector3 rpy_end   # target orientation (roll, pitch, yaw -- in degree!)
+float64 duration                # duration of the manoeuvre in seconds
+bool start_tracking             # if true, the trajectory gets instantly published after calculation
 ---
-bool finished
+geometry_msgs/Vector3[] p_acc   # acceleration of the resulting positional part over time
+geometry_msgs/Vector3[] rpy_acc # acceleration of the resulting rotational part over time 
+bool finished                   # true if calculation successful

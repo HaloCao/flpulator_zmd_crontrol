@@ -150,7 +150,8 @@ void TrajectoryDesigner::callTrajectoryGenerator() {
     pt_srv.request.rpy_end.y = target_pose[4];
     pt_srv.request.rpy_end.z = target_pose[5];
 
-    pt_srv.request.duration = duration;
+    pt_srv.request.duration = duration;    
+    pt_srv.request.start_tracking = false;
 
     if (polynomial_traj_client_.call(pt_srv)) {
         ROS_INFO("[flypulator_traj_generator] Successfully called polynomial trajectory service.");
@@ -158,6 +159,8 @@ void TrajectoryDesigner::callTrajectoryGenerator() {
     else {
         ROS_ERROR("[flypulator_traj_generator] Failed to call polynomial trajectory service.");
     }
+
+
 
 }
 

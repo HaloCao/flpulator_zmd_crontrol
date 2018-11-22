@@ -1,8 +1,9 @@
 #include "ros/ros.h"
-#include "flypulator_traj_generator/linear_trajectory.h"
-#include "flypulator_traj_generator/polynomial_trajectory.h"
 #include "trajectory_generator.h"
 // add additional service headers here
+
+#include "flypulator_traj_generator/linear_trajectory.h"
+#include "flypulator_traj_generator/polynomial_trajectory.h"
 
 // global variable for trajectory generator class object
 TrajectoryGenerator *g_generator_p;
@@ -10,9 +11,16 @@ TrajectoryGenerator *g_generator_p;
 // create polynomial trajectory from request and give response
 bool createPolynomialTrajectoryCB(flypulator_traj_generator::polynomial_trajectory::Request &req,
                                   flypulator_traj_generator::polynomial_trajectory::Response &res)
-{
-  res.finished = g_generator_p->createAndSendTrajectory(req.p_start, req.p_end, req.rpy_start, req.rpy_end, req.duration,
-                                                        trajectory_types::Polynomial);
+{    
+  // calculate trajectory, retrieve evolution of positional and rotational accelerations for feasibility check, and if demanded, publish it
+  trajectory::accelerations pos_accelerations;
+  trajectory::accelerations rot_accelerations;
+  res.finished = g_generator_p->createAndSendTrajectory(req.p_start, req.p_end, req.rpy_start, req.rpy_end, req.duration, req.start_tracking,
+                                                        trajectory_types::Polynomial, pos_accelerations, rot_accelerations);
+  // fill result
+  res.p_acc = pos_accelerations;
+  res.rpy_acc = rot_accelerations;
+
   return true;
 }
 
@@ -20,8 +28,16 @@ bool createPolynomialTrajectoryCB(flypulator_traj_generator::polynomial_trajecto
 bool createLinearTrajectoryCB(flypulator_traj_generator::linear_trajectory::Request &req,
                               flypulator_traj_generator::linear_trajectory::Response &res)
 {
-  res.finished = g_generator_p->createAndSendTrajectory(req.p_start, req.p_end, req.rpy_start, req.rpy_end, req.duration,
-                                                        trajectory_types::Linear);
+  // calculate trajectory, retrieve evolution of positional and rotational accelerations for feasibility check, and if demanded, publish it
+  trajectory::accelerations pos_accelerations;
+  trajectory::accelerations rot_accelerations;
+  res.finished = g_generator_p->createAndSendTrajectory(req.p_start, req.p_end, req.rpy_start, req.rpy_end, req.duration, req.start_tracking,
+                                                        trajectory_types::Linear, pos_accelerations, rot_accelerations);
+
+  // fill result
+  res.p_acc = pos_accelerations;
+  res.rpy_acc = rot_accelerations;
+
   return true;
 }
 
