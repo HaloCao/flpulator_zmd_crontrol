@@ -1,2 +1,2 @@
 trajectory/update_rate: 250 # [Hz] update rate for trajectory generator
-trajectory/simulation_step_size: 0.01 # [s] step size for numerical integration in terms of actuator rpm prediction
+trajectory/simulation_step_size: 0.05 # [s] step size for numerical integration in terms of actuator rpm prediction

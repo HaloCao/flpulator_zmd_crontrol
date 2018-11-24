@@ -16,7 +16,10 @@
 
 #include <Eigen/Dense>
 
+#include <math.h>
+
 #include <ros/ros.h>
+#include <tf/transform_broadcaster.h>
 
 /**
  * \struct Structure which holds the graphic components of a pose panel to set start and target pose.
@@ -140,7 +143,22 @@ private Q_SLOTS:
    */
   void startTrajectoryTracking();
 
+  /**
+   * \brief broadcastStartTransform Publishes the transform between world and start pose frame
+   */
+  void broadcastStartTransform();
+
+  /**
+   * \brief broadcastStartTransform Publishes the transform between world and target pose frame
+   */
+  void broadcastTargetTransform();
+
 private:
+  ros::NodeHandle nh_;  ///< Interface to register standard ros components
+
+  tf::TransformBroadcaster start_frame_br_;  ///< tf broadcaster publishing the transform between world and start pose frame
+  tf::TransformBroadcaster target_frame_br_; ///< tf broadcaster publishing the transform between world and target pose frame
+
   QVBoxLayout *main_layout_;  ///< The main layout of the trajectory-ui-widget
 
   PosePanel start_pose_panel_;   ///< Structure containing the graphical components of the start pose panel

@@ -51,6 +51,7 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
 
   // Initialize 3D View (VisualizationManager and RenderPanel)
   manager_ = new rviz::VisualizationManager(render_panel_);
+  manager_->setFixedFrame("world");
   render_panel_->initialize(manager_->getSceneManager(), manager_);
   manager_->initialize();
   manager_->startUpdate();
@@ -59,6 +60,17 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
   grid_ = manager_->createDisplay("rviz/Grid", "base grid", true);
   ROS_ASSERT(grid_ != NULL);
   grid_->subProp("Color")->setValue(QColor(Qt::white));
+
+  // show start and target pose frames
+  start_frame_ = manager_->createDisplay("rviz/Axes", "start_frame", true);
+  start_frame_->subProp("Reference Frame")->setValue("start_pose");
+
+  target_frame_ = manager_->createDisplay("rviz/Axes", "target_frame", true);
+  target_frame_->subProp("Reference Frame")->setValue("target_pose");
+
+  // show model of the hexacopter
+  uav_model_ = manager_->createDisplay("rviz/RobotModel", "uav_hexacopter", true);
+  uav_model_->subProp("Robot Description")->setValue("/robot_description");
 
   // apply keypresses
   qApp->installEventFilter(this);

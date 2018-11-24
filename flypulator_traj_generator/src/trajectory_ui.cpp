@@ -10,8 +10,6 @@
 #include <QPushButton>
 #include <QSpacerItem>
 
-#include "ros/ros.h"
-
 #include "trajectory_ui.h"
 
 TrajectoryUI::TrajectoryUI(QWidget *parent)
@@ -193,6 +191,7 @@ void TrajectoryUI::startposeSliderCallback(int id)
   start_pose_panel_.pose_values_[id]->setValue(new_val);
   start_pose_[id] = new_val;
   Q_EMIT poseUpdate();
+  broadcastStartTransform();
 }
 
 void TrajectoryUI::targetposeSliderCallback(int id)
@@ -202,6 +201,7 @@ void TrajectoryUI::targetposeSliderCallback(int id)
   target_pose_panel_.pose_values_[id]->setValue(new_val);
   target_pose_[id] = new_val;
   Q_EMIT poseUpdate();
+  broadcastTargetTransform();
 }
 
 void TrajectoryUI::startposeSpinbCallback(int id)
@@ -211,6 +211,7 @@ void TrajectoryUI::startposeSpinbCallback(int id)
   start_pose_panel_.sliders_[id]->setValue((int)(start_pose_panel_.multiplier * new_val));
   start_pose_[id] = new_val;
   Q_EMIT poseUpdate();
+  broadcastStartTransform();
 }
 
 void TrajectoryUI::targetposeSpinbCallback(int id)
@@ -220,6 +221,7 @@ void TrajectoryUI::targetposeSpinbCallback(int id)
   target_pose_panel_.sliders_[id]->setValue((int)(target_pose_panel_.multiplier * new_val));
   target_pose_[id] = new_val;
   Q_EMIT poseUpdate();
+  broadcastTargetTransform();
 }
 
 void TrajectoryUI::durationSliderCallback(int new_val)
@@ -266,4 +268,26 @@ void TrajectoryUI::startTrajectoryTracking()
 {
   ROS_INFO("Start Trajectory Tracking");
   // todo
+}
+
+void TrajectoryUI::broadcastStartTransform() {
+    // convert attitude to rad
+      Eigen::Vector3f start_ori_rad = start_pose_.tail(3) * M_PI / 180.0f;
+      tf::Transform transform;
+      transform.setOrigin( tf::Vector3(start_pose_[0], start_pose_[1], start_pose_[2]) );
+      tf::Quaternion q;
+      q.setRPY(start_ori_rad[0], start_ori_rad[1], start_ori_rad[2]);
+      transform.setRotation(q);
+      start_frame_br_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "start_pose"));
+}
+
+void TrajectoryUI::broadcastTargetTransform() {
+    // convert attitude to rad
+    Eigen::Vector3f target_ori_rad = target_pose_.tail(3) * M_PI / 180.0f;
+    tf::Transform transform;
+    transform.setOrigin( tf::Vector3(target_pose_[0], target_pose_[1], target_pose_[2]) );
+    tf::Quaternion q;
+    q.setRPY(target_ori_rad[0], target_ori_rad[1], target_ori_rad[2]);
+    transform.setRotation(q);
+    target_frame_br_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "target_pose"));
 }

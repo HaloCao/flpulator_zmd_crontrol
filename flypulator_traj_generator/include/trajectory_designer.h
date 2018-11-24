@@ -70,6 +70,10 @@ private:
   rviz::RenderPanel* render_panel_;      ///< Widget which shows OGRE-rendered scene in RViz.
 
   rviz::Display* grid_;  ///< Displays a finite 2D grid in 3D render space.
+  rviz::Display* start_frame_; ///< Coordinate system representing the frame of trajectory's start position.
+  rviz::Display* target_frame_; ///< Coordinate system representing the frame of trajectory's target position.
+  rviz::Display* uav_model_; ///< Model of the hexacopter
+
 
   TrajectoryUI* ui_panel_;       ///< User interface to set the parametrization of a desired trajectory.
   ActuatorPlot* actuator_plot_;  ///< holds a qCustomPlot widget which plots the behaviour of the rotor velocities.
