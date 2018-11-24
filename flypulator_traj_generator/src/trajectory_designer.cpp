@@ -5,6 +5,7 @@
 
 #include <QColor>
 #include <QGridLayout>
+#include <QVector>
 #include <QEvent>
 #include <QKeyEvent>
 #include <QApplication>
@@ -18,9 +19,10 @@
 #include "trajectory_designer.h"
 
 TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
-    : QWidget(parent),
-      ui_panel_(new TrajectoryUI(this)),
-      actuator_plot_(new ActuatorPlot(this))
+  : QWidget(parent)
+  , ui_panel_(new TrajectoryUI(this))
+  , actuator_plot_(new ActuatorPlot(this))
+  , actuator_simulation_(new ActuatorSimulation())
 
 {
   // updates the ROS-Spin at 50 Hz (necessary for node communication) and listens to ros-shutdown
@@ -64,7 +66,7 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
   // connect ui_panel poseupdate signal to local slot to get informed about updates in the trajectory set-up
   connect(ui_panel_, SIGNAL(poseUpdate()), this, SLOT(callTrajectoryGenerator()));
 
-  //register ros service client for polynomial trajectory generation service+
+  // register ros service client for polynomial trajectory generation service+
   polynomial_traj_client_ = nh_.serviceClient<polynomial_trajectory>("polynomial_trajectory");
 }
 
@@ -124,44 +126,58 @@ bool TrajectoryDesigner::eventFilter(QObject *object, QEvent *event)
   return false;
 }
 
-void TrajectoryDesigner::callTrajectoryGenerator() {
-    // Create references to retrieve the current trajectory setup from user interface
-    Eigen::Vector6f start_pose;
-    Eigen::Vector6f target_pose;
-    double duration;
+void TrajectoryDesigner::callTrajectoryGenerator()
+{
+  // Create references to retrieve the current trajectory setup from user interface
+  Eigen::Vector6f start_pose;
+  Eigen::Vector6f target_pose;
+  double duration;
 
-    // Write references
-    ui_panel_->getTrajectorySetup(start_pose, target_pose, duration);
+  // Write references
+  ui_panel_->getTrajectorySetup(start_pose, target_pose, duration);
 
-    // create service
-    polynomial_trajectory pt_srv;
-    // fill service parameters
-    pt_srv.request.p_start.x = start_pose[0];
-    pt_srv.request.p_start.y = start_pose[1];
-    pt_srv.request.p_start.z = start_pose[2];
-    pt_srv.request.rpy_start.x = start_pose[3];
-    pt_srv.request.rpy_start.y = start_pose[4];
-    pt_srv.request.rpy_start.z = start_pose[5];
+  // create service
+  polynomial_trajectory pt_srv;
 
-    pt_srv.request.p_end.x = target_pose[0];
-    pt_srv.request.p_end.y = target_pose[1];
-    pt_srv.request.p_end.z = target_pose[2];
-    pt_srv.request.rpy_end.x = target_pose[3];
-    pt_srv.request.rpy_end.y = target_pose[4];
-    pt_srv.request.rpy_end.z = target_pose[5];
+  // fill service parameters
+  pt_srv.request.p_start.x = start_pose[0];
+  pt_srv.request.p_start.y = start_pose[1];
+  pt_srv.request.p_start.z = start_pose[2];
+  pt_srv.request.rpy_start.x = start_pose[3];
+  pt_srv.request.rpy_start.y = start_pose[4];
+  pt_srv.request.rpy_start.z = start_pose[5];
 
-    pt_srv.request.duration = duration;    
-    pt_srv.request.start_tracking = false;
+  pt_srv.request.p_end.x = target_pose[0];
+  pt_srv.request.p_end.y = target_pose[1];
+  pt_srv.request.p_end.z = target_pose[2];
+  pt_srv.request.rpy_end.x = target_pose[3];
+  pt_srv.request.rpy_end.y = target_pose[4];
+  pt_srv.request.rpy_end.z = target_pose[5];
 
-    if (polynomial_traj_client_.call(pt_srv)) {
-        ROS_INFO("[flypulator_traj_generator] Successfully called polynomial trajectory service.");
-    }
-    else {
-        ROS_ERROR("[flypulator_traj_generator] Failed to call polynomial trajectory service.");
-    }
+  pt_srv.request.duration = duration;
 
+  pt_srv.request.start_tracking = false;
 
+  if (!polynomial_traj_client_.call(pt_srv))
+  {
+    ROS_ERROR("[flypulator_traj_generator] Failed to call polynomial trajectory service.");
+    return;
+  }
 
+  // Create Vector to store rotor velocity evolution
+  size_t s = pt_srv.response.p_acc.size();
+  trajectory::RotorEvolution rotor_velocities(6, QVector<double>(s));
+
+  // boolean to check feasibility
+  bool feasible = true;
+
+  // simulate the rotor velocities for the current trajectory
+  actuator_simulation_->simulateActuatorVelocities(start_pose, pt_srv.response.p_acc, pt_srv.response.rpy_acc,
+                                                   rotor_velocities, feasible);
+
+  // convert timestamps to qvector and draw actuator evolution to custom plot
+  QVector<double> time_stamps = QVector<double>::fromStdVector(pt_srv.response.time_stamps);
+  actuator_plot_->plotActuatorEvolution(rotor_velocities, time_stamps, feasible);
 }
 
 // Destructor.

@@ -24,8 +24,9 @@ enum Type
 };
 };
 
-namespace trajectory {
-    typedef std::vector<geometry_msgs::Vector3> accelerations;
+namespace trajectory
+{
+typedef std::vector<geometry_msgs::Vector3> accelerations;
 }
 
 class TrajectoryGenerator
@@ -40,7 +41,8 @@ public:  // constructor takes publisher to publish message
   bool createAndSendTrajectory(const geometry_msgs::Vector3& p_start, const geometry_msgs::Vector3& p_end,
                                const geometry_msgs::Vector3& rpy_start, const geometry_msgs::Vector3& rpy_end,
                                const float duration, const bool start_tracking, const trajectory_types::Type traj_type,
-                               trajectory::accelerations &pos_accs, trajectory::accelerations &rot_accs);
+                               trajectory::accelerations& pos_accs, trajectory::accelerations& rot_accs,
+                               std::vector<double>& time_stamps);
 
 private:
   // message publisher for output trajectory, needs to be global to be visible to create<..>Trajectory functions
@@ -62,7 +64,7 @@ private:
   // convert 2 messages of Vector3 type to 6D float array
   void convertTo6DArray(const geometry_msgs::Vector3& x_1, const geometry_msgs::Vector3& x_2, float destination[]);
   // evaluate a polynom at a given time
-  inline float evaluatePolynom (float a0, float a1, float a2, float a3, float a4, float a5, float t);
+  inline float evaluateAcceleration(float a2, float a3, float a4, float a5, float t);
 };
 
 #endif  // TRAJECTORY_GENERATOR_H

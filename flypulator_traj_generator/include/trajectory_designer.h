@@ -8,6 +8,7 @@
 
 #include <QWidget>
 #include <QTimer>
+
 #include "rviz/view_controller.h"
 #include <ros/ros.h>
 
@@ -15,6 +16,7 @@
 
 #include "trajectory_ui.h"
 #include "actuator_plot.h"
+#include "actuator_simulation.h"
 
 namespace rviz
 {
@@ -58,20 +60,21 @@ private Q_SLOTS:
    */
   void callTrajectoryGenerator();
 
-
-private:  
-
+private:
   ros::NodeHandle nh_;  ///< Interface to register standard ros components
 
-  ros::ServiceClient polynomial_traj_client_; ///< Service client which calls ros-service to create polynomial trajectories.
+  ros::ServiceClient polynomial_traj_client_;  ///< Service client which calls ros-service to create polynomial
+                                               ///< trajectories.
 
   rviz::VisualizationManager* manager_;  ///< Central manager of rviz, holding displays, viewcontrollers etc.
   rviz::RenderPanel* render_panel_;      ///< Widget which shows OGRE-rendered scene in RViz.
 
   rviz::Display* grid_;  ///< Displays a finite 2D grid in 3D render space.
 
-  TrajectoryUI *ui_panel_; ///< User interface to set the parametrization of a desired trajectory.
-  ActuatorPlot *actuator_plot_; ///< holds a qCustomPlot widget which plots the behaviour of the rotor velocities.
+  TrajectoryUI* ui_panel_;       ///< User interface to set the parametrization of a desired trajectory.
+  ActuatorPlot* actuator_plot_;  ///< holds a qCustomPlot widget which plots the behaviour of the rotor velocities.
+  ActuatorSimulation* actuator_simulation_;  ///< Responsible for simulation of the course of rotor speeds based on a
+                                             ///< given trajectory
 };
 
 #endif  // TRAJECTORYDESIGNER_H

@@ -4,10 +4,10 @@
 bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& p_start,
                                                   const geometry_msgs::Vector3& p_end,
                                                   const geometry_msgs::Vector3& rpy_start,
-                                                  const geometry_msgs::Vector3& rpy_end,
-                                                  const float duration, const bool start_tracking,
-                                                  const trajectory_types::Type traj_type,
-                                                  trajectory::accelerations &pos_accs, trajectory::accelerations &rot_accs)
+                                                  const geometry_msgs::Vector3& rpy_end, const float duration,
+                                                  const bool start_tracking, const trajectory_types::Type traj_type,
+                                                  trajectory::accelerations& pos_accs,
+                                                  trajectory::accelerations& rot_accs, std::vector<double>& time_stamps)
 {
   // TODO: check if trajectory is feasible? (vel and acc to high, duration to low)
   // save input values in 6D array
@@ -42,7 +42,7 @@ bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& 
         a[dim][4] = 0;
         a[dim][5] = 0;
       }
-      ROS_INFO("Start linear trajectory..");
+      // ROS_INFO("Start linear trajectory..");
       break;
 
     case trajectory_types::Polynomial:
@@ -56,7 +56,7 @@ bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& 
         a[dim][4] = -15 * (pose_end[dim] - pose_start[dim]) / pow(duration, 4);
         a[dim][5] = 6 * (pose_end[dim] - pose_start[dim]) / pow(duration, 5);
       }
-      ROS_INFO("Start polynomial trajectory..");
+      // ROS_INFO("Start polynomial trajectory..");
       break;
 
     default:
@@ -68,35 +68,31 @@ bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& 
   if (!ros::param::get("/trajectory/simulation_step_size", sim_dt))
   {
     ROS_DEBUG("[TrajectoryGenService] Step size for simulation not specified: Using default of 10ms instead.");
-    sim_dt = 10;
+    sim_dt = 0.01;
   }
 
-  //convert to seconds
-  sim_dt /= 1000.0f;
-
-  for (double t = 0; t <= duration; t+=sim_dt)
+  for (double t = 0; t <= duration; t += sim_dt)
   {
     geometry_msgs::Vector3 pos_acc;
     geometry_msgs::Vector3 rot_acc;
 
-    pos_acc.x = evaluatePolynom(a[0][0], a[0][1], a[0][2], a[0][3], a[0][4], a[0][5], t);
-    pos_acc.y = evaluatePolynom(a[1][0], a[1][1], a[1][2], a[1][3], a[1][4], a[1][5], t);
-    pos_acc.z = evaluatePolynom(a[2][0], a[2][1], a[2][2], a[2][3], a[2][4], a[2][5], t);
+    pos_acc.x = evaluateAcceleration(a[0][2], a[0][3], a[0][4], a[0][5], t);
+    pos_acc.y = evaluateAcceleration(a[1][2], a[1][3], a[1][4], a[1][5], t);
+    pos_acc.z = evaluateAcceleration(a[2][2], a[2][3], a[2][4], a[2][5], t);
 
-    rot_acc.x = evaluatePolynom(a[3][0], a[3][1], a[3][2], a[3][3], a[3][4], a[3][5], t);
-    rot_acc.y = evaluatePolynom(a[4][0], a[4][1], a[4][2], a[4][3], a[4][4], a[4][5], t);
-    rot_acc.z = evaluatePolynom(a[5][0], a[5][1], a[5][2], a[5][3], a[5][4], a[5][5], t);
+    rot_acc.x = evaluateAcceleration(a[3][2], a[3][3], a[3][4], a[3][5], t);
+    rot_acc.y = evaluateAcceleration(a[4][2], a[4][3], a[4][4], a[4][5], t);
+    rot_acc.z = evaluateAcceleration(a[5][2], a[5][3], a[5][4], a[5][5], t);
 
     pos_accs.push_back(pos_acc);
     rot_accs.push_back(rot_acc);
-
-
+    time_stamps.push_back(t);
   }
 
   // only start the trajectory tracking, if demanded
   if (!start_tracking)
   {
-      return true;
+    return true;
   }
 
   const ros::Time t_start = ros::Time::now();  // Take ros time - sync with "use_sim_time" parameter over /clock topic
@@ -203,9 +199,9 @@ void TrajectoryGenerator::euler2Quaternion(const float roll, const float pitch, 
   q = yawAngle * pitchAngle * rollAngle;  //(yaw-pitch-roll sequence) with consequtive axes, q B to I
 }
 
-inline float TrajectoryGenerator::evaluatePolynom (float a0, float a1, float a2, float a3, float a4, float a5, float t)
+inline float TrajectoryGenerator::evaluateAcceleration(float a2, float a3, float a4, float a5, float t)
 {
-    return a0 + a1 * pow(t,1) + a2 * pow(t,2) + a3 * pow(t,4) + a4 * pow(t,4) + a5 * pow(t,5);
+  return 2 * a2 + 6 * a3 * t + 12 * a4 * pow(t, 2) + 20 * a5 * pow(t, 3);
 }
 
 // calculate angular velocity from euler angles and its derivatives, following Fje94 p.42

@@ -11,4 +11,5 @@ bool start_tracking             # if true, the trajectory gets instantly publish
 ---
 geometry_msgs/Vector3[] p_acc   # acceleration of the resulting positional part over time
 geometry_msgs/Vector3[] rpy_acc # acceleration of the resulting rotational part over time 
+float64[] time_stamps           # time stamps of each step
 bool finished                   # true if calculation successful

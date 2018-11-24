@@ -58,9 +58,9 @@ TrajectoryUI::TrajectoryUI(QWidget *parent)
   container->setLayout(start_reset_layout);
   main_layout_->addWidget(container);
 
-//  // apply vertical spacer to push items to the top
-//  QSpacerItem *v_spacer = new QSpacerItem(10, 100, QSizePolicy::Minimum, QSizePolicy::Expanding);
-//  main_layout_->addSpacerItem(v_spacer);
+  //  // apply vertical spacer to push items to the top
+  //  QSpacerItem *v_spacer = new QSpacerItem(10, 100, QSizePolicy::Minimum, QSizePolicy::Expanding);
+  //  main_layout_->addSpacerItem(v_spacer);
 
   // add panel for log messages
   QGroupBox *log_gbox = new QGroupBox("Log");
@@ -70,7 +70,6 @@ TrajectoryUI::TrajectoryUI(QWidget *parent)
   log_layout->addWidget(log_panel_);
   log_gbox->setLayout(log_layout);
   main_layout_->addWidget(log_gbox);
-
 
   // remove the padding of the buttons within the Spin boxes (no additional buttons used)
   qApp->setStyleSheet("QDoubleSpinBox::up-button {width: 0px;}  QDoubleSpinBox::down-button {width: 0px;}"
@@ -239,11 +238,12 @@ void TrajectoryUI::durationSpinbCallback(double new_val)
   Q_EMIT poseUpdate();
 }
 
-void TrajectoryUI::getTrajectorySetup(Eigen::Vector6f &start_pose, Eigen::Vector6f &target_pose, double &duration) {
-    // Write the references
-    start_pose = start_pose_;
-    target_pose = target_pose_;
-    duration = duration_;
+void TrajectoryUI::getTrajectorySetup(Eigen::Vector6f &start_pose, Eigen::Vector6f &target_pose, double &duration)
+{
+  // Write the references
+  start_pose = start_pose_;
+  target_pose = target_pose_;
+  duration = duration_;
 }
 
 void TrajectoryUI::resetPoseConfigurations()
@@ -251,14 +251,14 @@ void TrajectoryUI::resetPoseConfigurations()
   ROS_INFO("Reset Pose Configurations");
   for (int i = 0; i < 6; i++)
   {
-      start_pose_panel_.pose_values_[i]->setValue(0);
-      target_pose_panel_.pose_values_[i]->setValue(0);
+    start_pose_panel_.pose_values_[i]->setValue(0);
+    target_pose_panel_.pose_values_[i]->setValue(0);
   }
 
   // set all pose components to zero except target z-Position to 10m
   target_pose_panel_.pose_values_[2]->setValue(10);
 
-  //initial duration is 5 seconds
+  // initial duration is 5 seconds
   dur_value_->setValue(5);
 }
 

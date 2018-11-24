@@ -11,15 +11,19 @@ TrajectoryGenerator *g_generator_p;
 // create polynomial trajectory from request and give response
 bool createPolynomialTrajectoryCB(flypulator_traj_generator::polynomial_trajectory::Request &req,
                                   flypulator_traj_generator::polynomial_trajectory::Response &res)
-{    
-  // calculate trajectory, retrieve evolution of positional and rotational accelerations for feasibility check, and if demanded, publish it
+{
+  // calculate trajectory, retrieve evolution of positional and rotational accelerations for feasibility check, and if
+  // demanded, publish it
   trajectory::accelerations pos_accelerations;
   trajectory::accelerations rot_accelerations;
-  res.finished = g_generator_p->createAndSendTrajectory(req.p_start, req.p_end, req.rpy_start, req.rpy_end, req.duration, req.start_tracking,
-                                                        trajectory_types::Polynomial, pos_accelerations, rot_accelerations);
+  std::vector<double> time_stamps;
+  res.finished = g_generator_p->createAndSendTrajectory(req.p_start, req.p_end, req.rpy_start, req.rpy_end,
+                                                        req.duration, req.start_tracking, trajectory_types::Polynomial,
+                                                        pos_accelerations, rot_accelerations, time_stamps);
   // fill result
   res.p_acc = pos_accelerations;
   res.rpy_acc = rot_accelerations;
+  res.time_stamps = time_stamps;
 
   return true;
 }
@@ -28,15 +32,19 @@ bool createPolynomialTrajectoryCB(flypulator_traj_generator::polynomial_trajecto
 bool createLinearTrajectoryCB(flypulator_traj_generator::linear_trajectory::Request &req,
                               flypulator_traj_generator::linear_trajectory::Response &res)
 {
-  // calculate trajectory, retrieve evolution of positional and rotational accelerations for feasibility check, and if demanded, publish it
+  // calculate trajectory, retrieve evolution of positional and rotational accelerations for feasibility check, and if
+  // demanded, publish it
   trajectory::accelerations pos_accelerations;
   trajectory::accelerations rot_accelerations;
-  res.finished = g_generator_p->createAndSendTrajectory(req.p_start, req.p_end, req.rpy_start, req.rpy_end, req.duration, req.start_tracking,
-                                                        trajectory_types::Linear, pos_accelerations, rot_accelerations);
+  std::vector<double> time_stamps;
+  res.finished = g_generator_p->createAndSendTrajectory(req.p_start, req.p_end, req.rpy_start, req.rpy_end,
+                                                        req.duration, req.start_tracking, trajectory_types::Linear,
+                                                        pos_accelerations, rot_accelerations, time_stamps);
 
   // fill result
   res.p_acc = pos_accelerations;
   res.rpy_acc = rot_accelerations;
+  res.time_stamps = time_stamps;
 
   return true;
 }

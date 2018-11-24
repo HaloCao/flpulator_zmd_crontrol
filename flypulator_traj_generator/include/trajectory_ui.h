@@ -33,8 +33,9 @@ struct PosePanel
 /**
  * \typedef Vector6f Eigen/Matrix which holds a 6D-Pose (x,y,z,r,p,y).
  */
-namespace Eigen {
-   typedef Eigen::Matrix<float, 6, 1> Vector6f;
+namespace Eigen
+{
+typedef Eigen::Matrix<float, 6, 1> Vector6f;
 }
 
 class TrajectoryUI : public QWidget
@@ -54,7 +55,7 @@ public:
   void getTrajectorySetup(Eigen::Vector6f &start_pose, Eigen::Vector6f &target_pose, double &duration);
 
 public:
-  Q_SIGNALS:
+Q_SIGNALS:
 
   /**
    * \brief poseUpdate Informs trajectory designer about manipulation of start or target pose.
@@ -140,13 +141,12 @@ private Q_SLOTS:
   void startTrajectoryTracking();
 
 private:
-
   QVBoxLayout *main_layout_;  ///< The main layout of the trajectory-ui-widget
 
   PosePanel start_pose_panel_;   ///< Structure containing the graphical components of the start pose panel
   PosePanel target_pose_panel_;  ///< Structure containing the graphical components of the target pose panel
 
-  QTextEdit *log_panel_; ///< Displays log messages delivering information about system status.
+  QTextEdit *log_panel_;  ///< Displays log messages delivering information about system status.
 
   QSignalMapper *start_slide_mapper_;   ///< Dynamically maps every slider signal of a pose panel to one slider callback
   QSignalMapper *target_slide_mapper_;  ///< Dynamically maps every slider signal of a pose panel to one slider callback
@@ -157,8 +157,8 @@ private:
   QDoubleSpinBox *dur_value_;  ///< Spinbox holding the current value of the desired flight time
   QSlider *dur_slider_;        ///< QSlider for setting the desired flight time
 
-  Eigen::Vector6f start_pose_;  ///< 6D-Vector holding the components of the start pose.
-  Eigen::Vector6f target_pose_; ///< 6D-Vector holding the components of the target pose
+  Eigen::Vector6f start_pose_;   ///< 6D-Vector holding the components of the start pose.
+  Eigen::Vector6f target_pose_;  ///< 6D-Vector holding the components of the target pose
 };
 
 #endif  // TRAJECTORYUI_H
