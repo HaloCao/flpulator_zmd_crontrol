@@ -76,7 +76,7 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
   qApp->installEventFilter(this);
 
   // connect ui_panel poseupdate signal to local slot to get informed about updates in the trajectory set-up
-  connect(ui_panel_, SIGNAL(poseUpdate()), this, SLOT(callTrajectoryGenerator()));
+  connect(ui_panel_, SIGNAL(poseUpdate(bool)), this, SLOT(callTrajectoryGenerator(bool)));
 
   // register ros service client for polynomial trajectory generation service+
   polynomial_traj_client_ = nh_.serviceClient<polynomial_trajectory>("polynomial_trajectory");
@@ -138,7 +138,7 @@ bool TrajectoryDesigner::eventFilter(QObject *object, QEvent *event)
   return false;
 }
 
-void TrajectoryDesigner::callTrajectoryGenerator()
+void TrajectoryDesigner::callTrajectoryGenerator(bool start_tracking)
 {
   // Create references to retrieve the current trajectory setup from user interface
   Eigen::Vector6f start_pose;
@@ -168,7 +168,7 @@ void TrajectoryDesigner::callTrajectoryGenerator()
 
   pt_srv.request.duration = duration;
 
-  pt_srv.request.start_tracking = false;
+  pt_srv.request.start_tracking = start_tracking;
 
   if (!polynomial_traj_client_.call(pt_srv))
   {

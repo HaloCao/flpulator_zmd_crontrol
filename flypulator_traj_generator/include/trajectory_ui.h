@@ -62,8 +62,9 @@ Q_SIGNALS:
 
   /**
    * \brief poseUpdate Informs trajectory designer about manipulation of start or target pose.
+   * \param start_tracking True if the resulting trajectory from new poses is to be published.
    */
-  void poseUpdate();
+  void poseUpdate(bool start_tracking);
 
 protected:
   /**

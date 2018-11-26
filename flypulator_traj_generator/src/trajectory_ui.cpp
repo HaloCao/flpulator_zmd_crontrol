@@ -190,7 +190,7 @@ void TrajectoryUI::startposeSliderCallback(int id)
   double new_val = start_pose_panel_.sliders_[id]->value() / (double)start_pose_panel_.multiplier;
   start_pose_panel_.pose_values_[id]->setValue(new_val);
   start_pose_[id] = new_val;
-  Q_EMIT poseUpdate();
+  Q_EMIT poseUpdate(false);
   broadcastStartTransform();
 }
 
@@ -200,7 +200,7 @@ void TrajectoryUI::targetposeSliderCallback(int id)
   double new_val = target_pose_panel_.sliders_[id]->value() / (double)target_pose_panel_.multiplier;
   target_pose_panel_.pose_values_[id]->setValue(new_val);
   target_pose_[id] = new_val;
-  Q_EMIT poseUpdate();
+  Q_EMIT poseUpdate(false);
   broadcastTargetTransform();
 }
 
@@ -210,7 +210,7 @@ void TrajectoryUI::startposeSpinbCallback(int id)
   double new_val = start_pose_panel_.pose_values_[id]->value();
   start_pose_panel_.sliders_[id]->setValue((int)(start_pose_panel_.multiplier * new_val));
   start_pose_[id] = new_val;
-  Q_EMIT poseUpdate();
+  Q_EMIT poseUpdate(false);
   broadcastStartTransform();
 }
 
@@ -220,7 +220,7 @@ void TrajectoryUI::targetposeSpinbCallback(int id)
   double new_val = target_pose_panel_.pose_values_[id]->value();
   target_pose_panel_.sliders_[id]->setValue((int)(target_pose_panel_.multiplier * new_val));
   target_pose_[id] = new_val;
-  Q_EMIT poseUpdate();
+  Q_EMIT poseUpdate(false);
   broadcastTargetTransform();
 }
 
@@ -229,7 +229,7 @@ void TrajectoryUI::durationSliderCallback(int new_val)
   // divide slider value by common multiplier to retrieve it as double
   duration_ = (double)new_val / (double)start_pose_panel_.multiplier;
   dur_value_->setValue(duration_);
-  Q_EMIT poseUpdate();
+  Q_EMIT poseUpdate(false);
 }
 
 void TrajectoryUI::durationSpinbCallback(double new_val)
@@ -237,7 +237,7 @@ void TrajectoryUI::durationSpinbCallback(double new_val)
   // store new duration and set slider accordingly
   duration_ = new_val;
   dur_slider_->setValue(start_pose_panel_.multiplier * duration_);
-  Q_EMIT poseUpdate();
+  Q_EMIT poseUpdate(false);
 }
 
 void TrajectoryUI::getTrajectorySetup(Eigen::Vector6f &start_pose, Eigen::Vector6f &target_pose, double &duration)
@@ -267,11 +267,12 @@ void TrajectoryUI::resetPoseConfigurations()
 void TrajectoryUI::startTrajectoryTracking()
 {
   ROS_INFO("Start Trajectory Tracking");
-  // todo
+  Q_EMIT poseUpdate(true);
 }
 
 void TrajectoryUI::broadcastStartTransform() {
     // convert attitude to rad
+    //todo setRPY is using consecutive rotation convention, the desired one is xyz rotation around initial axes
       Eigen::Vector3f start_ori_rad = start_pose_.tail(3) * M_PI / 180.0f;
       tf::Transform transform;
       transform.setOrigin( tf::Vector3(start_pose_[0], start_pose_[1], start_pose_[2]) );
@@ -283,6 +284,7 @@ void TrajectoryUI::broadcastStartTransform() {
 
 void TrajectoryUI::broadcastTargetTransform() {
     // convert attitude to rad
+    //todo setRPY is using consecutive rotation convention, the desired one is xyz rotation around initial axes
     Eigen::Vector3f target_ori_rad = target_pose_.tail(3) * M_PI / 180.0f;
     tf::Transform transform;
     transform.setOrigin( tf::Vector3(target_pose_[0], target_pose_[1], target_pose_[2]) );

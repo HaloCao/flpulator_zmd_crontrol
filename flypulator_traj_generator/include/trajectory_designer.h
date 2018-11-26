@@ -57,8 +57,9 @@ private Q_SLOTS:
 
   /**
    * \brief Will be executed whenever the user manipulates the trajectory set-up.
+   * \param start_tracking True if the generated trajectory is to be published.
    */
-  void callTrajectoryGenerator();
+  void callTrajectoryGenerator(bool start_tracking);
 
 private:
   ros::NodeHandle nh_;  ///< Interface to register standard ros components
