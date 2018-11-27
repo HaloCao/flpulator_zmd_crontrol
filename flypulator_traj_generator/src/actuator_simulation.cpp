@@ -28,10 +28,10 @@ void ActuatorSimulation::simulateActuatorVelocities(Eigen::Vector6f &start_pose,
                                                     trajectory::RotorEvolution &rotor_velocities, bool &feasible)
 {
   // Uav attitude over time (initialize referring to the start pose)
-  Quaternionf q;  
+  Quaternionf q;
 
-  //starting orientation in rad
-  Eigen::Vector3f start_ori = start_pose.tail(3) * M_PI/180;
+  // starting orientation in rad
+  Eigen::Vector3f start_ori = start_pose.tail(3) * M_PI / 180;
 
   q = AngleAxisf(start_ori[0], Vector3f::UnitX()) * AngleAxisf(start_ori[1], Vector3f::UnitY()) *
       AngleAxisf(start_ori[2], Vector3f::UnitZ());

@@ -11,6 +11,7 @@
 
 #include "rviz/view_controller.h"
 #include <ros/ros.h>
+#include <tf/transform_listener.h>
 
 #include "flypulator_traj_generator/polynomial_trajectory.h"
 
@@ -64,17 +65,23 @@ private Q_SLOTS:
 private:
   ros::NodeHandle nh_;  ///< Interface to register standard ros components
 
-  ros::ServiceClient polynomial_traj_client_;  ///< Service client which calls ros-service to create polynomial
-                                               ///< trajectories.
+  ros::ServiceClient polynomial_traj_client_;     ///< Service client which calls ros-service to create polynomial
+                                                  ///< trajectories.
+  tf::TransformListener poses_changed_listener_;  ///< Listens to new transforms between world and start_pose /
+                                                  ///< target_pose frames
+  ros::Time start_tf_stamp_;   ///< Stores the time stamp when the last transform between world and start pose fram was
+                               ///< published.
+  ros::Time target_tf_stamp_;  ///< Stores the time stamp when the last transform between world and target pose fram was
+                               ///< published.
 
   rviz::VisualizationManager* manager_;  ///< Central manager of rviz, holding displays, viewcontrollers etc.
   rviz::RenderPanel* render_panel_;      ///< Widget which shows OGRE-rendered scene in RViz.
 
-  rviz::Display* grid_;  ///< Displays a finite 2D grid in 3D render space.
-  rviz::Display* start_frame_; ///< Coordinate system representing the frame of trajectory's start position.
-  rviz::Display* target_frame_; ///< Coordinate system representing the frame of trajectory's target position.
-  rviz::Display* uav_model_; ///< Model of the hexacopter
-
+  rviz::Display* grid_;          ///< Displays a finite 2D grid in 3D render space.
+  rviz::Display* start_frame_;   ///< Coordinate system representing the frame of trajectory's start position.
+  rviz::Display* target_frame_;  ///< Coordinate system representing the frame of trajectory's target position.
+  rviz::Display* uav_model_;     ///< Model of the hexacopter
+  rviz::Display* path_;          ///< Displays the current trajectory as a pose array.
 
   TrajectoryUI* ui_panel_;       ///< User interface to set the parametrization of a desired trajectory.
   ActuatorPlot* actuator_plot_;  ///< holds a qCustomPlot widget which plots the behaviour of the rotor velocities.

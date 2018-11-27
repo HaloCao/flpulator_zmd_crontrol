@@ -71,6 +71,9 @@ bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& 
     sim_dt = 0.01;
   }
 
+  geometry_msgs::PoseArray path;
+  std::vector<geometry_msgs::Pose> poses;
+
   for (double t = 0; t <= duration; t += sim_dt)
   {
     geometry_msgs::Vector3 pos_acc;
@@ -87,7 +90,33 @@ bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& 
     pos_accs.push_back(pos_acc);
     rot_accs.push_back(rot_acc);
     time_stamps.push_back(t);
+
+    geometry_msgs::Pose pose;
+    pose.position.x = evaluatePosition(a[0][0], a[0][1], a[0][2], a[0][3], a[0][4], a[0][5], t);
+    pose.position.y = evaluatePosition(a[1][0], a[1][1], a[1][2], a[1][3], a[1][4], a[1][5], t);
+    pose.position.z = evaluatePosition(a[2][0], a[2][1], a[2][2], a[2][3], a[2][4], a[2][5], t);
+
+    float roll = evaluatePosition(a[3][0], a[3][1], a[3][2], a[3][3], a[3][4], a[3][5], t);
+    float pitch = evaluatePosition(a[4][0], a[4][1], a[4][2], a[4][3], a[4][4], a[4][5], t);
+    float yaw = evaluatePosition(a[5][0], a[5][1], a[5][2], a[5][3], a[5][4], a[5][5], t);
+
+    // Each arrow of the pose array visualitation is supposed to point to the direction of the z-Axis, there a 90°
+    // rotation against the y-axis is performed after all.
+    Eigen::Quaternionf q;
+    q = Eigen::AngleAxisf(roll, Eigen::Vector3f::UnitX()) * Eigen::AngleAxisf(pitch, Eigen::Vector3f::UnitY()) *
+        Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ()) * Eigen::AngleAxisf(-0.5 * M_PI, Eigen::Vector3f::UnitY());
+
+    pose.orientation.x = q.x();
+    pose.orientation.y = q.y();
+    pose.orientation.z = q.z();
+    pose.orientation.w = q.w();
+
+    poses.push_back(pose);
   }
+
+  path.poses = poses;
+  path.header.frame_id = "world";
+  traj_visualization_pub_.publish(path);
 
   // only start the trajectory tracking, if demanded
   if (!start_tracking)
@@ -202,6 +231,11 @@ void TrajectoryGenerator::euler2Quaternion(const float roll, const float pitch, 
 inline float TrajectoryGenerator::evaluateAcceleration(float a2, float a3, float a4, float a5, float t)
 {
   return 2 * a2 + 6 * a3 * t + 12 * a4 * pow(t, 2) + 20 * a5 * pow(t, 3);
+}
+
+inline float TrajectoryGenerator::evaluatePosition(float a0, float a1, float a2, float a3, float a4, float a5, float t)
+{
+  return a0 + a1 * t + a2 * pow(t, 2) + a3 * pow(t, 3) + a4 * pow(t, 4) + a5 * pow(t, 5);
 }
 
 // calculate angular velocity from euler angles and its derivatives, following Fje94 p.42

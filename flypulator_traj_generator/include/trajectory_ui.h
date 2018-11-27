@@ -61,10 +61,9 @@ public:
 Q_SIGNALS:
 
   /**
-   * \brief poseUpdate Informs trajectory designer about manipulation of start or target pose.
-   * \param start_tracking True if the resulting trajectory from new poses is to be published.
+   * \brief startTracking Informs trajectory designer to generate new trajectory and publish it.
    */
-  void poseUpdate(bool start_tracking);
+  void startTracking(bool);
 
 protected:
   /**
@@ -154,11 +153,19 @@ private Q_SLOTS:
    */
   void broadcastTargetTransform();
 
+  /**
+   * @brief log Write the given message to the log panel.
+   * @param message String message to append.
+   */
+  void log(QString message);
+
 private:
   ros::NodeHandle nh_;  ///< Interface to register standard ros components
 
-  tf::TransformBroadcaster start_frame_br_;  ///< tf broadcaster publishing the transform between world and start pose frame
-  tf::TransformBroadcaster target_frame_br_; ///< tf broadcaster publishing the transform between world and target pose frame
+  tf::TransformBroadcaster start_frame_br_;   ///< tf broadcaster publishing the transform between world and start pose
+                                              ///< frame
+  tf::TransformBroadcaster target_frame_br_;  ///< tf broadcaster publishing the transform between world and target pose
+                                              ///< frame
 
   QVBoxLayout *main_layout_;  ///< The main layout of the trajectory-ui-widget
 

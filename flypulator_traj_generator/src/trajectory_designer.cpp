@@ -25,11 +25,6 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
   , actuator_simulation_(new ActuatorSimulation())
 
 {
-  // updates the ROS-Spin at 50 Hz (necessary for node communication) and listens to ros-shutdown
-  QTimer *t = new QTimer(this);
-  QObject::connect(t, SIGNAL(timeout()), this, SLOT(rosUpdate()));
-  t->start(20);
-
   // set user interface panel to fixed width and actuator plot widget to fixed height
   ui_panel_->setFixedWidth(500);
   actuator_plot_->setFixedHeight(400);
@@ -50,6 +45,7 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
   setLayout(main_layout);
 
   // Initialize 3D View (VisualizationManager and RenderPanel)
+  // todo: set camera such that whole default pose set is visible
   manager_ = new rviz::VisualizationManager(render_panel_);
   manager_->setFixedFrame("world");
   render_panel_->initialize(manager_->getSceneManager(), manager_);
@@ -72,14 +68,27 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
   uav_model_ = manager_->createDisplay("rviz/RobotModel", "uav_hexacopter", true);
   uav_model_->subProp("Robot Description")->setValue("/robot_description");
 
+  // show current trajectory as pose array
+  path_ = manager_->createDisplay("rviz/PoseArray", "trajectory_posearray", true);
+  path_->subProp("Topic")->setValue("trajectory/visualization");
+  path_->subProp("Arrow Length")->setValue(0.03);
+
   // apply keypresses
   qApp->installEventFilter(this);
 
   // connect ui_panel poseupdate signal to local slot to get informed about updates in the trajectory set-up
-  connect(ui_panel_, SIGNAL(poseUpdate(bool)), this, SLOT(callTrajectoryGenerator(bool)));
+  connect(ui_panel_, SIGNAL(startTracking(bool)), this, SLOT(callTrajectoryGenerator(bool)));
 
   // register ros service client for polynomial trajectory generation service+
   polynomial_traj_client_ = nh_.serviceClient<polynomial_trajectory>("polynomial_trajectory");
+
+  // updates the ROS-Spin at 50 Hz (necessary for node communication) and listens to ros-shutdown
+  QTimer *t = new QTimer(this);
+  QObject::connect(t, SIGNAL(timeout()), this, SLOT(rosUpdate()));
+  t->start(20);
+
+  // retrieve trajectory for initial pose configuration
+  callTrajectoryGenerator(false);
 }
 
 void TrajectoryDesigner::rosUpdate()
@@ -87,6 +96,39 @@ void TrajectoryDesigner::rosUpdate()
   if (ros::ok())
   {
     ros::spinOnce();
+
+    // look for new transform between /world and /start_pose, if not available, look for new transform between /world
+    // and /target_pose. Less elegant workaround.. Other solution would be to inform the trajectory designer via signal
+    // slot concept about new pose configurations, but the callback would run on the gui-thread, thus blocking user
+    // interactions and leading to laggy slider movements. The implementation should consider the callback to run in a
+    // dedicated thread.
+    tf::StampedTransform transform;
+    try
+    {
+      poses_changed_listener_.lookupTransform("/world", "/start_pose", ros::Time(0), transform);
+      if (transform.stamp_ != start_tf_stamp_)
+      {
+        start_tf_stamp_ = transform.stamp_;
+
+        // calculate new trajectory
+        callTrajectoryGenerator(false);
+
+        return;
+      }
+
+      poses_changed_listener_.lookupTransform("/world", "/target_pose", ros::Time(0), transform);
+      if (transform.stamp_ != target_tf_stamp_)
+      {
+        target_tf_stamp_ = transform.stamp_;
+
+        // calculate new trajectory
+        callTrajectoryGenerator(false);
+      }
+    }
+    catch (tf::TransformException &ex)
+    {
+      ROS_ERROR("%s", ex.what());
+    }
   }
   else
   {

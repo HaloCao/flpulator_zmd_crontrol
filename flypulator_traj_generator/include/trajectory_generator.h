@@ -7,6 +7,7 @@
 #include "geometry_msgs/Twist.h"
 #include "geometry_msgs/Vector3.h"
 #include "geometry_msgs/Quaternion.h"
+#include "geometry_msgs/PoseArray.h"
 
 // include message structs
 #include "trajectory_msgs/MultiDOFJointTrajectoryPoint.h"
@@ -32,9 +33,10 @@ typedef std::vector<geometry_msgs::Vector3> accelerations;
 class TrajectoryGenerator
 {
 public:  // constructor takes publisher to publish message
-  TrajectoryGenerator(ros::Publisher& pub)
+  TrajectoryGenerator(ros::Publisher& traj_pub, ros::Publisher& visu_pub)
   {
-    trajectory_publisher_ = pub;
+    trajectory_publisher_ = traj_pub;
+    traj_visualization_pub_ = visu_pub;
   }
 
   // create and send trajectory with pose estimation frequency
@@ -47,6 +49,8 @@ public:  // constructor takes publisher to publish message
 private:
   // message publisher for output trajectory, needs to be global to be visible to create<..>Trajectory functions
   ros::Publisher trajectory_publisher_;
+  // publisher for visualization purpose
+  ros::Publisher traj_visualization_pub_;
   // create trajectory message
   trajectory_msgs::MultiDOFJointTrajectoryPoint generateTrajectoryMessage(
       const float p[6], const float p_dot[6], const float p_ddot[6], const Eigen::Quaternionf& q,
@@ -63,8 +67,10 @@ private:
   void euler2Quaternion(const float roll, const float pitch, const float yaw, Eigen::Quaternionf& q);
   // convert 2 messages of Vector3 type to 6D float array
   void convertTo6DArray(const geometry_msgs::Vector3& x_1, const geometry_msgs::Vector3& x_2, float destination[]);
-  // evaluate a polynom at a given time
+  // evaluate acceleration polynom at a given time
   inline float evaluateAcceleration(float a2, float a3, float a4, float a5, float t);
+  // evaluate position polynom at a given time
+  inline float evaluatePosition(float a0, float a1, float a2, float a3, float a4, float a5, float t);
 };
 
 #endif  // TRAJECTORY_GENERATOR_H

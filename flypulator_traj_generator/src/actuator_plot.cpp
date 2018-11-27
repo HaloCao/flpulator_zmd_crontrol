@@ -51,7 +51,7 @@ ActuatorPlot::ActuatorPlot(QWidget *parent) : QWidget(parent), actuator_plot_(ne
   // show legend (horizontal fill order)
   actuator_plot_->legend->setVisible(true);
   actuator_plot_->legend->setFillOrder(QCPLegend::foColumnsFirst);
-  actuator_plot_->plotLayout()->setRowStretchFactor(1, 0.001);
+  //  actuator_plot_->plotLayout()->setRowStretchFactor(1, 0.001);
 
   // create constant horizontal lines to visualize the actuator velocity boundaries
   upper_limit_line_ = new QCPItemLine(actuator_plot_);
@@ -89,7 +89,7 @@ void ActuatorPlot::plotActuatorEvolution(trajectory::RotorEvolution &rotor_veloc
   plotActuatorBoundaries(t_end);
 
   // brush background light red if actuator boundaries exceeded
-  QColor background_col = feasible ? Qt::white : QColor(255, 234, 234);
+  QColor background_col = feasible ? Qt::white : QColor(255, 210, 210);
   actuator_plot_->setBackground(background_col);
 
   // update custom plot

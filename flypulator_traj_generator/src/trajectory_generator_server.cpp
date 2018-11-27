@@ -54,6 +54,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "trajectory_generator");  // pass node name (!)
   ros::NodeHandle n;
   ros::Publisher trajectory_publisher;
+  ros::Publisher traj_visualization_pub_;
 
   // register services
   ros::ServiceServer serviceLinTraj = n.advertiseService("linear_trajectory", createLinearTrajectoryCB);
@@ -64,8 +65,12 @@ int main(int argc, char **argv)
   // register publisher for output message
   trajectory_publisher = n.advertise<trajectory_msgs::MultiDOFJointTrajectoryPoint>("trajectory", 1000);
 
+  // register publisher for visualization
+  traj_visualization_pub_ = n.advertise<geometry_msgs::PoseArray>("/trajectory/visualization", 1000);
+  ;
+
   // create trajectory generator class object
-  TrajectoryGenerator m_generator(trajectory_publisher);
+  TrajectoryGenerator m_generator(trajectory_publisher, traj_visualization_pub_);
   g_generator_p = &m_generator;  // set pointer for global variable
 
   ros::spin();  // keep server alive and watch for requests
