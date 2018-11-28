@@ -1,5 +1,4 @@
 /*
- * @todo Description
  * @author Nils Dunkelberg
  */
 
@@ -37,6 +36,15 @@ typedef std::vector<geometry_msgs::Vector3> accelerations;
 typedef std::vector<QVector<double>> RotorEvolution;
 }  // namespace trajectory
 
+/**
+ * \class The ActuatorSimulation class
+ * \brief The ActuatorSimulation class implements the actual mathematics to simulate the rotor velocity's course over
+ * time. There is basically one central method which takes the required initial accelerations of the trajectory and uses
+ * the state space model of the hexacopter and the kinematic model from the ros parameter server to retrieve a solid
+ * prediction of the expected rotor velocities. Proceeding from the given forces and torques with regard to the
+ * navigation frame, a mapping matrix is used to solve for the rotor velocities. It contains the geometric
+ * characteristics as well as the current attitude of the hexacopter.
+ */
 class ActuatorSimulation
 {
 public:

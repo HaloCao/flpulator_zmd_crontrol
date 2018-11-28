@@ -1,5 +1,4 @@
 /*
- * @todo Description
  * @author Nils Dunkelberg
  */
 

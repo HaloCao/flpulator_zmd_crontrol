@@ -1,5 +1,4 @@
 /*
- * @todo Description
  * @author Nils Dunkelberg
  */
 
@@ -31,6 +30,14 @@ class VisualizationManager;
  */
 typedef flypulator_traj_generator::polynomial_trajectory polynomial_trajectory;
 
+/**
+ * \class The TrajectoryDesigner class
+ * \brief The Trajectory Designer embeds the main application of the trajectory planning module. It starts a
+ * QApplication containing a graphic user interface with a panel to specify the trajectory's parameters, a log area for
+ * informative feedback as well as a QCustomPlotting widget, which a priori plots the course of the six rotor velocities
+ * over the time of flight. Furthermore it contributes a 3D rviz-Render Scene where the start and target pose and the
+ * spacial course of the trajectory are visualized.
+ */
 class TrajectoryDesigner : public QWidget
 {
   Q_OBJECT

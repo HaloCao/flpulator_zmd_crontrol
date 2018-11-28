@@ -20,6 +20,7 @@
 
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 
 /**
  * \struct Structure which holds the graphic components of a pose panel to set start and target pose.
@@ -41,6 +42,12 @@ namespace Eigen
 typedef Eigen::Matrix<float, 6, 1> Vector6f;
 }
 
+/**
+ * \class The TrajectoryUI class
+ * \brief The TrajectoryUI class contains a user interface panel to specify the trajectory's initial parameters. There
+ * are two so called pose-panels offering six sliders to set the 6D- start and target poses of the trajectory. Further
+ * there is a slider to specify the desired time of flight and a panel to actually publish the calculated trajectory.
+ */
 class TrajectoryUI : public QWidget
 {
   Q_OBJECT
@@ -139,6 +146,12 @@ private Q_SLOTS:
   void resetPoseConfigurations();
 
   /**
+   * \brief alignStartDronePose Listen to baselink transform (current drone pose) and set the start pose of the
+   * trajectory accordingly.
+   */
+  void alignStartDronePose();
+
+  /**
    * \brief Callback to calculate trajectory for given pose-configurations and execute it.
    */
   void startTrajectoryTracking();
@@ -166,6 +179,7 @@ private:
                                               ///< frame
   tf::TransformBroadcaster target_frame_br_;  ///< tf broadcaster publishing the transform between world and target pose
                                               ///< frame
+  tf::TransformListener baselink_listener_;   ///< listens to baselink-transforms (current hexacopter pose)
 
   QVBoxLayout *main_layout_;  ///< The main layout of the trajectory-ui-widget
 

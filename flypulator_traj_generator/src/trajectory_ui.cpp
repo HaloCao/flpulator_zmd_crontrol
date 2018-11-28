@@ -1,5 +1,4 @@
 /*
- * @todo Description
  * @author Nils Dunkelberg
  */
 
@@ -44,21 +43,23 @@ TrajectoryUI::TrajectoryUI(QWidget *parent)
   // add reset and start buttons and connect them to their callbacks
   QPushButton *reset_btn = new QPushButton("Reset Poses");
   QPushButton *start_btn = new QPushButton("Start Trajectory Tracking");
+  QPushButton *match_start_pose_btn = new QPushButton("Align Start to Drone Pose");
+
+  // make start_trajectory_button fully span two rows
+  start_btn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
 
   connect(reset_btn, SIGNAL(clicked()), this, SLOT(resetPoseConfigurations()));
   connect(start_btn, SIGNAL(clicked()), this, SLOT(startTrajectoryTracking()));
+  connect(match_start_pose_btn, SIGNAL(clicked()), this, SLOT(alignStartDronePose()));
 
   // add buttons to horizontal layout and to main layout finally
-  QHBoxLayout *start_reset_layout = new QHBoxLayout();
-  start_reset_layout->addWidget(reset_btn);
-  start_reset_layout->addWidget(start_btn);
+  QGridLayout *start_reset_layout = new QGridLayout();
+  start_reset_layout->addWidget(reset_btn, 0, 0);
+  start_reset_layout->addWidget(match_start_pose_btn, 1, 0);
+  start_reset_layout->addWidget(start_btn, 0, 1, 2, 1);
   QWidget *container = new QWidget();
   container->setLayout(start_reset_layout);
   main_layout_->addWidget(container);
-
-  //  // apply vertical spacer to push items to the top
-  //  QSpacerItem *v_spacer = new QSpacerItem(10, 100, QSizePolicy::Minimum, QSizePolicy::Expanding);
-  //  main_layout_->addSpacerItem(v_spacer);
 
   // add panel for log messages
   QGroupBox *log_gbox = new QGroupBox("Log");
@@ -271,10 +272,41 @@ void TrajectoryUI::resetPoseConfigurations()
   dur_value_->setValue(5);
 }
 
+void TrajectoryUI::alignStartDronePose()
+{
+  // listen to transforms between /base_link and /world to retrieve drone's current pose
+  tf::StampedTransform baselink_tf;
+  try
+  {
+    baselink_listener_.lookupTransform("/world", "/base_link", ros::Time(0), baselink_tf);
+
+    // apply origin of transform to current start pose's position
+    tf::Vector3 orig = baselink_tf.getOrigin();
+    start_pose_panel_.pose_values_[0]->setValue(orig.getX());
+    start_pose_panel_.pose_values_[1]->setValue(orig.getY());
+    start_pose_panel_.pose_values_[2]->setValue(orig.getZ());
+
+    // apply roll pitch yaw angles to current start pose's orientation
+    tf::Quaternion q = baselink_tf.getRotation();
+    double roll, pitch, yaw;
+    tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
+
+    start_pose_panel_.pose_values_[3]->setValue(roll * 180 / M_PI);
+    start_pose_panel_.pose_values_[4]->setValue(pitch * 180 / M_PI);
+    start_pose_panel_.pose_values_[5]->setValue(yaw * 180 / M_PI);
+  }
+  catch (tf::TransformException &ex)
+  {
+    ROS_WARN("%s", ex.what());
+    log("Couldn't retrieve current pose of the hexacopter. Ensure the transform between /world and /baselink frames "
+        "being broadcasted.");
+  }
+}
+
 void TrajectoryUI::startTrajectoryTracking()
 {
-  log("Start Trajectory Tracking");
   Q_EMIT startTracking(true);
+  log("Finished Trajectory Tracking");
 }
 
 void TrajectoryUI::broadcastStartTransform()
@@ -303,5 +335,14 @@ void TrajectoryUI::broadcastTargetTransform()
 
 void TrajectoryUI::log(QString message)
 {
+  // color previous entry gray and append new message
+  log_panel_->setTextColor(QColor(150, 150, 150));
+  log_panel_->setText(log_panel_->toPlainText());
+  log_panel_->setTextColor(Qt::black);
   log_panel_->append(message);
+
+  // scroll to the very bottom
+  QTextCursor c = log_panel_->textCursor();
+  c.movePosition(QTextCursor::End);
+  log_panel_->setTextCursor(c);
 }

@@ -1,5 +1,4 @@
 /*
- * @todo Description
  * @author Nils Dunkelberg
  */
 
@@ -19,6 +18,12 @@ namespace trajectory
 typedef std::vector<QVector<double>> RotorEvolution;
 }  // namespace trajectory
 
+/**
+ * \class The ActuatorPlot class
+ * \brief The ActuatorPlot class is responsible for plotting the retrieved course of the rotor's velocities. Furthermore
+ * it plots the upper and lower limit of feasible actuator values and highlights a red background in case of
+ * infeasibility. The plotting is based on the open source QCustomPlot widget.
+ */
 class ActuatorPlot : public QWidget
 {
   Q_OBJECT
