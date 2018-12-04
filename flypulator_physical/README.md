@@ -24,11 +24,13 @@ start Tmux:
 ```
 tmux
 ```
+
 - Make vertical split: ctrl+x v
 - Make split: ctrl+x s
 - Close split: exit
 - Make new tab: ctrl+x c
 - Move to next/previous tab: ctrl+x n/p
+
 ### Start and attach to VNC server
 On the flypulator type:
 ```
@@ -47,6 +49,7 @@ steamVR
 ```
 observe that the tracker and the two lighthouses are marked green.
 ### ROS setup
+
 On the Flypulator: (open four windows in the ssh session with tmux and launch one node in each window)
 ```
 roscore
@@ -64,7 +67,6 @@ export ROS_MASTER_URI=http://flypulator:11311
 
 rqt
 ```
-
 
 
 
