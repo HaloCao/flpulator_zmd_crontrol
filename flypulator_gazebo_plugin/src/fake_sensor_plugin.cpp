@@ -30,6 +30,8 @@
 
 namespace gazebo
 {
+static bool is_initialized = false;  // flag to store position offset in z
+
 bool write_data_2_file = true;  // save pose data to file
 std::string file_path = "/home/jan/flypulator_ws/src/flypulator/flypulator_gazebo_plugin/position_data_refstep.csv";
 
@@ -202,11 +204,18 @@ public:
   void OnUpdate(const common::UpdateInfo &_info)  // update rate = 1kHz
   {
     static int loop_cnt = 0;
+    static double offset_z = 0;  // offset in z when using gazebo coordinates as UAV position in world frame
 
     if (loop_cnt >= (g_output_rate_divider - 1))
     {
       loop_cnt = 0;  // reset loop counter
       // ROS_INFO_STREAM("I am fake sensor:"<<this->world->SimTime().Double());
+      if (is_initialized == false)
+      {
+        offset_z = this->link0->WorldPose().Pos().Z();
+        ROS_DEBUG("offset_z: %f", offset_z);
+        is_initialized = true;
+      }
       ignition::math::Pose3d drone_pose = this->link0->WorldPose();
       ignition::math::Vector3<double> drone_vel_linear = this->link0->WorldLinearVel();
       ignition::math::Vector3<double> drone_vel_angular = this->link0->RelativeAngularVel();
@@ -218,7 +227,7 @@ public:
       // pose
       uav_state_msg.pose.position.x = drone_pose.Pos().X();
       uav_state_msg.pose.position.y = drone_pose.Pos().Y();
-      uav_state_msg.pose.position.z = drone_pose.Pos().Z();
+      uav_state_msg.pose.position.z = drone_pose.Pos().Z() - offset_z;
 
       // Eigen::Quaterniond q_ItoB
       // (drone_pose.Rot().W(),drone_pose.Rot().X(),drone_pose.Rot().Y(),drone_pose.Rot().Z()); Eigen::Quaterniond
@@ -249,7 +258,7 @@ public:
       // pose
       uav_state_meas_msg.pose.position.x = drone_pose.Pos().X() + g_noise_generator_x();
       uav_state_meas_msg.pose.position.y = drone_pose.Pos().Y() + g_noise_generator_y();
-      uav_state_meas_msg.pose.position.z = drone_pose.Pos().Z() + g_noise_generator_z();
+      uav_state_meas_msg.pose.position.z = drone_pose.Pos().Z() - offset_z + g_noise_generator_z();
 
       // add attitude noise using roll pitch yaw representation (yaw-pitch-roll sequence)
       ignition::math::Vector3<double> eul(drone_pose.Rot().Roll(), drone_pose.Rot().Pitch(), drone_pose.Rot().Yaw());

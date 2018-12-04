@@ -58,7 +58,6 @@ void computeControlOutputAndPublish()
 
   g_pose_error_pub->publish(pose_error_msg);
 
-
   Eigen::Matrix<float, 6, 1> control_wrench;
   // compute spinning rates
   ROS_DEBUG("Compute Control Output..");
@@ -207,11 +206,8 @@ int main(int argc, char** argv)
 
   g_current_pose.q = Eigen::Quaternionf(1.0, 0.0, 0.0, 0.0);
   g_current_pose.p = Eigen::Vector3f(0, 0, 0);
-  // for simulation in Gazebo
-  /* g_desired_pose.p = Eigen::Vector3f(0, 0, 0.23f); */
-  /* g_current_pose.p = Eigen::Vector3f(0, 0, 0.22f); */
+
   // initialize node
-  //
   ros::init(argc, argv, "controller");
 
   ros::NodeHandle n;
