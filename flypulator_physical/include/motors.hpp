@@ -68,8 +68,9 @@ class Motors
 
         flag_i2c_init = true;
 
-        armMotors();
-
+        disarmMotors();
+        
+        // keep ~1s send init signal to ESC
         for (int i = 0; i < 200; i++)
             writeMotors();
     }
@@ -83,7 +84,7 @@ class Motors
     {
         if (!flag_i2c_init)
             return;
-        if (motors_state == MOTOR_ARMED)
+        if (motors_state != MOTOR_ARMED)
             return;
 
         for (int i = 0; i < N_MOTORS; ++i)
@@ -97,9 +98,21 @@ class Motors
 
     /**
      * @name armMotors
-     * @brief set all motors to zero velocity.
+     * @brief allow setting velocity
      */
     void armMotors()
+    {
+        if (!flag_i2c_init)
+            return;
+
+        motors_state = MOTOR_ARMED;
+    }
+
+    /**
+    * @name  disarmMotors
+    * @brief set all motors to zero velocity.
+    */
+    void disarmMotors()
     {
         if (!flag_i2c_init)
             return;
@@ -108,18 +121,6 @@ class Motors
         {
             velocity[i] = 0;
         }
-
-        motors_state = MOTOR_ARMED;
-    }
-
-    /**
-    * @name  disarmMotors
-    * @brief as it's name.
-    */
-    void disarmMotors()
-    {
-        if (!flag_i2c_init)
-            return;
 
         motors_state = MOTOR_DISARMED;
     }

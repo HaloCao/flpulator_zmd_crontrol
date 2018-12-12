@@ -6,6 +6,7 @@
 
 // handle for all motors
 Motors *motors_ptr;
+float g_upper_limit = 6000;
 
 bool flag_in_control = false;
 
@@ -13,13 +14,13 @@ void controlMsgCallback(const flypulator_common_msgs::RotorVelStamped msg)
 {
   float input[6] = {0};
 
-  if (motors_ptr->getMotorsState() == Motors::MOTOR_ARMED)
+  if (motors_ptr->getMotorsState() != Motors::MOTOR_ARMED)
     return;
 
   flag_in_control = true;
 
   for (int i = 0; i < 6; ++i)
-    input[i] = msg.velocity[i];
+    input[i] = msg.velocity[i]>g_upper_limit?g_upper_limit:msg.velocity[i];
 
   motors_ptr->setMotorsVel(input);
 
@@ -34,17 +35,19 @@ void dynamicParamCallback(flypulator_mavros::offb_parameterConfig &config, uint3
     // arm motors
     if (motors_ptr->getMotorsState() != Motors::MOTOR_ARMED)
       motors_ptr->armMotors();
-
-    flag_in_control = false;
   }
   else
   {
     // disarm motors
     if (motors_ptr->getMotorsState() != Motors::MOTOR_DISARMED)
       motors_ptr->disarmMotors();
+
+    flag_in_control = false;
   }
 
-  if (!flag_in_control)
+  g_upper_limit = config.upper_limit;
+
+  if ((!flag_in_control)&&(motors_ptr->getMotorsState() != Motors::MOTOR_DISARMED))
   {
     float input[6]={0};
     input[0] = config.motor2_speed; // drone motor 2
@@ -54,10 +57,11 @@ void dynamicParamCallback(flypulator_mavros::offb_parameterConfig &config, uint3
     input[4] = config.motor6_speed; // drone motor 6
     input[5] = config.motor3_speed; // drone motor 3
 
+    for(int i=0; i<6; ++i)
+      input[i] = input[i]>g_upper_limit?g_upper_limit:input[i];
+
     motors_ptr->setMotorsVel(input);
   }
-
-  float upper_limit = config.upper_limit;
 }
 
 int main(int argc, char **argv)
@@ -77,7 +81,7 @@ int main(int argc, char **argv)
   cb = boost::bind(&dynamicParamCallback, _1, _2);
   param_srv.setCallback(cb);
 
-  ros::Rate loop_rate(100);
+  ros::Rate loop_rate(200);
   while (ros::ok())
   {
     if (!flag_in_control)
