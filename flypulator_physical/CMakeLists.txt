@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(flypulator_physical)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -141,6 +141,9 @@ include_directories(
 
 add_executable(offboard_node src/offboard_node.cpp)
 add_executable(latency_node src/latency_node.cpp)
+
+SET_SOURCE_FILES_PROPERTIES(src/ft260_driver.c PROPERTIES LANGUAGE CXX)
+add_executable(i2c_to_esc src/i2c_to_esc.cpp src/ft260_driver.c)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -155,9 +158,12 @@ target_link_libraries(offboard_node  ${catkin_LIBRARIES})
 
 target_link_libraries(latency_node  ${catkin_LIBRARIES})
 
+target_link_libraries(i2c_to_esc  ${catkin_LIBRARIES} -ludev)
+
 
 add_dependencies(offboard_node  ${PROJECT_NAME}_gencfg ${catkin_EXPORTED_TARGETS})
 add_dependencies(latency_node ${PROJECT_NAME}_gencfg ${catkin_EXPORTED_TARGETS})
+add_dependencies(i2c_to_esc ${PROJECT_NAME}_gencfg ${catkin_EXPORTED_TARGETS})
 #############
 ## Install ##
 #############
