@@ -33,14 +33,18 @@ void dynamicParamCallback(flypulator_mavros::offb_parameterConfig &config, uint3
   if (config.drone_armed)
   {
     // arm motors
-    if (motors_ptr->getMotorsState() != Motors::MOTOR_ARMED)
+    if (motors_ptr->getMotorsState() != Motors::MOTOR_ARMED){
       motors_ptr->armMotors();
+      ROS_WARN_STREAM("Motor ARMED!");
+    }
   }
   else
   {
     // disarm motors
-    if (motors_ptr->getMotorsState() != Motors::MOTOR_DISARMED)
+    if (motors_ptr->getMotorsState() != Motors::MOTOR_DISARMED){
       motors_ptr->disarmMotors();
+      ROS_WARN_STREAM("Motor DISARMED!");
+    }
 
     flag_in_control = false;
   }
@@ -50,12 +54,12 @@ void dynamicParamCallback(flypulator_mavros::offb_parameterConfig &config, uint3
   if ((!flag_in_control)&&(motors_ptr->getMotorsState() != Motors::MOTOR_DISARMED))
   {
     float input[6]={0};
-    input[0] = config.motor2_speed; // drone motor 2
-    input[1] = config.motor5_speed; // drone motor 5
-    input[2] = config.motor1_speed; // drone motor 1
-    input[3] = config.motor4_speed; // drone motor 4
-    input[4] = config.motor6_speed; // drone motor 6
-    input[5] = config.motor3_speed; // drone motor 3
+    input[0] = config.motor1_speed; 
+    input[1] = config.motor2_speed;
+    input[2] = config.motor3_speed; 
+    input[3] = config.motor4_speed;
+    input[4] = config.motor5_speed; 
+    input[5] = config.motor6_speed; 
 
     for(int i=0; i<6; ++i)
       input[i] = input[i]>g_upper_limit?g_upper_limit:input[i];
