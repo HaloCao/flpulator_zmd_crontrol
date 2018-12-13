@@ -17,7 +17,10 @@ void controlMsgCallback(const flypulator_common_msgs::RotorVelStamped msg)
   if (motors_ptr->getMotorsState() != Motors::MOTOR_ARMED)
     return;
 
-  flag_in_control = true;
+  if(!flag_in_control){
+    flag_in_control = true;
+    ROS_WARN_STREAM("Controller ON!");
+  }
 
   for (int i = 0; i < 6; ++i)
     input[i] = msg.velocity[i]>g_upper_limit?g_upper_limit:msg.velocity[i];
@@ -47,6 +50,7 @@ void dynamicParamCallback(flypulator_mavros::offb_parameterConfig &config, uint3
     }
 
     flag_in_control = false;
+    ROS_WARN_STREAM("Controller OFF!");
   }
 
   g_upper_limit = config.upper_limit;
@@ -65,6 +69,7 @@ void dynamicParamCallback(flypulator_mavros::offb_parameterConfig &config, uint3
       input[i] = input[i]>g_upper_limit?g_upper_limit:input[i];
 
     motors_ptr->setMotorsVel(input);
+    ROS_INFO_STREAM("Set Motors speed!");
   }
 }
 
