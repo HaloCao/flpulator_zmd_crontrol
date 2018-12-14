@@ -27,6 +27,7 @@ void controlMsgCallback(const flypulator_common_msgs::RotorVelStamped msg)
 
   motors_ptr->setMotorsVel(input);
 
+  ROS_INFO_STREAM("controlMsgCallback() Write Motors!");
   if (motors_ptr->writeMotors() != Motors::WRITE_OK)
     printf(PRED "writeMotor error!" PRST);
 }
@@ -90,12 +91,14 @@ int main(int argc, char **argv)
   cb = boost::bind(&dynamicParamCallback, _1, _2);
   param_srv.setCallback(cb);
 
-  ros::Rate loop_rate(200);
+  ros::Rate loop_rate(100);
   while (ros::ok())
   {
-    if (!flag_in_control)
+    if (!flag_in_control){
+      ROS_INFO_STREAM("main() Write Motors!");
       if (motors_ptr->writeMotors() != Motors::WRITE_OK)
         printf(PRED "writeMotor error!" PRST);
+    }
 
     ros::spinOnce();
     loop_rate.sleep();
