@@ -3,11 +3,17 @@
 #include <flypulator_common_msgs/RotorVelStamped.h>
 #include <dynamic_reconfigure/server.h>
 #include <motors.hpp>
+#include <thread>
+#include <mutex>
+#include <algorithm>
+
 
 // handle for all motors
 Motors *motors_ptr;
 float g_upper_limit = 6000;
+float g_lower_limit = 0;
 bool sem_i2c = true; // binary semaphore for i2c master
+std::mutex mutex_set_motors;
 
 bool flag_in_control = false;
 
@@ -18,6 +24,8 @@ void controlMsgCallback(const flypulator_common_msgs::RotorVelStamped msg)
   if (motors_ptr->getMotorsState() != Motors::MOTOR_ARMED)
     return;
 
+  ROS_INFO_STREAM_THROTTLE(0.5, "controlMsgCallback() get flypulator_common_msgs::RotorVelStamped!");
+
   if (!flag_in_control)
   {
     flag_in_control = true;
@@ -25,17 +33,17 @@ void controlMsgCallback(const flypulator_common_msgs::RotorVelStamped msg)
   }
 
   for (int i = 0; i < 6; ++i)
-    input[i] = msg.velocity[i] > g_upper_limit ? g_upper_limit : msg.velocity[i];
+    input[i] = std::clamp(static_cast<float>(msg.velocity[i]), g_lower_limit, g_upper_limit);
 
   motors_ptr->setMotorsVel(input);
 
-  ROS_INFO_STREAM("controlMsgCallback() Write Motors!");
+  // ROS_INFO_STREAM_THROTTLE(0.5, "controlMsgCallback() Write Motors!");
 
-  while (!sem_i2c);
-  sem_i2c = false;
-  if (motors_ptr->writeMotors() != Motors::WRITE_OK)
-    printf(PRED "writeMotor error!" PRST);
-  sem_i2c = true;
+  // while (!sem_i2c);
+  // sem_i2c = false;
+  // if (motors_ptr->writeMotors() != Motors::WRITE_OK)
+  //   printf(PRED "writeMotor error!\n" PRST);
+  // sem_i2c = true;
 }
 
 void dynamicParamCallback(flypulator_mavros::offb_parameterConfig &config, uint32_t level)
@@ -54,6 +62,7 @@ void dynamicParamCallback(flypulator_mavros::offb_parameterConfig &config, uint3
     // disarm motors
     if (motors_ptr->getMotorsState() != Motors::MOTOR_DISARMED)
     {
+      // std::lock_guard<std::mutex> lg(mutex_set_motors);
       motors_ptr->disarmMotors();
       ROS_WARN_STREAM("Motor DISARMED!");
     }
@@ -75,10 +84,22 @@ void dynamicParamCallback(flypulator_mavros::offb_parameterConfig &config, uint3
     input[5] = config.motor6_speed;
 
     for (int i = 0; i < 6; ++i)
-      input[i] = input[i] > g_upper_limit ? g_upper_limit : input[i];
+      input[i] = std::clamp(input[i], g_lower_limit, g_upper_limit);
 
+    // std::lock_guard<std::mutex> lg(mutex_set_motors);
     motors_ptr->setMotorsVel(input);
     ROS_INFO_STREAM("Set Motors speed!");
+  }
+}
+
+void updateMotors()
+{
+  // long int loop_cnt = 0;
+  for(;;){
+    // std::lock_guard<std::mutex> lg(mutex_set_motors);
+    // std::cout<<"update motors:"<< loop_cnt++ <<std::endl;
+    if (motors_ptr->writeMotors() != Motors::WRITE_OK)
+          printf(PRED "writeMotor error!\n" PRST);
   }
 }
 
@@ -91,7 +112,7 @@ int main(int argc, char **argv)
 
   // add subscribers for topics state and control output
   ros::Subscriber control_sub = nh.subscribe<flypulator_common_msgs::RotorVelStamped>(
-      "/drone/rotor_cmd", 10, controlMsgCallback);
+      "/drone/rotor_cmd", 10, controlMsgCallback, ros::TransportHints().tcpNoDelay());
 
   // set up callbacks for dynamic reconfigure
   dynamic_reconfigure::Server<flypulator_mavros::offb_parameterConfig> param_srv;
@@ -99,23 +120,8 @@ int main(int argc, char **argv)
   cb = boost::bind(&dynamicParamCallback, _1, _2);
   param_srv.setCallback(cb);
 
-  ros::Rate loop_rate(100);
-  while (ros::ok())
-  {
-    if (!flag_in_control)
-    {
-      ROS_INFO_STREAM("main() Write Motors!");
-
-      while (!sem_i2c);
-        sem_i2c = true;
-      if (motors_ptr->writeMotors() != Motors::WRITE_OK)
-        printf(PRED "writeMotor error!" PRST);
-      sem_i2c = false;
-    }
-
-    ros::spinOnce();
-    loop_rate.sleep();
-  }
+  std::thread motor_update_process{updateMotors};
+  ros::spin();
 
   return 0;
 }

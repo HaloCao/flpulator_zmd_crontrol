@@ -3,6 +3,7 @@
 
 #include "ros/ros.h"
 #include <ft260_driver.h>
+#include <algorithm>
 
 class Motors
 {
@@ -26,10 +27,18 @@ class Motors
     static const int N_MOTORS = 6;
     // motors' I2C address
     uint8_t motor_i2c_addr[6] = {0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e};
-    // maximal rotational velocity(command) of the motors
+    // relationship between throttle and rpm
+    // rpm = farctor_k * throttle + farctor_b
+    static constexpr float farctor_k = 30.922;
+    static constexpr float farctor_b = 122.22;
+    // maximal/minimal rotational velocity(command) of the motors
     static constexpr float MAX_MOTOR_VELOCITY = 6000;
+    static constexpr float MIN_MOTOR_VELOCITY = farctor_b + 1;
     // maximal throttle of the ESC see: HERKULES_3_User_Manual_v040.pdf
-    static const int MAX_THROTTLE = 245;
+    static constexpr float MAX_THROTTLE = 245;
+    static constexpr float MIN_THROTTLE = 0;
+
+
 
     // current motors state armed or disarmed
     MOTORS_STATE_T motors_state;
@@ -37,7 +46,7 @@ class Motors
     float velocity[N_MOTORS];
     // throttle of the motors that will be written to I2C bus
     // 8 bit resolution see: HERKULES_3_User_Manual_v040.pdf
-    uint8_t throttle[N_MOTORS];
+    int throttle[N_MOTORS];
     // handle for the I2C master
     FT260_DEVICE_T *i2c_master;
     // initialization flag of the I2C master
@@ -88,12 +97,7 @@ class Motors
             return;
 
         for (int i = 0; i < N_MOTORS; ++i)
-            if (vel[i] < 0)
-                velocity[i] = 0;
-            else if (vel[i] > MAX_MOTOR_VELOCITY)
-                velocity[i] = MAX_MOTOR_VELOCITY;
-            else
-                velocity[i] = vel[i];
+            velocity[i] = std::max(MIN_MOTOR_VELOCITY,std::min(vel[i],MAX_MOTOR_VELOCITY));
     }
 
     /**
@@ -190,8 +194,14 @@ class Motors
    */
     void normVelocity()
     {
-        for (int i = 0; i < N_MOTORS; ++i)
-            throttle[i] = MAX_THROTTLE * (velocity[i] / MAX_MOTOR_VELOCITY) + 0.5;
+        for (int i = 0; i < N_MOTORS; ++i){
+            if(velocity[i]<MIN_MOTOR_VELOCITY)
+                throttle[i] = 0;
+            else{
+                throttle[i] = (velocity[i] - farctor_b)/farctor_k + 0.5;
+                throttle[i] = std::max(MIN_THROTTLE,std::min(static_cast<float>(throttle[i]),MAX_THROTTLE));
+            }
+        }
     }
 };
 
