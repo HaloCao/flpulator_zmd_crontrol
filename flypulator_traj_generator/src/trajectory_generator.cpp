@@ -272,7 +272,7 @@ inline void TrajectoryGenerator::calculateEulerParameters(Eigen::Matrix3d rotMat
   }
   else if (eulerParams.angle == M_PI)
   {
-    eulerParams.axis(0) = 1;
+    eulerParams.axis(0) = -1;
   }
   else
   {

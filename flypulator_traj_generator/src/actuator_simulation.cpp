@@ -17,6 +17,13 @@ ActuatorSimulation::ActuatorSimulation()
   ros::param::param<float>("/uav/i_yy", i_yy_, 0.5f);
   ros::param::param<float>("/uav/i_zz", i_zz_, 2.0f);
 
+  ros::param::param<float>("/uav/alpha", alpha_, 13.6f);
+  ros::param::param<float>("/uav/beta", beta_, 0.0f);
+  ros::param::param<float>("/uav/length", length_, 0.6f);
+  ros::param::param<float>("/uav/delta_h", dh_, 0.0f);
+  ros::param::param<float>("/uav/k", k_, 0.000056);
+  ros::param::param<float>("/uav/b", b_, 0.0000011);
+
   // actuator velocity boundaries
   ros::param::param<double>("/uav/rotor_vel_max", upper_vel_limit_, 5700);
   ros::param::param<double>("/uav/rotor_vel_min", lower_vel_limit_, 0);
@@ -81,11 +88,11 @@ void ActuatorSimulation::simulateActuatorVelocities(Eigen::Vector6f &start_pose,
     u[5] = (omeg_dot[2] - omeg_dot[0] * omeg_dot[1] * (i_xx_ - i_yy_ / i_zz_)) * i_zz_;
 
     // retrieve inverse mapping matrix
-    Matrix6f W_inv;
-    getInverseMappingMatrix(W_inv, q);
+    Matrix6f W;
+    getMappingMatrix(W, q);
 
     // get squared rotor velocities
-    Vector6f rot_vel_square = W_inv * u;
+    Vector6f rot_vel_square = W.inverse() * u;
 
     // convert to array (to apply element-wise operations) and retrieve the square root while keeping sign
     ArrayXf rot_vel = rot_vel_square.array();
@@ -144,234 +151,29 @@ inline void ActuatorSimulation::eulerParamsToRotMatrix(Eigen::Vector3f euler_axi
   rotMat(2, 2) = kz * kz * ve + ce;
 }
 
-inline void ActuatorSimulation::getInverseMappingMatrix(Matrix6f &map_mat, Quaternionf attitude)
+void ActuatorSimulation::getMappingMatrix(Eigen::Matrix6f &map_matrix, Quaternionf q)
 {
-  // todo Mapping Matrix is hardcoded for now (referring to fixed uav_params) . It should be calculated programmatically
-  // depending on actual uav geometry from parameter server.
-  // The hardcoding originates from a matlab script.
-  // Quaternion definition from Matlab (q1,q2,q3,q4) = (x, y, z, w),
-  // Quaternion definiton from Eigen (q0,q1,q2,q3) = (w, x, y, z)
-  // todo unifiy!
+    //todo Hardcode inverse mapping matrix
+    // compute thrust directions
+    Eigen::Vector3f e_r;   // thrust direction
+    Eigen::Vector3f mom;   // drag + thrust torque
+    Eigen::Vector3f r_ti;  // vector from COM to i-th rotor
 
-  // convert quaternion depiction
-  float q1 = attitude.x();
-  float q2 = attitude.y();
-  float q3 = attitude.z();
-  float q4 = attitude.w();
-
-  map_mat(0, 0) =
-      (962.1860511 * (-2.429738275e161 * pow(q1, 2) - 2.708843346e177 * q1 * q2 + 4.929691737e176 * q1 * q3 +
-                      2.429738275e161 * pow(q2, 2) + 4.929691737e176 * q2 * q4 + 2.429738275e161 * pow(q3, 2) +
-                      2.708843346e177 * q3 * q4 - 2.429738275e161 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(0, 1) =
-      -(962.1860511 * (-1.354421673e177 * pow(q1, 2) + 4.859476551e161 * q1 * q2 + 4.929691737e176 * q1 * q4 +
-                       1.354421673e177 * pow(q2, 2) - 4.929691737e176 * q2 * q3 - 1.354421673e177 * pow(q3, 2) +
-                       4.859476551e161 * q3 * q4 + 1.354421673e177 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(0, 2) =
-      -(481.0930255 * (4.929691737e176 * pow(q1, 2) + 9.718953101e161 * q1 * q3 + 5.417686692e177 * q1 * q4 +
-                       4.929691737e176 * pow(q2, 2) + 5.417686692e177 * q2 * q3 - 9.718953101e161 * q2 * q4 -
-                       4.929691737e176 * pow(q3, 2) - 4.929691737e176 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(0, 3) = -1.91674902 * pow(10, -12);
-
-  map_mat(0, 4) = -10684.63398;
-
-  map_mat(0, 5) = -13306.1476;
-
-  map_mat(1, 0) =
-      (655.2818796 * (-1.722326264e177 * pow(q1, 2) + 1.988771064e177 * q1 * q2 + 7.238534702e176 * q1 * q3 +
-                      1.722326264e177 * pow(q2, 2) + 7.238534702e176 * q2 * q4 + 1.722326264e177 * pow(q3, 2) -
-                      1.988771064e177 * q3 * q4 - 1.722326264e177 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(1, 1) =
-      -(1310.563759 * (4.971927661e176 * pow(q1, 2) + 1.722326264e177 * q1 * q2 + 3.619267351e176 * q1 * q4 -
-                       4.971927661e176 * pow(q2, 2) - 3.619267351e176 * q2 * q3 + 4.971927661e176 * pow(q3, 2) +
-                       1.722326264e177 * q3 * q4 - 4.971927661e176 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(1, 2) =
-      (1310.563759 * (-1.809633675e176 * pow(q1, 2) - 1.722326264e177 * q1 * q3 + 9.943855322e176 * q1 * q4 -
-                      1.809633675e176 * pow(q2, 2) + 9.943855322e176 * q2 * q3 + 1.722326264e177 * q2 * q4 +
-                      1.809633675e176 * pow(q3, 2) + 1.809633675e176 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(1, 3) = 9253.164458;
-
-  map_mat(1, 4) = -5342.316991;
-
-  map_mat(1, 5) = 13306.1476;
-
-  map_mat(2, 0) =
-      (120.2732564 * (9.383708611e177 * pow(q1, 2) + 1.083537338e178 * q1 * q2 + 3.943753389e177 * q1 * q3 -
-                      9.383708611e177 * pow(q2, 2) + 3.943753389e177 * q2 * q4 - 9.383708611e177 * pow(q3, 2) -
-                      1.083537338e178 * q3 * q4 + 9.383708611e177 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(2, 1) =
-      (120.2732564 * (-5.417686692e177 * pow(q1, 2) + 1.876741722e178 * q1 * q2 - 3.943753389e177 * q1 * q4 +
-                      5.417686692e177 * pow(q2, 2) + 3.943753389e177 * q2 * q3 - 5.417686692e177 * pow(q3, 2) +
-                      1.876741722e178 * q3 * q4 + 5.417686692e177 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(2, 2) =
-      (60.13662819 * (-3.943753389e177 * pow(q1, 2) + 3.753483444e178 * q1 * q3 + 2.167074677e178 * q1 * q4 -
-                      3.943753389e177 * pow(q2, 2) + 2.167074677e178 * q2 * q3 - 3.753483444e178 * q2 * q4 +
-                      3.943753389e177 * pow(q3, 2) + 3.943753389e177 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(2, 3) = 9253.164458;
-
-  map_mat(2, 4) = 5342.316991;
-
-  map_mat(2, 5) = -13306.1476;
-
-  map_mat(3, 0) =
-      (2.39423885e50 * (-1.063750641e114 * pow(q1, 2) - 1.088617906e130 * q1 * q2 + 1.981122571e129 * q1 * q3 +
-                        1.063750641e114 * pow(q2, 2) + 1.981122571e129 * q2 * q4 + 1.063750641e114 * pow(q3, 2) +
-                        1.088617906e130 * q3 * q4 - 1.063750641e114 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(3, 1) =
-      -(2.39423885e50 * (-5.443089528e129 * pow(q1, 2) + 2.127501283e114 * q1 * q2 + 1.981122571e129 * q1 * q4 +
-                         5.443089528e129 * pow(q2, 2) - 1.981122571e129 * q2 * q3 - 5.443089528e129 * pow(q3, 2) +
-                         2.127501283e114 * q3 * q4 + 5.443089528e129 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(3, 2) =
-      -(1.197119425e50 * (1.981122571e129 * pow(q1, 2) + 4.255002566e114 * q1 * q3 + 2.177235811e130 * q1 * q4 +
-                          1.981122571e129 * pow(q2, 2) + 2.177235811e130 * q2 * q3 - 4.255002566e114 * q2 * q4 -
-                          1.981122571e129 * pow(q3, 2) - 1.981122571e129 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(3, 3) = -2.088113046 * pow(10, -12);
-
-  map_mat(3, 4) = 10684.63398;
-
-  map_mat(3, 5) = 13306.1476;
-
-  map_mat(4, 0) =
-      (120.2732564 * (-9.383708611e177 * pow(q1, 2) + 1.083537338e178 * q1 * q2 + 3.943753389e177 * q1 * q3 +
-                      9.383708611e177 * pow(q2, 2) + 3.943753389e177 * q2 * q4 + 9.383708611e177 * pow(q3, 2) -
-                      1.083537338e178 * q3 * q4 - 9.383708611e177 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(4, 1) =
-      -(120.2732564 * (5.417686692e177 * pow(q1, 2) + 1.876741722e178 * q1 * q2 + 3.943753389e177 * q1 * q4 -
-                       5.417686692e177 * pow(q2, 2) - 3.943753389e177 * q2 * q3 + 5.417686692e177 * pow(q3, 2) +
-                       1.876741722e178 * q3 * q4 - 5.417686692e177 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(4, 2) =
-      (60.13662819 * (-3.943753389e177 * pow(q1, 2) - 3.753483444e178 * q1 * q3 + 2.167074677e178 * q1 * q4 -
-                      3.943753389e177 * pow(q2, 2) + 2.167074677e178 * q2 * q3 + 3.753483444e178 * q2 * q4 +
-                      3.943753389e177 * pow(q3, 2) + 3.943753389e177 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(4, 3) = -9253.164458;
-
-  map_mat(4, 4) = 5342.316991;
-
-  map_mat(4, 5) = -13306.1476;
-
-  map_mat(5, 0) =
-      (655.2818796 * (1.722326264e177 * pow(q1, 2) + 1.988771064e177 * q1 * q2 + 7.238534702e176 * q1 * q3 -
-                      1.722326264e177 * pow(q2, 2) + 7.238534702e176 * q2 * q4 - 1.722326264e177 * pow(q3, 2) -
-                      1.988771064e177 * q3 * q4 + 1.722326264e177 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(5, 1) =
-      (1310.563759 * (-4.971927661e176 * pow(q1, 2) + 1.722326264e177 * q1 * q2 - 3.619267351e176 * q1 * q4 +
-                      4.971927661e176 * pow(q2, 2) + 3.619267351e176 * q2 * q3 - 4.971927661e176 * pow(q3, 2) +
-                      1.722326264e177 * q3 * q4 + 4.971927661e176 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(5, 2) =
-      (1310.563759 * (-1.809633675e176 * pow(q1, 2) + 1.722326264e177 * q1 * q3 + 9.943855322e176 * q1 * q4 -
-                      1.809633675e176 * pow(q2, 2) + 9.943855322e176 * q2 * q3 - 1.722326264e177 * q2 * q4 +
-                      1.809633675e176 * pow(q3, 2) + 1.809633675e176 * pow(q4, 2))) /
-      (7.488139347e175 * pow(q1, 4) + 1.497627869e176 * pow(q1, 2) * pow(q2, 2) +
-       1.497627869e176 * pow(q1, 2) * pow(q3, 2) + 1.497627869e176 * pow(q1, 2) * pow(q4, 2) +
-       7.488139347e175 * pow(q2, 4) + 1.497627869e176 * pow(q2, 2) * pow(q3, 2) +
-       1.497627869e176 * pow(q2, 2) * pow(q4, 2) + 7.488139347e175 * pow(q3, 4) +
-       1.497627869e176 * pow(q3, 2) * pow(q4, 2) + 7.488139347e175 * pow(q4, 4));
-
-  map_mat(5, 3) = -9253.164458;
-
-  map_mat(5, 4) = -5342.316991;
-
-  map_mat(5, 5) = 13306.1476;
+    // compute matrix
+    for (int i = 0; i < 6; i++)
+    {
+      float alpha = alpha_ * M_PI / 180.0 * pow(-1, i);
+      float beta = beta_;
+      float gamma = ((float)i) * M_PI / 3.0f; //todo: why -pi/6 in controller_interface?
+      // compute thrust direction
+      e_r = Eigen::Vector3f(cos(alpha) * sin(beta) * cos(gamma) + sin(alpha) * sin(gamma),
+                            cos(alpha) * sin(beta) * sin(gamma) - sin(alpha) * cos(gamma), cos(alpha) * cos(beta));
+      // compute r_ti vector;
+      r_ti << length_ * cos(gamma), length_ * sin(gamma), dh_;
+      // compute thrust and drag torque
+      mom = k_ * r_ti.cross(e_r) + b_ * pow(-1, i) * e_r;
+      // save to variable map_matrix
+      map_matrix.block(0, i, 3, 1) = k_ * q.matrix() *  e_r;
+      map_matrix.block(3, i, 3, 1) = mom;
+    }
 }

@@ -79,11 +79,11 @@ protected:
   inline void eulerParamsToRotMatrix(Eigen::Vector3f euler_axis, float euler_angle, Eigen::Matrix3f &rotMat);
 
   /**
-   * \brief getInverseMappingMatrix Writes the mapping matrix (mapping from forces/torques to rotor velocities) to a
-   * provided reference.   * \param map_mat Reference to the mapping matrix. \param attitude Current attitude of the
-   * hexacopter, since mapping matrix depends on it.
+   * @brief getMappingMatrix Writes the mapping matrix (mapping from rotor velocities to forces/torques) to a given reference
+   * \param map_matrix Reference to write resulting mapping matrix to
+   * \param q Quaternion indicating the hexacopter's current orientation
    */
-  inline void getInverseMappingMatrix(Eigen::Matrix6f &map_mat, Eigen::Quaternionf attitude);
+  void getMappingMatrix(Eigen::Matrix6f &map_matrix, Eigen::Quaternionf q);
 
 private:
   // simulation parameters
@@ -95,6 +95,13 @@ private:
   float i_xx_;  ///< inertia w.r.t. x-axis of the hexacopter [kg*m²].
   float i_yy_;  ///< inertia w.r.t. y-axis of the hexacopter [kg*m²].
   float i_zz_;  ///< inertia w.r.t. z-axis of the hexacopter [kg*m²].
+
+  float k_;
+  float b_;
+  float alpha_;
+  float beta_;
+  float length_;
+  float dh_;
 
   // actuator boundaries for feasibility check
   double upper_vel_limit_;  ///< The maximum feasible rotational velocity of a propeller.
