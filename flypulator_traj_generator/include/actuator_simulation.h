@@ -29,10 +29,13 @@ typedef Eigen::Matrix<float, 6, 6> Matrix6f;
 namespace trajectory
 {
 /**
- *\typedef accelerations Vector which holds the course of positional or rotational accelerations over time.
- *\typedef RotorEvolution Vector holding the rotor velocities of the hexacopter over time
+ *\typedef pos_accelerations Vector which holds the course of positional accelerations over time.
+ *\typedef euler_angle_accelerations Vector which holds the course of rotational accelerations (euler angle only) over
+ *time. \typedef RotorEvolution Vector holding the rotor velocities of the hexacopter over time
  */
-typedef std::vector<geometry_msgs::Vector3> accelerations;
+typedef std::vector<geometry_msgs::Vector3> pos_accelerations;
+typedef std::vector<double> euler_angle_accelerations;
+typedef std::vector<double> euler_angles;
 typedef std::vector<QVector<double>> RotorEvolution;
 }  // namespace trajectory
 
@@ -56,15 +59,25 @@ public:
    * \param start_pose Start pose of the trajectory to retrieve initial attitude
    * \param pos_accs Vector of positional accelerations over time
    * \param rot_accs Vector of rotational accelerations over time
+   * \param euler_axis constant euler axis of the whole rotational manoeuvre w.r.t the starting frame
    * \param rotor_velocities Reference to a vector of 6D-vectors to store the resulting rotor velocities over time.
    * \param feasible True if given trajectory doesn't exceed the actuator boundaries
    *
    */
-  void simulateActuatorVelocities(Eigen::Vector6f &start_pose, trajectory::accelerations &pos_accs,
-                                  trajectory::accelerations &rot_accs, trajectory::RotorEvolution &rotor_velocities,
-                                  bool &feasible);
+  void simulateActuatorVelocities(Eigen::Vector6f &start_pose, trajectory::pos_accelerations &pos_accs,
+                                  trajectory::euler_angle_accelerations &rot_accs,
+                                  trajectory::euler_angles &euler_angles, geometry_msgs::Vector3 &euler_axis,
+                                  trajectory::RotorEvolution &rotor_velocities, bool &feasible);
 
 protected:
+  /**
+   * \brief eulerParamsToRotMatrix Calculates a rotation matrix from given euler axis and euler angle
+   * \param euler_axis  A 3D unit vector corresponding to the euler axis
+   * \param euler_angle The angle, indicating the current rotation around the euler axis
+   * \param rotMat  The resulting rotation matrix
+   */
+  inline void eulerParamsToRotMatrix(Eigen::Vector3f euler_axis, float euler_angle, Eigen::Matrix3f &rotMat);
+
   /**
    * \brief getInverseMappingMatrix Writes the mapping matrix (mapping from forces/torques to rotor velocities) to a
    * provided reference.   * \param map_mat Reference to the mapping matrix. \param attitude Current attitude of the

@@ -1,21 +1,19 @@
 #include "trajectory_generator.h"
+#include <iostream>
 
 // create Trajectory and send it periodically
-bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& p_start,
-                                                  const geometry_msgs::Vector3& p_end,
-                                                  const geometry_msgs::Vector3& rpy_start,
-                                                  const geometry_msgs::Vector3& rpy_end, const float duration,
-                                                  const bool start_tracking, const trajectory_types::Type traj_type,
-                                                  trajectory::accelerations& pos_accs,
-                                                  trajectory::accelerations& rot_accs, std::vector<double>& time_stamps)
+bool TrajectoryGenerator::createAndSendTrajectory(
+    const geometry_msgs::Vector3& p_start, const geometry_msgs::Vector3& p_end, const geometry_msgs::Vector3& rpy_start,
+    const geometry_msgs::Vector3& rpy_end, const float duration, const bool start_tracking,
+    const trajectory_types::Type traj_type, trajectory::pos_accelerations& pos_accs,
+    trajectory::euler_angle_accelerations& euler_angle_accs, trajectory::euler_angles& euler_angles,
+    geometry_msgs::Vector3& eulerAxis, std::vector<double>& time_stamps)
 {
-  // TODO: check if trajectory is feasible? (vel and acc to high, duration to low)
   // save input values in 6D array
-  float pose_start[6];
+  float pose_start[7];
   convertTo6DArray(p_start, rpy_start, pose_start);
-  float pose_end[6];
+  float pose_end[7];
   convertTo6DArray(p_end, rpy_end, pose_end);
-  // float duration = req.duration; // trajectory duration time
 
   float pose_current[6];  // array for 6D pose
   float vel_current[6];   // array for 6D velocities
@@ -25,7 +23,30 @@ bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& 
   Eigen::Vector3f omega_current;
   Eigen::Vector3f omega_dot_current;
 
-  float a[6][6];  // polynomial coefficients for trajectory, first dimension: axis, second dimension: coefficient (can
+  // ####### calculation of euler parameters ###########
+  // rotation matrix from start and end pose
+  Eigen::Matrix3d rotMatStart;
+  rpyToRotMat(pose_start[3], pose_start[4], pose_start[5], rotMatStart);
+  Eigen::Matrix3d rotMatEnd;
+  rpyToRotMat(pose_end[3], pose_end[4], pose_end[5], rotMatEnd);
+
+  // retrieve difference rotation
+  Eigen::Matrix3d rDiffMat = rotMatStart.transpose() * rotMatEnd;
+
+  // get euler axis and angle
+  Eigen::EulerParams eulerParams;
+  calculateEulerParameters(rDiffMat, eulerParams);
+
+  // assign euler axis to service response
+  eulerAxis.x = eulerParams.axis[0];
+  eulerAxis.y = eulerParams.axis[1];
+  eulerAxis.z = eulerParams.axis[2];
+
+  // temporarely store starting and ending euler angles at 7th position of start and end pose
+  pose_start[6] = 0;
+  pose_end[6] = eulerParams.angle;
+
+  float a[7][6];  // polynomial coefficients for trajectory, first dimension: axis, second dimension: coefficient (can
                   // be more than 6 for higher order polynoms)
 
   // calculate polynomial coeffiencts for linear and polynomial trajectory
@@ -33,7 +54,7 @@ bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& 
   {
     case trajectory_types::Linear:
       // calculate constant linear velocity and acceleration (=0)
-      for (int dim = 0; dim < 6; dim++)
+      for (int dim = 0; dim < 7; dim++)
       {
         a[dim][0] = pose_start[dim];
         a[dim][1] = (pose_end[dim] - pose_start[dim]) / duration;
@@ -47,7 +68,7 @@ bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& 
 
     case trajectory_types::Polynomial:
       // calculate polynomial coefficients
-      for (int dim = 0; dim < 6; dim++)
+      for (int dim = 0; dim < 7; dim++)
       {
         a[dim][0] = pose_start[dim];
         a[dim][1] = 0.0f;
@@ -77,18 +98,19 @@ bool TrajectoryGenerator::createAndSendTrajectory(const geometry_msgs::Vector3& 
   for (double t = 0; t <= duration; t += sim_dt)
   {
     geometry_msgs::Vector3 pos_acc;
-    geometry_msgs::Vector3 rot_acc;
+    float euler_angle_acc;
+    float euler_angle;
 
     pos_acc.x = evaluateAcceleration(a[0][2], a[0][3], a[0][4], a[0][5], t);
     pos_acc.y = evaluateAcceleration(a[1][2], a[1][3], a[1][4], a[1][5], t);
     pos_acc.z = evaluateAcceleration(a[2][2], a[2][3], a[2][4], a[2][5], t);
 
-    rot_acc.x = evaluateAcceleration(a[3][2], a[3][3], a[3][4], a[3][5], t);
-    rot_acc.y = evaluateAcceleration(a[4][2], a[4][3], a[4][4], a[4][5], t);
-    rot_acc.z = evaluateAcceleration(a[5][2], a[5][3], a[5][4], a[5][5], t);
+    euler_angle_acc = evaluateAcceleration(a[6][2], a[6][3], a[6][4], a[6][5], t);
+    euler_angle = evaluatePosition(a[6][0], a[6][1], a[6][2], a[6][3], a[6][4], a[6][5], t);
 
     pos_accs.push_back(pos_acc);
-    rot_accs.push_back(rot_acc);
+    euler_angle_accs.push_back(euler_angle_acc);
+    euler_angles.push_back(euler_angle);
     time_stamps.push_back(t);
 
     geometry_msgs::Pose pose;
@@ -236,6 +258,43 @@ inline float TrajectoryGenerator::evaluateAcceleration(float a2, float a3, float
 inline float TrajectoryGenerator::evaluatePosition(float a0, float a1, float a2, float a3, float a4, float a5, float t)
 {
   return a0 + a1 * t + a2 * pow(t, 2) + a3 * pow(t, 3) + a4 * pow(t, 4) + a5 * pow(t, 5);
+}
+
+inline void TrajectoryGenerator::calculateEulerParameters(Eigen::Matrix3d rotMat, Eigen::EulerParams& eulerParams)
+{
+  // get euler parameters from rotation matrix
+  eulerParams.angle = acos(0.5 * (rotMat(0, 0) + rotMat(1, 1) + rotMat(2, 2) - 1));
+
+  // todo: handle singularities properly
+  if (eulerParams.angle == 0)
+  {
+    eulerParams.axis(0) = 1;
+  }
+  else if (eulerParams.angle == M_PI)
+  {
+    eulerParams.axis(0) = 1;
+  }
+  else
+  {
+    Eigen::Vector3f v;
+    v(0) = rotMat(2, 1) - rotMat(1, 2);
+    v(1) = rotMat(0, 2) - rotMat(2, 0);
+    v(2) = rotMat(1, 0) - rotMat(0, 1);
+
+    eulerParams.axis = 0.5 / sin(eulerParams.angle) * v;
+  }
+}
+
+inline void TrajectoryGenerator::rpyToRotMat(float roll, float pitch, float yaw, Eigen::Matrix3d& rotMatrix)
+{
+  // convert rpy angles to rotation matix (yaw pitch roll sequence with consecutive axes)
+  Eigen::AngleAxisd rollAngle(roll, Eigen::Vector3d::UnitX());
+  Eigen::AngleAxisd pitchAngle(pitch, Eigen::Vector3d::UnitY());
+  Eigen::AngleAxisd yawAngle(yaw, Eigen::Vector3d::UnitZ());
+
+  Eigen::Quaternion<double> q = yawAngle * pitchAngle * rollAngle;
+
+  rotMatrix = q.matrix();
 }
 
 // calculate angular velocity from euler angles and its derivatives, following Fje94 p.42

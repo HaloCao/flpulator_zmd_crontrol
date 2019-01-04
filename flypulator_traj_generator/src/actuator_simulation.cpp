@@ -22,8 +22,11 @@ ActuatorSimulation::ActuatorSimulation()
   ros::param::param<double>("/uav/rotor_vel_min", lower_vel_limit_, 0);
 }
 
-void ActuatorSimulation::simulateActuatorVelocities(Eigen::Vector6f &start_pose, trajectory::accelerations &pos_accs,
-                                                    trajectory::accelerations &rot_accs,
+void ActuatorSimulation::simulateActuatorVelocities(Eigen::Vector6f &start_pose,
+                                                    trajectory::pos_accelerations &pos_accs,
+                                                    trajectory::euler_angle_accelerations &euler_angle_accelerations,
+                                                    trajectory::euler_angles &euler_angles,
+                                                    geometry_msgs::Vector3 &euler_axis,
                                                     trajectory::RotorEvolution &rotor_velocities, bool &feasible)
 {
   // Uav attitude over time (initialize referring to the start pose)
@@ -32,8 +35,8 @@ void ActuatorSimulation::simulateActuatorVelocities(Eigen::Vector6f &start_pose,
   // starting orientation in rad
   Eigen::Vector3f start_ori = start_pose.tail(3) * M_PI / 180;
 
-  q = AngleAxisf(start_ori[0], Vector3f::UnitX()) * AngleAxisf(start_ori[1], Vector3f::UnitY()) *
-      AngleAxisf(start_ori[2], Vector3f::UnitZ());
+  q = AngleAxisf(start_ori[2], Vector3f::UnitZ()) * AngleAxisf(start_ori[1], Vector3f::UnitY()) *
+      AngleAxisf(start_ori[0], Vector3f::UnitX());
 
   // Derivation of UAV attitude
   Quaternionf q_dot;
@@ -41,14 +44,16 @@ void ActuatorSimulation::simulateActuatorVelocities(Eigen::Vector6f &start_pose,
   // Angular velocity over time
   Vector3f omeg(0.0f, 0.0f, 0.0f);
 
+  // static euler axis w.r.t. to the starting orientation {S}
+  Vector3f eulerAxis(euler_axis.x, euler_axis.y, euler_axis.z);
+
   for (size_t i = 0; i < pos_accs.size(); i++)
   {
     // input vector holding the three force and the three torque components
     Vector6f u;
 
-    // current translational and rotational accelerations
+    // current translational accelerations
     geometry_msgs::Vector3 pos_acc = pos_accs[i];
-    geometry_msgs::Vector3 rot_acc = rot_accs[i];
 
     // ######### translational (force) components ##############
     u[0] = mass_ * pos_acc.x;
@@ -56,15 +61,19 @@ void ActuatorSimulation::simulateActuatorVelocities(Eigen::Vector6f &start_pose,
     u[2] = mass_ * (pos_acc.z + gravity_);
 
     // ######### rotational (torque) components ################
-    // retrieve orientation of {I} w.r.t. {B}
-    // todo check euler convention (rpy)
-    Matrix3f R_BI = q.toRotationMatrix().transpose();
+    // retrieve orientation of {B} w.r.t. {S} where S is the starting frame, where the euler axis is defined
+    Matrix3f R_AB;
+    eulerParamsToRotMatrix(eulerAxis, euler_angles[i], R_AB);
 
-    // angular acceleration w.r.t. initial frame
-    Vector3f omeg_dot_i(rot_acc.x, rot_acc.y, rot_acc.z);
+    // current orientation of the body frame is the tranposed matrix
+    Matrix3f R_BA = R_AB.transpose();
 
-    // transform to body frame
-    Vector3f omeg_dot = R_BI * omeg_dot_i;
+    // retrieve euler axis w.r.t. the current body frame
+    Vector3f eulerAxis_B = R_BA * eulerAxis;
+
+    // the angular acceleration w.r.t. the body frame points to the same direction, as the euler axis w.r.t. to the body
+    // frame it consequently equals the scalar euler angle acceleration multiplied by the euler axis w.r.t. {B}
+    Vector3f omeg_dot = eulerAxis_B * euler_angle_accelerations[i];
 
     // retrieve corresponding torques referring the state space model
     u[3] = (omeg_dot[0] - omeg_dot[1] * omeg_dot[2] * (i_yy_ - i_zz_ / i_xx_)) * i_xx_;
@@ -108,6 +117,31 @@ void ActuatorSimulation::simulateActuatorVelocities(Eigen::Vector6f &start_pose,
 
     omeg += omeg_dot * dt_;
   }
+}
+
+inline void ActuatorSimulation::eulerParamsToRotMatrix(Eigen::Vector3f euler_axis, float euler_angle,
+                                                       Eigen::Matrix3f &rotMat)
+{
+  // store single components for better readibility
+  float kx = euler_axis[0];
+  float ky = euler_axis[1];
+  float kz = euler_axis[2];
+
+  float ce = cos(euler_angle);
+  float se = sin(euler_angle);
+  float ve = 1 - ce;
+
+  rotMat(0, 0) = kx * kx * ve + ce;
+  rotMat(0, 1) = kx * ky * ve - kz * se;
+  rotMat(0, 2) = kx * kz * ve + ky * se;
+
+  rotMat(1, 0) = kx * ky * ve + kz * se;
+  rotMat(1, 1) = ky * ky * ve + ce;
+  rotMat(1, 2) = ky * kz * ve - kx * se;
+
+  rotMat(2, 0) = kx * kz * ve - ky * se;
+  rotMat(2, 1) = ky * kz * ve + kx * se;
+  rotMat(2, 2) = kz * kz * ve + ce;
 }
 
 inline void ActuatorSimulation::getInverseMappingMatrix(Matrix6f &map_mat, Quaternionf attitude)

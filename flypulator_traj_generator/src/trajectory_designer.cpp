@@ -225,7 +225,8 @@ void TrajectoryDesigner::callTrajectoryGenerator(bool start_tracking)
   bool feasible = true;
 
   // simulate the rotor velocities for the current trajectory
-  actuator_simulation_->simulateActuatorVelocities(start_pose, pt_srv.response.p_acc, pt_srv.response.rpy_acc,
+  actuator_simulation_->simulateActuatorVelocities(start_pose, pt_srv.response.p_acc, pt_srv.response.euler_angle_acc,
+                                                   pt_srv.response.euler_angle, pt_srv.response.euler_axis,
                                                    rotor_velocities, feasible);
 
   // convert timestamps to qvector and draw actuator evolution to custom plot

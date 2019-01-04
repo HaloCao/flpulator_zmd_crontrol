@@ -25,10 +25,21 @@ enum Type
 };
 };
 
+namespace Eigen
+{
+struct EulerParams
+{
+  Eigen::Vector3f axis;
+  float angle;
+};
+};  // namespace Eigen
+
 namespace trajectory
 {
-typedef std::vector<geometry_msgs::Vector3> accelerations;
-}
+typedef std::vector<geometry_msgs::Vector3> pos_accelerations;
+typedef std::vector<double> euler_angle_accelerations;
+typedef std::vector<double> euler_angles;
+}  // namespace trajectory
 
 class TrajectoryGenerator
 {
@@ -43,7 +54,9 @@ public:  // constructor takes publisher to publish message
   bool createAndSendTrajectory(const geometry_msgs::Vector3& p_start, const geometry_msgs::Vector3& p_end,
                                const geometry_msgs::Vector3& rpy_start, const geometry_msgs::Vector3& rpy_end,
                                const float duration, const bool start_tracking, const trajectory_types::Type traj_type,
-                               trajectory::accelerations& pos_accs, trajectory::accelerations& rot_accs,
+                               trajectory::pos_accelerations& pos_accs,
+                               trajectory::euler_angle_accelerations& euler_angle_accs,
+                               trajectory::euler_angles& euler_angles, geometry_msgs::Vector3& eulerAxis,
                                std::vector<double>& time_stamps);
 
 private:
@@ -71,6 +84,10 @@ private:
   inline float evaluateAcceleration(float a2, float a3, float a4, float a5, float t);
   // evaluate position polynom at a given time
   inline float evaluatePosition(float a0, float a1, float a2, float a3, float a4, float a5, float t);
+  // calculate euler parameters
+  inline void calculateEulerParameters(Eigen::Matrix3d rotMat, Eigen::EulerParams& eulerParams);
+  // convert RPY-Angles to discrete cosine matrix
+  inline void rpyToRotMat(float roll, float pitch, float yaw, Eigen::Matrix3d& rotMatrix);
 };
 
 #endif  // TRAJECTORY_GENERATOR_H

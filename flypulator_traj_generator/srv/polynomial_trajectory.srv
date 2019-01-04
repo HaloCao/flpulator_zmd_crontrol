@@ -10,6 +10,8 @@ float64 duration                # duration of the manoeuvre in seconds
 bool start_tracking             # if true, the trajectory gets instantly published after calculation
 ---
 geometry_msgs/Vector3[] p_acc   # acceleration of the resulting positional part over time
-geometry_msgs/Vector3[] rpy_acc # acceleration of the resulting rotational part over time 
+float64[] euler_angle_acc       # course of the acceleration of the euler angle (referring euler params) over time 
+float64[] euler_angle           # course of the euler angle (referring euler params) over time 
+geometry_msgs/Vector3 euler_axis# constant euler axis of the rotational trajectory w.r.t the start frame
 float64[] time_stamps           # time stamps of each step
 bool finished                   # true if calculation successful

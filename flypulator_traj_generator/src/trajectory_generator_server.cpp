@@ -14,15 +14,20 @@ bool createPolynomialTrajectoryCB(flypulator_traj_generator::polynomial_trajecto
 {
   // calculate trajectory, retrieve evolution of positional and rotational accelerations for feasibility check, and if
   // demanded, publish it
-  trajectory::accelerations pos_accelerations;
-  trajectory::accelerations rot_accelerations;
+  trajectory::pos_accelerations pos_accelerations;
+  trajectory::euler_angle_accelerations euler_angle_accelerations;
+  trajectory::euler_angles eulerAngles;
+  geometry_msgs::Vector3 eulerAxis;
   std::vector<double> time_stamps;
-  res.finished = g_generator_p->createAndSendTrajectory(req.p_start, req.p_end, req.rpy_start, req.rpy_end,
-                                                        req.duration, req.start_tracking, trajectory_types::Polynomial,
-                                                        pos_accelerations, rot_accelerations, time_stamps);
+
+  res.finished = g_generator_p->createAndSendTrajectory(
+      req.p_start, req.p_end, req.rpy_start, req.rpy_end, req.duration, req.start_tracking,
+      trajectory_types::Polynomial, pos_accelerations, euler_angle_accelerations, eulerAngles, eulerAxis, time_stamps);
   // fill result
   res.p_acc = pos_accelerations;
-  res.rpy_acc = rot_accelerations;
+  res.euler_angle_acc = euler_angle_accelerations;
+  res.euler_angle = eulerAngles;
+  res.euler_axis = eulerAxis;
   res.time_stamps = time_stamps;
 
   return true;
@@ -34,16 +39,20 @@ bool createLinearTrajectoryCB(flypulator_traj_generator::linear_trajectory::Requ
 {
   // calculate trajectory, retrieve evolution of positional and rotational accelerations for feasibility check, and if
   // demanded, publish it
-  trajectory::accelerations pos_accelerations;
-  trajectory::accelerations rot_accelerations;
+  trajectory::pos_accelerations pos_accelerations;
+  trajectory::euler_angle_accelerations euler_angle_accelerations;
+  trajectory::euler_angles eulerAngles;
+  geometry_msgs::Vector3 eulerAxis;
   std::vector<double> time_stamps;
-  res.finished = g_generator_p->createAndSendTrajectory(req.p_start, req.p_end, req.rpy_start, req.rpy_end,
-                                                        req.duration, req.start_tracking, trajectory_types::Linear,
-                                                        pos_accelerations, rot_accelerations, time_stamps);
+  res.finished = g_generator_p->createAndSendTrajectory(
+      req.p_start, req.p_end, req.rpy_start, req.rpy_end, req.duration, req.start_tracking, trajectory_types::Linear,
+      pos_accelerations, euler_angle_accelerations, eulerAngles, eulerAxis, time_stamps);
 
   // fill result
   res.p_acc = pos_accelerations;
-  res.rpy_acc = rot_accelerations;
+  res.euler_angle_acc = euler_angle_accelerations;
+  res.euler_angle = eulerAngles;
+  res.euler_axis = eulerAxis;
   res.time_stamps = time_stamps;
 
   return true;
