@@ -18,6 +18,9 @@
 #include "actuator_plot.h"
 #include "actuator_simulation.h"
 
+#include <dynamic_reconfigure/server.h>
+#include <flypulator_traj_generator/traj_parameterConfig.h>
+
 namespace rviz
 {
 class Display;
@@ -69,6 +72,11 @@ private Q_SLOTS:
    */
   void callTrajectoryGenerator(bool start_tracking);
 
+  /**
+   * \brief configCallback Callback for dynamic reconfigure of trajectory parameters
+   */
+  void configCallback(flypulator_traj_generator::traj_parameterConfig& config, uint32_t level);
+
 private:
   ros::NodeHandle nh_;  ///< Interface to register standard ros components
 
@@ -94,6 +102,10 @@ private:
   ActuatorPlot* actuator_plot_;  ///< holds a qCustomPlot widget which plots the behaviour of the rotor velocities.
   ActuatorSimulation* actuator_simulation_;  ///< Responsible for simulation of the course of rotor speeds based on a
                                              ///< given trajectory
+
+  dynamic_reconfigure::Server<flypulator_traj_generator::traj_parameterConfig> dr_srv; ///< server instance for dynamic reconfigure of trajectory parameters
+  dynamic_reconfigure::Server<flypulator_traj_generator::traj_parameterConfig>::CallbackType cb; ///< callback for dyn. reconfigure
+
 };
 
 #endif  // TRAJECTORYDESIGNER_H

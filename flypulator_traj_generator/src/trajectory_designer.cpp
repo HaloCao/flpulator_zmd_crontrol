@@ -81,13 +81,15 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
   // register ros service client for polynomial trajectory generation service+
   polynomial_traj_client_ = nh_.serviceClient<polynomial_trajectory>("polynomial_trajectory");
 
+  // setup server for dynamic reconfigure of trajectory generation parameters
+  cb = boost::bind(&TrajectoryDesigner::configCallback, this, _1, _2);
+  dr_srv.setCallback(cb);
+
   // updates the ROS-Spin at 50 Hz (necessary for node communication) and listens to ros-shutdown
   QTimer *t = new QTimer(this);
   QObject::connect(t, SIGNAL(timeout()), this, SLOT(rosUpdate()));
   t->start(20);
 
-  // retrieve trajectory for initial pose configuration
-  callTrajectoryGenerator(false);
 }
 
 void TrajectoryDesigner::rosUpdate()
@@ -133,6 +135,19 @@ void TrajectoryDesigner::rosUpdate()
   {
     QApplication::quit();
   }
+}
+
+void TrajectoryDesigner::configCallback(flypulator_traj_generator::traj_parameterConfig& config, uint32_t level)
+{
+    // update parameters of actuator simulation through dynamic reconfigure
+    actuator_simulation_->updateDroneParameters(config);
+
+    // update upper and lower actuator boundaries for plotting purposes
+    actuator_plot_->updateActuatorBoundaries((float) config.rotor_vel_max, (float) config.rotor_vel_min);
+
+    // restart simulation
+    callTrajectoryGenerator(false);
+
 }
 
 bool TrajectoryDesigner::eventFilter(QObject *object, QEvent *event)

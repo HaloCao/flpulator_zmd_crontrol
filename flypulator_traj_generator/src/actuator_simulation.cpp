@@ -29,6 +29,23 @@ ActuatorSimulation::ActuatorSimulation()
   ros::param::param<double>("/uav/rotor_vel_min", lower_vel_limit_, 0);
 }
 
+void ActuatorSimulation::updateDroneParameters(flypulator_traj_generator::traj_parameterConfig& config)
+{
+    // updating geometric drone parameters through dynamic reconfigure
+    k_ = (float) config.k;
+    b_ = (float) config.b;
+    dh_ = (float) config.delta_h;
+    length_ = (float) config.length;
+    alpha_ = (float) config.alpha;
+    beta_ = (float) config.beta;
+    mass_ = (float) config.mass;
+    i_xx_ = (float) config.i_xx;
+    i_yy_ = (float) config.i_yy;
+    i_zz_ = (float) config.i_zz;
+    upper_vel_limit_ = (float) config.rotor_vel_max;
+    lower_vel_limit_ = (float) config.rotor_vel_min;
+}
+
 void ActuatorSimulation::simulateActuatorVelocities(Eigen::Vector6f &start_pose,
                                                     trajectory::pos_accelerations &pos_accs,
                                                     trajectory::euler_angle_accelerations &euler_angle_accelerations,

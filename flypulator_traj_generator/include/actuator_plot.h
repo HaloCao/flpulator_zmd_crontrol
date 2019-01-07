@@ -39,6 +39,13 @@ public:
    */
   void plotActuatorEvolution(trajectory::RotorEvolution &rotor_velocities, QVector<double> &time_stamps, bool feasible);
 
+  /**
+   * \brief updateActuatorBoundaries Will be called by trajectory designer through dynamic reconfigure in order to update actuator boundaries
+   * @param upper_limit upper limit of valid rotor velocities
+   * @param lower_limit lower limit of valid rotor velocities
+   */
+  void updateActuatorBoundaries(float upper_limit, float lower_limit);
+
 protected:
   /**
    * \brief plotActuatorBoundaries draws the upper and lower limit of the permitted rotor velocities as constants.

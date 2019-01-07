@@ -40,7 +40,9 @@
   
   <build_depend>geometry_msgs</build_depend>
   <build_depend>trajectory_msgs</build_depend>
-  <build_depend>message_generation</build_depend> <!-- turn srv files into source code for C++, python and other languages-->
+  <build_depend>message_generation</build_depend>   
+  <build_depend>dynamic_reconfigure</build_depend>
+  
   <exec_depend>libqt5-core</exec_depend>
   <exec_depend>libqt5-gui</exec_depend>
   <exec_depend>libqt5-widgets</exec_depend>
@@ -48,6 +50,7 @@
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>roscpp</exec_depend>
-  <exec_depend>message_runtime</exec_depend> <!-- turn srv files into source code for C++, python and other languages-->
+  <exec_depend>message_runtime</exec_depend>   
+  <exec_depend>dynamic_reconfigure</exec_depend><!-- turn srv files into source code for C++, python and other languages-->
 
 </package>

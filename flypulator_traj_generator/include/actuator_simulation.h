@@ -16,6 +16,9 @@
 
 #include <math.h>
 
+#include <dynamic_reconfigure/server.h>
+#include <flypulator_traj_generator/traj_parameterConfig.h>
+
 /**
  * \typedef Vector6f Eigen/Matrix which holds the individual rotor velocities.
  * \typedef Matrix6f Eigen/Matrix which holds the Mapping Matrix (mapping from forces/torques to rot. velocities)
@@ -68,6 +71,11 @@ public:
                                   trajectory::euler_angle_accelerations &rot_accs,
                                   trajectory::euler_angles &euler_angles, geometry_msgs::Vector3 &euler_axis,
                                   trajectory::RotorEvolution &rotor_velocities, bool &feasible);
+
+  /**
+   * \brief configCallback Callback for dynamic reconfigure of trajectory parameters
+   */
+  void updateDroneParameters(flypulator_traj_generator::traj_parameterConfig& config);
 
 protected:
   /**

@@ -71,6 +71,18 @@ void ActuatorPlot::plotActuatorBoundaries(double t_end)
   lower_limit_line_->end->setCoords(t_end, lower_vel_limit_);
 }
 
+void ActuatorPlot::updateActuatorBoundaries(float upper_limit, float lower_limit)
+{
+    // update actuator boundaries
+    if (upper_limit <= lower_limit)
+    {
+        return;
+    }
+
+    upper_vel_limit_ = upper_limit;
+    lower_vel_limit_ = lower_limit;
+}
+
 void ActuatorPlot::plotActuatorEvolution(trajectory::RotorEvolution &rotor_velocities, QVector<double> &time_stamps,
                                          bool feasible)
 {
