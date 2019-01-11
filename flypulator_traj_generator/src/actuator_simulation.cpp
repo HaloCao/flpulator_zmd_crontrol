@@ -181,7 +181,7 @@ void ActuatorSimulation::getMappingMatrix(Eigen::Matrix6f &map_matrix, Quaternio
     {
       float alpha = alpha_ * M_PI / 180.0 * pow(-1, i);
       float beta = beta_;
-      float gamma = ((float)i) * M_PI / 3.0f; //todo: why -pi/6 in controller_interface?
+      float gamma = ((float)i) * M_PI / 3.0f - M_PI/6;   //todo: why -pi/6 in controller_interface?
       // compute thrust direction
       e_r = Eigen::Vector3f(cos(alpha) * sin(beta) * cos(gamma) + sin(alpha) * sin(gamma),
                             cos(alpha) * sin(beta) * sin(gamma) - sin(alpha) * cos(gamma), cos(alpha) * cos(beta));
