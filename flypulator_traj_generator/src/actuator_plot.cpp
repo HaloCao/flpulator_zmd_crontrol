@@ -31,8 +31,8 @@ ActuatorPlot::ActuatorPlot(QWidget *parent) : QWidget(parent), actuator_plot_(ne
 
   // create six empty graphs for the rotor velocities
   // colors of the graphs
-  QColor pen_colors[6] = {QColor(23, 96, 214),  QColor(136, 27, 163), QColor(163, 27, 59),
-                          QColor(255, 175, 17), QColor(84, 178, 17),  QColor(36, 214, 205)};
+  QColor pen_colors[6] = {QColor(0, 114, 189),  QColor(217, 83, 25), QColor(237, 178, 32),
+                          QColor(126, 47, 142), QColor(119, 172, 48),  QColor(77, 190, 238)};
   QPen pen;
   pen.setWidth(2);
 
@@ -40,7 +40,7 @@ ActuatorPlot::ActuatorPlot(QWidget *parent) : QWidget(parent), actuator_plot_(ne
   {
     // add graph
     actuator_plot_->addGraph();
-    actuator_plot_->graph(i)->setName("w" + QString::number(i));
+    actuator_plot_->graph(i)->setName(QString((QChar) 0x3C9) + QString::number(i+1));
 
     // set style
     pen.setColor(pen_colors[i]);
