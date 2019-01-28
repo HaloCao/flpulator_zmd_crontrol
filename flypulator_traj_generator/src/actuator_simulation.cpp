@@ -54,15 +54,35 @@ void ActuatorSimulation::updateDroneParameters(flypulator_traj_generator::traj_p
     lower_vel_limit_squ_ = pow(lower_vel_limit_ * M_PI / 30, 2);
 }
 
-bool ActuatorSimulation::isFeasible(Eigen::Vector6f pose)
+Eigen::Vector6f ActuatorSimulation::getSteadyStateRotorVelocities(Eigen::Vector6f pose)
 {
     // retrieve pose orientation as radiation
-    Eigen::Vector3f pose_ori = pose.tail(3) * M_PI / 180;
+    Vector3f pose_ori = pose.tail(3) * M_PI / 180;
 
     // orientation as quaternion
     Quaternionf q = AngleAxisf(pose_ori[2], Vector3f::UnitZ()) * AngleAxisf(pose_ori[1], Vector3f::UnitY()) *
         AngleAxisf(pose_ori[0], Vector3f::UnitX());
 
+    // calculate rotor velocities from quaternion and return them
+    return quatToSteadyStateRotorVelocities(q);
+
+
+}
+
+Eigen::Vector6f ActuatorSimulation::getSteadyStateRotorVelocities(Eigen::Vector3f euler_axis, double euler_angle)
+{
+    Quaternionf q;
+    q.x() = euler_axis[0] * sin(euler_angle/2);
+    q.y() = euler_axis[1] * sin(euler_angle/2);
+    q.z() = euler_axis[2] * sin(euler_angle/2);
+    q.w() = cos(euler_angle/2);
+
+    // calculate rotor velocities from quaternion and return them
+    return quatToSteadyStateRotorVelocities(q);
+}
+
+Eigen::Vector6f ActuatorSimulation::quatToSteadyStateRotorVelocities(Eigen::Quaternionf q)
+{
     // force/torque input vector, only fz-component for steady state
     Vector6f u = Vector6f::Zero();
     u[2] = mass_ * gravity_;
@@ -71,18 +91,10 @@ bool ActuatorSimulation::isFeasible(Eigen::Vector6f pose)
     Matrix6f W;
     getMappingMatrix(W, q);
 
-    // get squared rotor velocities
-    Vector6f rot_vel_square = W.inverse() * u;
-
-    // retrieve maximum and minimum rotor squared velocities
-    double rot_vel_min = rot_vel_square.minCoeff();
-    double rot_vel_max = rot_vel_square.maxCoeff();
-
-    // feasibility check
-    return rot_vel_min >= lower_vel_limit_squ_ && rot_vel_max <= upper_vel_limit_squ_;
-
-
+    // get squared rotor velocities and return them
+    return W.inverse() * u;
 }
+
 void ActuatorSimulation::simulateActuatorVelocities(Eigen::Vector6f &start_pose,
                                                     trajectory::pos_accelerations &pos_accs,
                                                     trajectory::euler_angle_accelerations &euler_angle_accelerations,
@@ -94,7 +106,7 @@ void ActuatorSimulation::simulateActuatorVelocities(Eigen::Vector6f &start_pose,
   Quaternionf q;
 
   // starting orientation in rad
-  Eigen::Vector3f start_ori = start_pose.tail(3) * M_PI / 180;
+  Vector3f start_ori = start_pose.tail(3) * M_PI / 180;
 
   q = AngleAxisf(start_ori[2], Vector3f::UnitZ()) * AngleAxisf(start_ori[1], Vector3f::UnitY()) *
       AngleAxisf(start_ori[0], Vector3f::UnitX());
@@ -180,6 +192,32 @@ void ActuatorSimulation::simulateActuatorVelocities(Eigen::Vector6f &start_pose,
   }
 }
 
+void ActuatorSimulation::poseToEulerParams(Eigen::Vector6f pose, Eigen::Vector3f &euler_axis, double &euler_angle)
+{
+    // convert pose orientation to radiation
+    Vector3f pose_ori = pose.tail(3) * M_PI / 180;
+
+    // calculate rotation matrix according to ypr-sequence with consecutive axes
+    AngleAxisd roll_angle(pose_ori[0], Vector3d::UnitX());
+    AngleAxisd pitch_angle(pose_ori[1], Vector3d::UnitY());
+    AngleAxisd yaw_angle(pose_ori[2], Vector3d::UnitZ());
+
+    Quaternion<double> q = yaw_angle * pitch_angle * roll_angle;
+
+    Matrix3d rot_mat = q.matrix();
+
+    // retrieve euler parameters from rotation matrix
+    euler_angle = acos(0.5 * (rot_mat(0, 0) + rot_mat(1, 1) + rot_mat(2, 2) - 1));
+
+    // todo: handle singularities
+    Vector3f v;
+    v(0) = rot_mat(2, 1) - rot_mat(1, 2);
+    v(1) = rot_mat(0, 2) - rot_mat(2, 0);
+    v(2) = rot_mat(1, 0) - rot_mat(0, 1);
+
+    euler_axis = 0.5 / sin(euler_angle) * v;
+}
+
 inline void ActuatorSimulation::eulerParamsToRotMatrix(Eigen::Vector3f euler_axis, float euler_angle,
                                                        Eigen::Matrix3f &rotMat)
 {
@@ -205,13 +243,31 @@ inline void ActuatorSimulation::eulerParamsToRotMatrix(Eigen::Vector3f euler_axi
   rotMat(2, 2) = kz * kz * ve + ce;
 }
 
+Vector3f ActuatorSimulation::eulerParamsToYPR(Eigen::Vector3f euler_axis, double euler_angle)
+{
+    // convert euler parameter to rotation matrix
+    Matrix3f rot_mat;
+    eulerParamsToRotMatrix(euler_axis, euler_angle, rot_mat);
+
+    // retrieve roll pitch yaw angles following ypr-sequence with consecutive axes
+    float roll = atan2(rot_mat(2,1), rot_mat(2,2));
+    float pitch = -asin(rot_mat(2,0));
+    float yaw = atan2(rot_mat(1,0), rot_mat(0,0));
+
+    Vector3f rpy_angles;
+    rpy_angles << roll, pitch, yaw;
+
+    return rpy_angles * 180 / M_PI;
+
+}
+
 void ActuatorSimulation::getMappingMatrix(Eigen::Matrix6f &map_matrix, Quaternionf q)
 {
     //todo Hardcode inverse mapping matrix
     // compute thrust directions
-    Eigen::Vector3f e_r;   // thrust direction
-    Eigen::Vector3f mom;   // drag + thrust torque
-    Eigen::Vector3f r_ti;  // vector from COM to i-th rotor
+    Vector3f e_r;   // thrust direction
+    Vector3f mom;   // drag + thrust torque
+    Vector3f r_ti;  // vector from COM to i-th rotor
 
     // compute matrix
     for (int i = 0; i < 6; i++)

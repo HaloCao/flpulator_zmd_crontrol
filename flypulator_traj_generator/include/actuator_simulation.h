@@ -78,11 +78,36 @@ public:
   void updateDroneParameters(flypulator_traj_generator::traj_parameterConfig& config);
 
   /**
-   * @brief isFeasible Checks the given 6D-pose for feasibility
-   * @param pose Pose to check for feasibility
-   * @return True if pose is feasible
+   * \brief getSteadyStateRotorVelocities Calculates the squared rotor velocites for the given 6D-pose and returns them
+   * \param pose The pose to calculate rotor velocities for (implies orientation described throug ypr-angles in degree)
+   * \return Rotor velocities per rad²/s²
    */
-  bool isFeasible(Eigen::Vector6f pose);
+  Eigen::Vector6f getSteadyStateRotorVelocities(Eigen::Vector6f pose);
+
+  /**
+   * \brief getSteadyStateRotorVelocities Calculates the squared rotor velocites for the given orientation (representated through euler parameters) and returns them
+   * \param euler_axis The euler axis of the steady state orientation
+   * \param euler_angle The euler angle of the steady state orientation
+   * \return Rotor velocities per rad²/s²
+   */
+  Eigen::Vector6f getSteadyStateRotorVelocities(Eigen::Vector3f euler_axis, double euler_angle);
+
+  /**
+   * \brief poseToEulerParams Calculates the euler parameters for a given pose
+   * \param pose Pose to calculate euler parameters for (orientation as degree)
+   * \param euler_axis Reference to the resulting euler axis
+   * \param euler_angle Reference to the resulting euler angle
+   */
+  void poseToEulerParams(Eigen::Vector6f pose, Eigen::Vector3f &euler_axis, double &euler_angle);
+
+  /**
+   * @brief eulerParamsToYPR Converts from euler parameters to yaw-pitch-roll - angles
+   * @param euler_axis The euler axis of the given orientation
+   * @param euler_angle The euler angle of the given rotation
+   * @return The resulting roll pitch yaw angles following y-p-r-Sequence with consecutive axes (in degrees)
+   */
+  Eigen::Vector3f eulerParamsToYPR(Eigen::Vector3f euler_axis, double euler_angle);
+
 
 protected:
   /**
@@ -99,6 +124,13 @@ protected:
    * \param q Quaternion indicating the hexacopter's current orientation
    */
   void getMappingMatrix(Eigen::Matrix6f &map_matrix, Eigen::Quaternionf q);
+
+  /**
+   * \brief quatToSteadyStateRotorVelocities
+   * \param q Quaternion indicating the orientation to calculate rotor velocities for
+   * \return 6D-Vector of rotor velocities per rad²/s²
+   */
+  Eigen::Vector6f quatToSteadyStateRotorVelocities(Eigen::Quaternionf q);
 
 private:
   // simulation parameters

@@ -303,6 +303,18 @@ void TrajectoryUI::alignStartDronePose()
   }
 }
 
+void TrajectoryUI::setTargetPose(Eigen::Vector6f target_pose)
+{
+    // update locally stored target pose
+    target_pose_ = target_pose;
+
+    // update ui elements
+    for (size_t i  = 0; i < 6; i++)
+    {
+        target_pose_panel_.pose_values_[i]->setValue(target_pose[i]);
+    }
+}
+
 void TrajectoryUI::calculateFeasibleTrajectory()
 {
     Q_EMIT makeFeasible();

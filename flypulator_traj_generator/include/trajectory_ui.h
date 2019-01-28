@@ -64,6 +64,12 @@ public:
    */
   void getTrajectorySetup(Eigen::Vector6f &start_pose, Eigen::Vector6f &target_pose, double &duration);
 
+  /**
+   * \brief setTargetPose Sets the target position including sliders to the given target pose. Called after feasible target pose is found
+   * \param target_pose The new feasible 6D - target pose of the trajectory
+   */
+  void setTargetPose(Eigen::Vector6f target_pose);
+
 public:
 Q_SIGNALS:
 

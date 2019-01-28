@@ -211,6 +211,9 @@ void TrajectoryDesigner::makeFeasibleCallback()
     // pass trajectory setup to feasibility check class and retrieve feasible alternative when required
     feasibility_check_->makeFeasible(start_pose, target_pose, duration);
 
+    // set the user interface to the new feasible target pose
+    ui_panel_->setTargetPose(target_pose);
+
 
 }
 
