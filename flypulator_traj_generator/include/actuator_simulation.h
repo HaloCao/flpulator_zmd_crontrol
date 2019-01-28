@@ -77,6 +77,13 @@ public:
    */
   void updateDroneParameters(flypulator_traj_generator::traj_parameterConfig& config);
 
+  /**
+   * @brief isFeasible Checks the given 6D-pose for feasibility
+   * @param pose Pose to check for feasibility
+   * @return True if pose is feasible
+   */
+  bool isFeasible(Eigen::Vector6f pose);
+
 protected:
   /**
    * \brief eulerParamsToRotMatrix Calculates a rotation matrix from given euler axis and euler angle
@@ -112,8 +119,10 @@ private:
   float dh_;
 
   // actuator boundaries for feasibility check
-  double upper_vel_limit_;  ///< The maximum feasible rotational velocity of a propeller.
-  double lower_vel_limit_;  ///< The minimum feasible rotational velocity of a propeller.
+  double upper_vel_limit_;  ///< The maximum feasible rotational velocity of a propeller per rpm.
+  double lower_vel_limit_;  ///< The minimum feasible rotational velocity of a propeller per rpm.
+  double upper_vel_limit_squ_; ///< The maximum feasible velocity per rad²/s²
+  double lower_vel_limit_squ_; ///< The minimum feasible velocity per rad²/s²
 };
 
 #endif  // ACUTATORSIMULATION_H

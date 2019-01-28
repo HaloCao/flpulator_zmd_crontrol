@@ -27,6 +27,10 @@ ActuatorSimulation::ActuatorSimulation()
   // actuator velocity boundaries
   ros::param::param<double>("/uav/rotor_vel_max", upper_vel_limit_, 5700);
   ros::param::param<double>("/uav/rotor_vel_min", lower_vel_limit_, 0);
+
+  //store actuator boundaries as rad²/s² as well
+  upper_vel_limit_squ_ = pow(upper_vel_limit_ * M_PI / 30, 2);
+  lower_vel_limit_squ_ = pow(lower_vel_limit_ * M_PI / 30, 2);
 }
 
 void ActuatorSimulation::updateDroneParameters(flypulator_traj_generator::traj_parameterConfig& config)
@@ -43,9 +47,42 @@ void ActuatorSimulation::updateDroneParameters(flypulator_traj_generator::traj_p
     i_yy_ = (float) config.i_yy;
     i_zz_ = (float) config.i_zz;
     upper_vel_limit_ = (float) config.rotor_vel_max;
-    lower_vel_limit_ = (float) config.rotor_vel_min;
+    lower_vel_limit_ = (float) config.rotor_vel_min;    
+
+    //store actuator boundaries as rad²/s² as well
+    upper_vel_limit_squ_ = pow(upper_vel_limit_ * M_PI / 30, 2);
+    lower_vel_limit_squ_ = pow(lower_vel_limit_ * M_PI / 30, 2);
 }
 
+bool ActuatorSimulation::isFeasible(Eigen::Vector6f pose)
+{
+    // retrieve pose orientation as radiation
+    Eigen::Vector3f pose_ori = pose.tail(3) * M_PI / 180;
+
+    // orientation as quaternion
+    Quaternionf q = AngleAxisf(pose_ori[2], Vector3f::UnitZ()) * AngleAxisf(pose_ori[1], Vector3f::UnitY()) *
+        AngleAxisf(pose_ori[0], Vector3f::UnitX());
+
+    // force/torque input vector, only fz-component for steady state
+    Vector6f u = Vector6f::Zero();
+    u[2] = mass_ * gravity_;
+
+    // retrieve mapping matrix and calculate squared rotor velocities
+    Matrix6f W;
+    getMappingMatrix(W, q);
+
+    // get squared rotor velocities
+    Vector6f rot_vel_square = W.inverse() * u;
+
+    // retrieve maximum and minimum rotor squared velocities
+    double rot_vel_min = rot_vel_square.minCoeff();
+    double rot_vel_max = rot_vel_square.maxCoeff();
+
+    // feasibility check
+    return rot_vel_min >= lower_vel_limit_squ_ && rot_vel_max <= upper_vel_limit_squ_;
+
+
+}
 void ActuatorSimulation::simulateActuatorVelocities(Eigen::Vector6f &start_pose,
                                                     trajectory::pos_accelerations &pos_accs,
                                                     trajectory::euler_angle_accelerations &euler_angle_accelerations,

@@ -58,8 +58,8 @@ public:
   /**
    * \brief getTrajectorySetup Creates references to the trajectories set-up.
    * Used by parent widget to retrieve the trajectory setup and call the generator service.
-   * \param start_pose Reference to the trajectory's start pose
-   * \param target_pose Reference to the trajectory's target pose
+   * \param start_pose Reference to the trajectory's start pose (orientation in degrees)
+   * \param target_pose Reference to the trajectory's target pose (orientation in degrees)
    * \param duration Reference to the trajectory's duration
    */
   void getTrajectorySetup(Eigen::Vector6f &start_pose, Eigen::Vector6f &target_pose, double &duration);
@@ -71,6 +71,11 @@ Q_SIGNALS:
    * \brief startTracking Informs trajectory designer to generate new trajectory and publish it.
    */
   void startTracking(bool);
+
+  /**
+   * \brief makeFeasible Informs trajectory designer to trigger calculation of feasible trajectory
+   */
+  void makeFeasible();
 
 protected:
   /**
@@ -150,6 +155,11 @@ private Q_SLOTS:
    * trajectory accordingly.
    */
   void alignStartDronePose();
+
+  /**
+   * \brief makeFeasible Trigger the calculation of a feasible trajectory considering the current start and end poses.
+   */
+  void calculateFeasibleTrajectory();
 
   /**
    * \brief Callback to calculate trajectory for given pose-configurations and execute it.

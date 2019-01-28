@@ -22,6 +22,7 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
   , ui_panel_(new TrajectoryUI(this))
   , actuator_plot_(new ActuatorPlot(this))
   , actuator_simulation_(new ActuatorSimulation())
+  , feasibility_check_(new FeasibilityCheck(actuator_simulation_))
 
 {
   // set user interface panel to fixed width and actuator plot widget to fixed height
@@ -77,6 +78,9 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
 
   // connect ui_panel poseupdate signal to local slot to get informed about updates in the trajectory set-up
   connect(ui_panel_, SIGNAL(startTracking(bool)), this, SLOT(callTrajectoryGenerator(bool)));
+
+  //connect ui_panel makeFeasible signal to local slot in order to calculate feasible trajectory
+  connect(ui_panel_, SIGNAL(makeFeasible()), this, SLOT(makeFeasibleCallback()));
 
   // register ros service client for polynomial trajectory generation service+
   polynomial_traj_client_ = nh_.serviceClient<polynomial_trajectory>("polynomial_trajectory");
@@ -192,6 +196,22 @@ bool TrajectoryDesigner::eventFilter(QObject *object, QEvent *event)
     }
   }
   return false;
+}
+
+void TrajectoryDesigner::makeFeasibleCallback()
+{
+    // Create references to retrieve the current trajectory setup from user interface
+    Eigen::Vector6f start_pose;
+    Eigen::Vector6f target_pose;
+    double duration;
+
+    // Write references (orientation in degrees)
+    ui_panel_->getTrajectorySetup(start_pose, target_pose, duration);
+
+    // pass trajectory setup to feasibility check class and retrieve feasible alternative when required
+    feasibility_check_->makeFeasible(start_pose, target_pose, duration);
+
+
 }
 
 void TrajectoryDesigner::callTrajectoryGenerator(bool start_tracking)

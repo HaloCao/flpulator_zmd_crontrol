@@ -44,19 +44,19 @@ TrajectoryUI::TrajectoryUI(QWidget *parent)
   QPushButton *reset_btn = new QPushButton("Reset Poses");
   QPushButton *start_btn = new QPushButton("Start Trajectory Tracking");
   QPushButton *match_start_pose_btn = new QPushButton("Align Start to Drone Pose");
-
-  // make start_trajectory_button fully span two rows
-  start_btn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+  QPushButton *make_feasible_btn = new QPushButton("Find Feasible Trajectory");
 
   connect(reset_btn, SIGNAL(clicked()), this, SLOT(resetPoseConfigurations()));
   connect(start_btn, SIGNAL(clicked()), this, SLOT(startTrajectoryTracking()));
   connect(match_start_pose_btn, SIGNAL(clicked()), this, SLOT(alignStartDronePose()));
+  connect(make_feasible_btn, SIGNAL(clicked()), this, SLOT(calculateFeasibleTrajectory()));
 
   // add buttons to horizontal layout and to main layout finally
   QGridLayout *start_reset_layout = new QGridLayout();
   start_reset_layout->addWidget(reset_btn, 0, 0);
   start_reset_layout->addWidget(match_start_pose_btn, 1, 0);
-  start_reset_layout->addWidget(start_btn, 0, 1, 2, 1);
+  start_reset_layout->addWidget(make_feasible_btn, 0,1);
+  start_reset_layout->addWidget(start_btn, 1, 1);
   QWidget *container = new QWidget();
   container->setLayout(start_reset_layout);
   main_layout_->addWidget(container);
@@ -301,6 +301,12 @@ void TrajectoryUI::alignStartDronePose()
     log("Couldn't retrieve current pose of the hexacopter. Ensure the transform between /world and /baselink frames "
         "being broadcasted.");
   }
+}
+
+void TrajectoryUI::calculateFeasibleTrajectory()
+{
+    Q_EMIT makeFeasible();
+    log("Calculating feasible trajectory");
 }
 
 void TrajectoryUI::startTrajectoryTracking()
