@@ -25,14 +25,14 @@ ActuatorPlot::ActuatorPlot(QWidget *parent) : QWidget(parent), actuator_plot_(ne
 
   // label axes
   actuator_plot_->xAxis->setLabel("Time [s]");
-  actuator_plot_->yAxis->setLabel("Rotational Speed [rpm]");
+  actuator_plot_->yAxis->setLabel("Rotor velocities [rpm]");
   // set axes range
-  actuator_plot_->yAxis->setRange(-5000, 7000);
+  actuator_plot_->yAxis->setRange(-2000, 7000);
 
   // create six empty graphs for the rotor velocities
   // colors of the graphs
-  QColor pen_colors[6] = {QColor(0, 114, 189),  QColor(217, 83, 25), QColor(237, 178, 32),
-                          QColor(126, 47, 142), QColor(119, 172, 48),  QColor(77, 190, 238)};
+  QColor pen_colors[6] = {QColor(0, 114, 189),  QColor(217, 83, 25),  QColor(237, 178, 32),
+                          QColor(126, 47, 142), QColor(119, 172, 48), QColor(77, 190, 238)};
   QPen pen;
   pen.setWidth(2);
 
@@ -40,7 +40,7 @@ ActuatorPlot::ActuatorPlot(QWidget *parent) : QWidget(parent), actuator_plot_(ne
   {
     // add graph
     actuator_plot_->addGraph();
-    actuator_plot_->graph(i)->setName(QString((QChar) 0x3C9) + QString::number(i+1));
+    actuator_plot_->graph(i)->setName(QString((QChar)0x3C9) + QString::number(i + 1));
 
     // set style
     pen.setColor(pen_colors[i]);
@@ -73,18 +73,18 @@ void ActuatorPlot::plotActuatorBoundaries(double t_end)
 
 void ActuatorPlot::updateActuatorBoundaries(float upper_limit, float lower_limit)
 {
-    // update actuator boundaries
-    if (upper_limit <= lower_limit)
-    {
-        return;
-    }
+  // update actuator boundaries
+  if (upper_limit <= lower_limit)
+  {
+    return;
+  }
 
-    upper_vel_limit_ = upper_limit;
-    lower_vel_limit_ = lower_limit;
+  upper_vel_limit_ = upper_limit;
+  lower_vel_limit_ = lower_limit;
 }
 
-void ActuatorPlot::plotActuatorEvolution(trajectory::RotorEvolution &rotor_velocities, QVector<double> &time_stamps,
-                                         bool feasible)
+void ActuatorPlot::plotActuatorEvolution(trajectory::rotor_velocities_rpm &rotor_velocities,
+                                         QVector<double> &time_stamps, bool feasible)
 {
   // update time axis range
   double t_end = time_stamps[time_stamps.size() - 1];

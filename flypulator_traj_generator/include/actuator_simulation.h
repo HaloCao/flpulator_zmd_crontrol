@@ -38,7 +38,9 @@ namespace trajectory
  *\typedef pos_accelerations Vector which holds the course of positional accelerations over time.
  *\typedef euler_angle_accelerations Vector which holds the course of rotational accelerations (euler angle only) over
  *time.
- * \typedef RotorEvolution Vector holding the rotor velocities of the hexacopter over time
+ * \typedef euler_angles Vector which holds the course of the euler angles
+ * \typedef rotor_velocities_rpm Vector which holds the rotor velocities in the unit of rev. per minute (QVector for
+ *later plotting) \typedef rotor_velocities_squared Vector which holds the rotor velocities in the unit of rad²/s²
  */
 typedef std::vector<geometry_msgs::Vector3> pos_accelerations;
 typedef std::vector<double> euler_angle_accelerations;
@@ -46,32 +48,45 @@ typedef std::vector<double> euler_angles;
 typedef std::vector<QVector<double>> rotor_velocities_rpm;
 typedef std::vector<Eigen::Vector6f> rotor_velocities_squared;
 
+/**
+ * \brief The TrajectoryData struct This structure contains all the relevent input and output trajectory data as well as
+ * the QVectors necessary for plotting.
+ */
 struct TrajectoryData
 {
-    // input
-    Eigen::Vector6f start_pose_;
-    Eigen::Vector6f target_pose_;
-    trajectory::pos_accelerations pos_accs_;
-    trajectory::euler_angle_accelerations euler_angle_accs_;
-    trajectory::euler_angles euler_angles_;
-    Eigen::Vector3f euler_axis_;
+  // input
+  Eigen::Vector6f start_pose_;
+  Eigen::Vector6f target_pose_;
+  trajectory::pos_accelerations pos_accs_;
+  trajectory::euler_angle_accelerations euler_angle_accs_;
+  trajectory::euler_angles euler_angles_;
+  Eigen::Vector3f euler_axis_;
 
-    // output
-    trajectory::rotor_velocities_rpm rot_vel_rpm_;
-    trajectory::rotor_velocities_squared rot_vel_squ_;
-    indices i_min_;
-    indices i_max_;
-    double rot_vel_squ_min_;
-    double rot_vel_squ_max_;
+  // output
+  QVector<double> time_stamps_;
+  trajectory::rotor_velocities_rpm rot_vel_rpm_;
+  trajectory::rotor_velocities_squared rot_vel_squ_;
+  indices i_min_;
+  indices i_max_;
+  double rot_vel_squ_min_;
+  double rot_vel_squ_max_;
+  bool feasible_;
 
-    TrajectoryData(Eigen::Vector6f start_pose, Eigen::Vector6f target_pose, trajectory::pos_accelerations pos_accs, trajectory::euler_angle_accelerations euler_angle_accs, trajectory::euler_angles euler_angles, Eigen::Vector3f euler_axis, trajectory::rotor_velocities_rpm rotor_velocities_rpm)
-        : start_pose_(start_pose),
-          target_pose_(target_pose),
-          pos_accs_(pos_accs),
-          euler_angle_accs_(euler_angle_accs),
-          euler_angles_(euler_angles),
-          euler_axis_(euler_axis),
-          rot_vel_rpm_(rotor_velocities_rpm) {}
+  TrajectoryData(Eigen::Vector6f start_pose, Eigen::Vector6f target_pose, trajectory::pos_accelerations pos_accs,
+                 trajectory::euler_angle_accelerations euler_angle_accs, trajectory::euler_angles euler_angles,
+                 Eigen::Vector3f euler_axis, trajectory::rotor_velocities_rpm rotor_velocities_rpm,
+                 QVector<double> time_stamps)
+    : start_pose_(start_pose)
+    , target_pose_(target_pose)
+    , pos_accs_(pos_accs)
+    , euler_angle_accs_(euler_angle_accs)
+    , euler_angles_(euler_angles)
+    , euler_axis_(euler_axis)
+    , rot_vel_rpm_(rotor_velocities_rpm)
+    , time_stamps_(time_stamps)
+    , feasible_(true)
+  {
+  }
 };
 }  // namespace trajectory
 
@@ -92,15 +107,15 @@ public:
   /**
    * \brief simulateActuatorVelocities Calculates the evolution of the rotor rotational velocities based on the
    * trajectory's pose accelerations.
-   * \param trajectory_data contains the relevant inputs (startpose, accelerations...) and used to store the outputs (rotor velocities, location of maximum, minimum etc)
-   * (see trajectory::TrajectoryData)
+   * \param trajectory_data contains the relevant inputs (startpose, accelerations...) and used to store the outputs
+   * (rotor velocities, location of maximum, minimum etc) (see trajectory::TrajectoryData)
    */
-   void simulateActuatorVelocities(trajectory::TrajectoryData &traj_data);
+  void simulateActuatorVelocities(trajectory::TrajectoryData &traj_data);
 
   /**
    * \brief configCallback Callback for dynamic reconfigure of trajectory parameters
    */
-  void updateDroneParameters(flypulator_traj_generator::traj_parameterConfig& config);
+  void updateDroneParameters(flypulator_traj_generator::traj_parameterConfig &config);
 
   /**
    * \brief getSteadyStateRotorVelocities Calculates the squared rotor velocites for the given 6D-pose and returns them
@@ -110,10 +125,9 @@ public:
   Eigen::Vector6f getSteadyStateRotorVelocities(Eigen::Vector6f pose);
 
   /**
-   * \brief getSteadyStateRotorVelocities Calculates the squared rotor velocites for the given orientation (representated through euler parameters) and returns them
-   * \param euler_axis The euler axis of the steady state orientation
-   * \param euler_angle The euler angle of the steady state orientation
-   * \return Rotor velocities per rad²/s²
+   * \brief getSteadyStateRotorVelocities Calculates the squared rotor velocites for the given orientation
+   * (representated through euler parameters) and returns them \param euler_axis The euler axis of the steady state
+   * orientation \param euler_angle The euler angle of the steady state orientation \return Rotor velocities per rad²/s²
    */
   Eigen::Vector6f getSteadyStateRotorVelocities(Eigen::Vector3f euler_axis, double euler_angle);
 
@@ -134,7 +148,8 @@ public:
   Eigen::Vector3f eulerParamsToYPR(Eigen::Vector3f euler_axis, double euler_angle);
 
   /**
-   * @brief eulerParamsToQuat Calculates a quaternion from euler parameters, considering the startin frame, in which the euler parameters are defined
+   * @brief eulerParamsToQuat Calculates a quaternion from euler parameters, considering the startin frame, in which the
+   * euler parameters are defined
    * @param start_frame Orientation of the frame, where the euler parameters are defined w.r.t. the global frame {I}
    * @param euler_axis The euler axis describing the rotation w.r.t the start frame
    * @param euler_angle The euler angle describing the rotation w.r.t the start frame
@@ -143,7 +158,8 @@ public:
   Eigen::Quaternionf eulerParamsToQuat(Eigen::Vector3f start_frame, Eigen::Vector3f euler_axis, double euler_angle);
 
   /**
-   * @brief getGravitationalVelocityComponent Calculates the contribution of gravitational influence to the rotor velocity of the specified rotor
+   * @brief getGravitationalVelocityComponent Calculates the contribution of gravitational influence to the rotor
+   * velocity of the specified rotor
    * @param q The quaternion describing the orientation of the hexarotor w.r.t. the global frame
    * @param rotor_index The index of the regarded rotor
    * @return The rotor velocity influenced by gravitational force
@@ -152,9 +168,9 @@ public:
 
 protected:
   /**
-   * @brief getMappingMatrix Writes the mapping matrix (mapping from rotor velocities to forces/torques) to a given reference
-   * \param map_matrix Reference to write resulting mapping matrix to
-   * \param q Quaternion indicating the hexacopter's current orientation
+   * @brief getMappingMatrix Writes the mapping matrix (mapping from rotor velocities to forces/torques) to a given
+   * reference \param map_matrix Reference to write resulting mapping matrix to \param q Quaternion indicating the
+   * hexacopter's current orientation
    */
   void getMappingMatrix(Eigen::Matrix6f &map_matrix, Eigen::Quaternionf q);
 
@@ -164,7 +180,7 @@ protected:
    * \param euler_angle The angle, indicating the current rotation around the euler axis
    * \param rotMat  The resulting rotation matrix
    */
-  inline void eulerParamsToRotMatrix(Eigen::Vector3f euler_axis, float euler_angle, Eigen::Matrix3f &rotMat);  
+  inline void eulerParamsToRotMatrix(Eigen::Vector3f euler_axis, float euler_angle, Eigen::Matrix3f &rotMat);
 
   /**
    * \brief quatToSteadyStateRotorVelocities
@@ -190,12 +206,6 @@ private:
   float beta_;
   float length_;
   float dh_;
-
-  // actuator boundaries for feasibility check
-  double upper_vel_limit_;  ///< The maximum feasible rotational velocity of a propeller per rpm.
-  double lower_vel_limit_;  ///< The minimum feasible rotational velocity of a propeller per rpm.
-  double upper_vel_limit_squ_; ///< The maximum feasible velocity per rad²/s²
-  double lower_vel_limit_squ_; ///< The minimum feasible velocity per rad²/s²
 };
 
 #endif  // ACUTATORSIMULATION_H

@@ -55,7 +55,7 @@ TrajectoryUI::TrajectoryUI(QWidget *parent)
   QGridLayout *start_reset_layout = new QGridLayout();
   start_reset_layout->addWidget(reset_btn, 0, 0);
   start_reset_layout->addWidget(match_start_pose_btn, 1, 0);
-  start_reset_layout->addWidget(make_feasible_btn, 0,1);
+  start_reset_layout->addWidget(make_feasible_btn, 0, 1);
   start_reset_layout->addWidget(start_btn, 1, 1);
   QWidget *container = new QWidget();
   container->setLayout(start_reset_layout);
@@ -305,34 +305,33 @@ void TrajectoryUI::alignStartDronePose()
 
 void TrajectoryUI::setTargetPose(Eigen::Vector6f target_pose)
 {
-    // update locally stored target pose
-    target_pose_ = target_pose;
+  // update locally stored target pose
+  target_pose_ = target_pose;
 
-    // update ui elements
-    for (size_t i  = 0; i < 6; i++)
-    {
-        target_pose_panel_.pose_values_[i]->setValue(target_pose[i]);
-    }
+  // update ui elements
+  for (size_t i = 0; i < 6; i++)
+  {
+    target_pose_panel_.pose_values_[i]->setValue(target_pose[i]);
+  }
 
-    // broadcast transform to new target position
-    broadcastTargetTransform();
+  // broadcast transform to new target position
+  broadcastTargetTransform();
 }
 
 void TrajectoryUI::setDuration(double duration)
 {
-    // update locally stored duration
-    duration_ = duration;
+  // update locally stored duration
+  duration_ = duration;
 
-    // update ui elements
-    dur_slider_->setValue(duration * (double)start_pose_panel_.multiplier);
-    dur_value_->setValue(duration);
-
+  // update ui elements
+  dur_slider_->setValue(duration * (double)start_pose_panel_.multiplier);
+  dur_value_->setValue(duration);
 }
 
 void TrajectoryUI::calculateFeasibleTrajectory()
 {
-    Q_EMIT makeFeasible();
-    log("Calculating feasible trajectory");
+  log("Calculating feasible trajectory");
+  Q_EMIT makeFeasible();
 }
 
 void TrajectoryUI::startTrajectoryTracking()

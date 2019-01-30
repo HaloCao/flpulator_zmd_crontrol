@@ -71,7 +71,7 @@ private Q_SLOTS:
    * \brief Will be executed whenever the user manipulates the trajectory set-up.
    * \param start_tracking True if the generated trajectory is to be published.
    */
-  void callTrajectoryGenerator(bool start_tracking);
+  void updateTrajectoryCallback(bool start_tracking);
 
   /**
    * \brief configCallback Callback for dynamic reconfigure of trajectory parameters
@@ -79,7 +79,8 @@ private Q_SLOTS:
   void configCallback(flypulator_traj_generator::traj_parameterConfig& config, uint32_t level);
 
   /**
-   * \brief makeFeasibleCallback Will be executed, when user hits button to calculate feasible trajectory. Triggers the calculation and the plotting of the feasible trajectory afterwards.
+   * \brief makeFeasibleCallback Will be executed, when user hits button to calculate feasible trajectory. Triggers the
+   * calculation and the plotting of the feasible trajectory afterwards.
    */
   void makeFeasibleCallback();
 
@@ -106,12 +107,14 @@ private:
 
   TrajectoryUI* ui_panel_;       ///< User interface to set the parametrization of a desired trajectory.
   ActuatorPlot* actuator_plot_;  ///< holds a qCustomPlot widget which plots the behaviour of the rotor velocities.
-  ActuatorSimulation* actuator_simulation_;  ///< Responsible for simulation of the course of rotor speeds based on a given trajectory
-  FeasibilityCheck* feasibility_check_; ///< Performs feasibility check for a given trajectory and calculates feasible alternative where required
+  FeasibilityCheck* feasibility_check_;  ///< Performs feasibility check for a given trajectory and calculates feasible
+                                         ///< alternative where required
 
-  dynamic_reconfigure::Server<flypulator_traj_generator::traj_parameterConfig> dr_srv; ///< server instance for dynamic reconfigure of trajectory parameters
-  dynamic_reconfigure::Server<flypulator_traj_generator::traj_parameterConfig>::CallbackType cb; ///< callback for dyn. reconfigure
-
+  dynamic_reconfigure::Server<flypulator_traj_generator::traj_parameterConfig> dr_srv;  ///< server instance for dynamic
+                                                                                        ///< reconfigure of trajectory
+                                                                                        ///< parameters
+  dynamic_reconfigure::Server<flypulator_traj_generator::traj_parameterConfig>::CallbackType cb;  ///< callback for dyn.
+                                                                                                  ///< reconfigure
 };
 
 #endif  // TRAJECTORYDESIGNER_H

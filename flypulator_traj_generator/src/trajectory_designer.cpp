@@ -21,8 +21,7 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
   : QWidget(parent)
   , ui_panel_(new TrajectoryUI(this))
   , actuator_plot_(new ActuatorPlot(this))
-  , actuator_simulation_(new ActuatorSimulation())
-  , feasibility_check_(new FeasibilityCheck(actuator_simulation_))
+  , feasibility_check_(new FeasibilityCheck())
 
 {
   // set user interface panel to fixed width and actuator plot widget to fixed height
@@ -77,9 +76,9 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
   qApp->installEventFilter(this);
 
   // connect ui_panel poseupdate signal to local slot to get informed about updates in the trajectory set-up
-  connect(ui_panel_, SIGNAL(startTracking(bool)), this, SLOT(callTrajectoryGenerator(bool)));
+  connect(ui_panel_, SIGNAL(startTracking(bool)), this, SLOT(updateTrajectoryCallback(bool)));
 
-  //connect ui_panel makeFeasible signal to local slot in order to calculate feasible trajectory
+  // connect ui_panel makeFeasible signal to local slot in order to calculate feasible trajectory
   connect(ui_panel_, SIGNAL(makeFeasible()), this, SLOT(makeFeasibleCallback()));
 
   // register ros service client for polynomial trajectory generation service+
@@ -93,7 +92,6 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
   QTimer *t = new QTimer(this);
   QObject::connect(t, SIGNAL(timeout()), this, SLOT(rosUpdate()));
   t->start(20);
-
 }
 
 void TrajectoryDesigner::rosUpdate()
@@ -116,7 +114,7 @@ void TrajectoryDesigner::rosUpdate()
         start_tf_stamp_ = transform.stamp_;
 
         // calculate new trajectory
-        callTrajectoryGenerator(false);
+        updateTrajectoryCallback(false);
 
         return;
       }
@@ -127,7 +125,7 @@ void TrajectoryDesigner::rosUpdate()
         target_tf_stamp_ = transform.stamp_;
 
         // calculate new trajectory
-        callTrajectoryGenerator(false);
+        updateTrajectoryCallback(false);
       }
     }
     catch (tf::TransformException &ex)
@@ -141,17 +139,16 @@ void TrajectoryDesigner::rosUpdate()
   }
 }
 
-void TrajectoryDesigner::configCallback(flypulator_traj_generator::traj_parameterConfig& config, uint32_t level)
+void TrajectoryDesigner::configCallback(flypulator_traj_generator::traj_parameterConfig &config, uint32_t level)
 {
-    // update parameters of actuator simulation through dynamic reconfigure
-    actuator_simulation_->updateDroneParameters(config);
+  // update upper and lower actuator boundaries for plotting purposes
+  actuator_plot_->updateActuatorBoundaries((float)config.rotor_vel_max, (float)config.rotor_vel_min);
 
-    // update upper and lower actuator boundaries for plotting purposes
-    actuator_plot_->updateActuatorBoundaries((float) config.rotor_vel_max, (float) config.rotor_vel_min);
+  // update parameters of feasibilityCheck instance as well
+  feasibility_check_->updateSimulationParameters(config);
 
-    // restart simulation
-    callTrajectoryGenerator(false);
-
+  // restart simulation
+  updateTrajectoryCallback(false);
 }
 
 bool TrajectoryDesigner::eventFilter(QObject *object, QEvent *event)
@@ -200,25 +197,28 @@ bool TrajectoryDesigner::eventFilter(QObject *object, QEvent *event)
 
 void TrajectoryDesigner::makeFeasibleCallback()
 {
-    // Create references to retrieve the current trajectory setup from user interface
-    Eigen::Vector6f start_pose;
-    Eigen::Vector6f target_pose;
-    double duration;
+  // Create references to retrieve the current trajectory setup from user interface
+  Eigen::Vector6f start_pose;
+  Eigen::Vector6f target_pose;
+  double duration;
 
-    // Write references (orientation in degrees)
-    ui_panel_->getTrajectorySetup(start_pose, target_pose, duration);
+  // Write references (orientation in degrees)
+  ui_panel_->getTrajectorySetup(start_pose, target_pose, duration);
 
-    // pass trajectory setup to feasibility check class and retrieve feasible alternative when required
-    feasibility_check_->makeFeasible(start_pose, target_pose, duration);
-
+  // pass trajectory setup to feasibility check class and retrieve feasible alternative when required
+  if (!feasibility_check_->makeFeasible(start_pose, target_pose, duration))
+  {
+    ui_panel_->log("Start pose not feasible. Please adjust!");
+  }
+  else
+  {
     // set the user interface to the new feasible target pose and duration
     ui_panel_->setDuration(duration);
     ui_panel_->setTargetPose(target_pose);
-
-
+  }
 }
 
-void TrajectoryDesigner::callTrajectoryGenerator(bool start_tracking)
+void TrajectoryDesigner::updateTrajectoryCallback(bool start_tracking)
 {
   // Create references to retrieve the current trajectory setup from user interface
   Eigen::Vector6f start_pose;
@@ -228,50 +228,18 @@ void TrajectoryDesigner::callTrajectoryGenerator(bool start_tracking)
   // Write references
   ui_panel_->getTrajectorySetup(start_pose, target_pose, duration);
 
-  // create service
-  polynomial_trajectory pt_srv;
+  // call trajectory generator and check feasibility
+  feasibility_check_->callTrajectoryGenerator(start_pose, target_pose, duration, start_tracking);
 
-  // fill service parameters
-  pt_srv.request.p_start.x = start_pose[0];
-  pt_srv.request.p_start.y = start_pose[1];
-  pt_srv.request.p_start.z = start_pose[2];
-  pt_srv.request.rpy_start.x = start_pose[3];
-  pt_srv.request.rpy_start.y = start_pose[4];
-  pt_srv.request.rpy_start.z = start_pose[5];
+  // retrieve plot data
+  trajectory::rotor_velocities_rpm rotor_velocities_rpm;
+  QVector<double> time_stamps;
+  bool feasible;
 
-  pt_srv.request.p_end.x = target_pose[0];
-  pt_srv.request.p_end.y = target_pose[1];
-  pt_srv.request.p_end.z = target_pose[2];
-  pt_srv.request.rpy_end.x = target_pose[3];
-  pt_srv.request.rpy_end.y = target_pose[4];
-  pt_srv.request.rpy_end.z = target_pose[5];
+  feasibility_check_->getPlotData(rotor_velocities_rpm, time_stamps, feasible);
 
-  pt_srv.request.duration = duration;
-
-  pt_srv.request.start_tracking = start_tracking;
-
-  if (!polynomial_traj_client_.call(pt_srv))
-  {
-    ROS_ERROR("[flypulator_traj_generator] Failed to call polynomial trajectory service.");
-    return;
-  }
-
-  // Create Vector to store rotor velocity evolution
-  size_t size = pt_srv.response.p_acc.size();
-  trajectory::rotor_velocities_rpm rotor_velocities_rpm(6, QVector<double>(size));
-
-  // convert eulerAxis from geometry message to Vector3f
-  Eigen::Vector3f euler_axis(pt_srv.response.euler_axis.x, pt_srv.response.euler_axis.y, pt_srv.response.euler_axis.z);
-
-  // initialize trajectory data struct and fill it
-  trajectory::TrajectoryData traj_data(start_pose, target_pose, pt_srv.response.p_acc, pt_srv.response.euler_angle_acc, pt_srv.response.euler_angle, euler_axis, rotor_velocities_rpm);
-
-  // simulate the rotor velocities for the current trajectory
-  actuator_simulation_->simulateActuatorVelocities(traj_data);
-
-  // convert timestamps to qvector and draw actuator evolution to custom plot
-  QVector<double> time_stamps = QVector<double>::fromStdVector(pt_srv.response.time_stamps);
-  actuator_plot_->plotActuatorEvolution(traj_data.rot_vel_rpm_, time_stamps, true);
+  // update plot
+  actuator_plot_->plotActuatorEvolution(rotor_velocities_rpm, time_stamps, feasible);
 }
 
 // Destructor.

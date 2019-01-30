@@ -13,9 +13,9 @@
 namespace trajectory
 {
 /**
- *\typedef RotorEvolution Vector holding the rotor velocities of the hexacopter over time
+ *\typedef rotor_velocities_rpm Vector holding the rotor velocities of the hexacopter over time
  */
-typedef std::vector<QVector<double>> RotorEvolution;
+typedef std::vector<QVector<double>> rotor_velocities_rpm;
 }  // namespace trajectory
 
 /**
@@ -37,10 +37,12 @@ public:
    * \param time_steps Reference to the time stamps of each sampling point
    * \param feasible True if given trajectory doesn't exceed actuator boundaries
    */
-  void plotActuatorEvolution(trajectory::RotorEvolution &rotor_velocities, QVector<double> &time_stamps, bool feasible);
+  void plotActuatorEvolution(trajectory::rotor_velocities_rpm &rotor_velocities, QVector<double> &time_stamps,
+                             bool feasible);
 
   /**
-   * \brief updateActuatorBoundaries Will be called by trajectory designer through dynamic reconfigure in order to update actuator boundaries
+   * \brief updateActuatorBoundaries Will be called by trajectory designer through dynamic reconfigure in order to
+   * update actuator boundaries
    * @param upper_limit upper limit of valid rotor velocities
    * @param lower_limit lower limit of valid rotor velocities
    */

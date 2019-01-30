@@ -65,18 +65,24 @@ public:
   void getTrajectorySetup(Eigen::Vector6f &start_pose, Eigen::Vector6f &target_pose, double &duration);
 
   /**
-   * \brief setTargetPose Sets the target position including sliders to the given target pose. Called after feasible target pose is found
-   * \param target_pose The new feasible 6D - target pose of the trajectory
+   * \brief setTargetPose Sets the target position including sliders to the given target pose. Called after feasible
+   * target pose is found \param target_pose The new feasible 6D - target pose of the trajectory
    */
   void setTargetPose(Eigen::Vector6f target_pose);
 
   /**
-   * \brief setDuration Sets the duration includeing sliders to given new duration. Called after feasible duration is found
-   * \param duration The new feasible duration of the trajectory;
+   * \brief setDuration Sets the duration includeing sliders to given new duration. Called after feasible duration is
+   * found \param duration The new feasible duration of the trajectory;
    */
   void setDuration(double duration);
 
 public:
+  /**
+   * @brief log Write the given message to the log panel.
+   * @param message String message to append.
+   */
+  void log(QString message);
+
 Q_SIGNALS:
 
   /**
@@ -187,12 +193,6 @@ private Q_SLOTS:
    * \brief broadcastStartTransform Publishes the transform between world and target pose frame
    */
   void broadcastTargetTransform();
-
-  /**
-   * @brief log Write the given message to the log panel.
-   * @param message String message to append.
-   */
-  void log(QString message);
 
 private:
   ros::NodeHandle nh_;  ///< Interface to register standard ros components
