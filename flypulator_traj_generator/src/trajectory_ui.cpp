@@ -313,6 +313,9 @@ void TrajectoryUI::setTargetPose(Eigen::Vector6f target_pose)
     {
         target_pose_panel_.pose_values_[i]->setValue(target_pose[i]);
     }
+
+    // broadcast transform to new target position
+    broadcastTargetTransform();
 }
 
 void TrajectoryUI::calculateFeasibleTrajectory()

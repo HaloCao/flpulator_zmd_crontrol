@@ -95,18 +95,13 @@ Eigen::Vector6f ActuatorSimulation::quatToSteadyStateRotorVelocities(Eigen::Quat
     return W.inverse() * u;
 }
 
-void ActuatorSimulation::simulateActuatorVelocities(Eigen::Vector6f &start_pose,
-                                                    trajectory::pos_accelerations &pos_accs,
-                                                    trajectory::euler_angle_accelerations &euler_angle_accelerations,
-                                                    trajectory::euler_angles &euler_angles,
-                                                    geometry_msgs::Vector3 &euler_axis,
-                                                    trajectory::RotorEvolution &rotor_velocities, bool &feasible)
+void ActuatorSimulation::simulateActuatorVelocities(trajectory::TrajectoryData &traj_data)
 {
   // Uav attitude over time (initialize referring to the start pose)
   Quaternionf q;
 
   // starting orientation in rad
-  Vector3f start_ori = start_pose.tail(3) * M_PI / 180;
+  Vector3f start_ori = traj_data.start_pose_.tail(3) * M_PI / 180;
 
   q = AngleAxisf(start_ori[2], Vector3f::UnitZ()) * AngleAxisf(start_ori[1], Vector3f::UnitY()) *
       AngleAxisf(start_ori[0], Vector3f::UnitX());
@@ -117,16 +112,16 @@ void ActuatorSimulation::simulateActuatorVelocities(Eigen::Vector6f &start_pose,
   // Angular velocity over time
   Vector3f omeg(0.0f, 0.0f, 0.0f);
 
-  // static euler axis w.r.t. to the starting orientation {S}
-  Vector3f eulerAxis(euler_axis.x, euler_axis.y, euler_axis.z);
+  // static euler axis w.r.t. to the starting orientation {A}
+  Vector3f euler_axis_A = traj_data.euler_axis_;
 
-  for (size_t i = 0; i < pos_accs.size(); i++)
+  for (size_t i = 0; i < traj_data.pos_accs_.size(); i++)
   {
     // input vector holding the three force and the three torque components
     Vector6f u;
 
     // current translational accelerations
-    geometry_msgs::Vector3 pos_acc = pos_accs[i];
+    geometry_msgs::Vector3 pos_acc = traj_data.pos_accs_[i];
 
     // ######### translational (force) components ##############
     u[0] = mass_ * pos_acc.x;
@@ -134,19 +129,19 @@ void ActuatorSimulation::simulateActuatorVelocities(Eigen::Vector6f &start_pose,
     u[2] = mass_ * (pos_acc.z + gravity_);
 
     // ######### rotational (torque) components ################
-    // retrieve orientation of {B} w.r.t. {S} where S is the starting frame, where the euler axis is defined
+    // retrieve orientation of {B} w.r.t. {SA} where A is the starting frame, where the euler axis is defined
     Matrix3f R_AB;
-    eulerParamsToRotMatrix(eulerAxis, euler_angles[i], R_AB);
+    eulerParamsToRotMatrix(euler_axis_A, traj_data.euler_angles_[i], R_AB);
 
     // current orientation of the body frame is the tranposed matrix
     Matrix3f R_BA = R_AB.transpose();
 
     // retrieve euler axis w.r.t. the current body frame
-    Vector3f eulerAxis_B = R_BA * eulerAxis;
+    Vector3f eulerAxis_B = R_BA * euler_axis_A;
 
     // the angular acceleration w.r.t. the body frame points to the same direction, as the euler axis w.r.t. to the body
     // frame it consequently equals the scalar euler angle acceleration multiplied by the euler axis w.r.t. {B}
-    Vector3f omeg_dot = eulerAxis_B * euler_angle_accelerations[i];
+    Vector3f omeg_dot = eulerAxis_B * traj_data.euler_angle_accs_[i];
 
     // retrieve corresponding torques referring the state space model
     u[3] = (omeg_dot[0] - omeg_dot[1] * omeg_dot[2] * (i_yy_ - i_zz_ / i_xx_)) * i_xx_;
@@ -168,11 +163,8 @@ void ActuatorSimulation::simulateActuatorVelocities(Eigen::Vector6f &start_pose,
     for (size_t j = 0; j < rot_vel.size(); j++)
     {
       double rot_vel_rpm = rot_vel[j] * 60 / (2 * M_PI);
-      rotor_velocities[j][i] = rot_vel_rpm;
-
-      // feasibility check
-      feasible &= rot_vel_rpm <= upper_vel_limit_;
-      feasible &= rot_vel_rpm >= lower_vel_limit_;
+      traj_data.rotor_velocities_rpm_[j][i] = rot_vel_rpm;
+      traj_data.rotor_velocities_squared_.push_back(rot_vel_square);
     }
 
     // todo: impelement runge kutta or other low error integration method

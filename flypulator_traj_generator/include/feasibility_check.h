@@ -17,27 +17,6 @@
 //#include <flypulator_traj_generator/traj_parameterConfig.h>
 
 /**
-* \typedef Vector6f Eigen/Matrix which holds the individual rotor velocities.
-*/
-namespace Eigen
-{
-typedef Eigen::Matrix<float, 6, 1> Vector6f;
-}  // namespace Eigen
-
-//namespace trajectory
-//{
-///**
-// *\typedef pos_accelerations Vector which holds the course of positional accelerations over time.
-// *\typedef euler_angle_accelerations Vector which holds the course of rotational accelerations (euler angle only) over
-// *time. \typedef RotorEvolution Vector holding the rotor velocities of the hexacopter over time
-// */
-//typedef std::vector<geometry_msgs::Vector3> pos_accelerations;
-//typedef std::vector<double> euler_angle_accelerations;
-//typedef std::vector<double> euler_angles;
-//typedef std::vector<QVector<double>> RotorEvolution;
-//}  // namespace trajectory
-
-/**
  * \class The FeasibilityCheck class
  * \brief The FeasibilityCheck class inspects a given trajectory for feasibility. In case of missing steady state feasibility, it calculates the next feasible endpose. Furthermore it performs a reparametrization of trajectory's duration in order to obtain in-flight feasibility.
  */

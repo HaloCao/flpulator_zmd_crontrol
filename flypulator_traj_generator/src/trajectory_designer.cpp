@@ -256,20 +256,21 @@ void TrajectoryDesigner::callTrajectoryGenerator(bool start_tracking)
   }
 
   // Create Vector to store rotor velocity evolution
-  size_t s = pt_srv.response.p_acc.size();
-  trajectory::RotorEvolution rotor_velocities(6, QVector<double>(s));
+  size_t size = pt_srv.response.p_acc.size();
+  trajectory::rotor_velocities_rpm rotor_velocities_rpm(6, QVector<double>(size));
 
-  // boolean to check feasibility
-  bool feasible = true;
+  // convert eulerAxis from geometry message to Vector3f
+  Eigen::Vector3f euler_axis(pt_srv.response.euler_axis.x, pt_srv.response.euler_axis.y, pt_srv.response.euler_axis.z);
+
+  // initialize trajectory data struct and fill it
+  trajectory::TrajectoryData traj_data(start_pose, pt_srv.response.p_acc, pt_srv.response.euler_angle_acc, pt_srv.response.euler_angle, euler_axis, rotor_velocities_rpm);
 
   // simulate the rotor velocities for the current trajectory
-  actuator_simulation_->simulateActuatorVelocities(start_pose, pt_srv.response.p_acc, pt_srv.response.euler_angle_acc,
-                                                   pt_srv.response.euler_angle, pt_srv.response.euler_axis,
-                                                   rotor_velocities, feasible);
+  actuator_simulation_->simulateActuatorVelocities(traj_data);
 
   // convert timestamps to qvector and draw actuator evolution to custom plot
   QVector<double> time_stamps = QVector<double>::fromStdVector(pt_srv.response.time_stamps);
-  actuator_plot_->plotActuatorEvolution(rotor_velocities, time_stamps, feasible);
+  actuator_plot_->plotActuatorEvolution(traj_data.rotor_velocities_rpm_, time_stamps, true);
 }
 
 // Destructor.

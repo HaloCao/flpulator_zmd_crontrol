@@ -34,12 +34,17 @@ bool FeasibilityCheck::makeFeasible(Eigen::Vector6f &start_pose, Eigen::Vector6f
         ROS_INFO("Start pose not feasible. Please adjust!");
         return false;
     }
+
     // check target pose feasibility. If not feasible, calculate closest feasible alternative.
     if (!isFeasible(rot_vel_squ_target))
     {
         ROS_INFO("Target pose not feasible. Retrieving feasible alternative...");
         retrieveFeasibleEndpose(target_pose, rot_vel_squ_target);
     }
+
+    // check if trajectory is feasible
+    //callTrajectoryGenerator();
+
 }
 
 bool FeasibilityCheck::isFeasible(Eigen::Vector6f rotor_velocities)
@@ -110,5 +115,56 @@ double FeasibilityCheck::findFeasbileEulerAngle(double rotvel_init, double rotve
     }
     return theta_k;
 }
+
+//void FeasibilityCheck::callTrajectoryGenerator(bool start_tracking)
+//{
+//  // Create references to retrieve the current trajectory setup from user interface
+//  Eigen::Vector6f start_pose;
+//  Eigen::Vector6f target_pose;
+//  double duration;
+
+//  // create service
+//  polynomial_trajectory pt_srv;
+
+//  // fill service parameters
+//  pt_srv.request.p_start.x = start_pose[0];
+//  pt_srv.request.p_start.y = start_pose[1];
+//  pt_srv.request.p_start.z = start_pose[2];
+//  pt_srv.request.rpy_start.x = start_pose[3];
+//  pt_srv.request.rpy_start.y = start_pose[4];
+//  pt_srv.request.rpy_start.z = start_pose[5];
+
+//  pt_srv.request.p_end.x = target_pose[0];
+//  pt_srv.request.p_end.y = target_pose[1];
+//  pt_srv.request.p_end.z = target_pose[2];
+//  pt_srv.request.rpy_end.x = target_pose[3];
+//  pt_srv.request.rpy_end.y = target_pose[4];
+//  pt_srv.request.rpy_end.z = target_pose[5];
+
+//  pt_srv.request.duration = duration;
+
+//  pt_srv.request.start_tracking = start_tracking;
+
+//  if (!polynomial_traj_client_.call(pt_srv))
+//  {
+//    ROS_ERROR("[flypulator_traj_generator] Failed to call polynomial trajectory service.");
+//    return;
+//  }
+
+//  // Create Vector to store rotor velocity evolution
+//  size_t s = pt_srv.response.p_acc.size();
+//  trajectory::rotor_velocities_rpm rotor_velocities(6, QVector<double>(s));
+
+//  // boolean to check feasibility
+//  bool feasible = true;
+
+//  // simulate the rotor velocities for the current trajectory
+//  actuator_simulation_->simulateActuatorVelocities(start_pose, pt_srv.response.p_acc, pt_srv.response.euler_angle_acc,
+//                                                   pt_srv.response.euler_angle, pt_srv.response.euler_axis,
+//                                                   rotor_velocities, feasible);
+
+//  // convert timestamps to qvector
+//  QVector<double> time_stamps = QVector<double>::fromStdVector(pt_srv.response.time_stamps);
+//}
 
 

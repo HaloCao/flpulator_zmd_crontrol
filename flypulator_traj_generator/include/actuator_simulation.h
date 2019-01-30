@@ -34,12 +34,38 @@ namespace trajectory
 /**
  *\typedef pos_accelerations Vector which holds the course of positional accelerations over time.
  *\typedef euler_angle_accelerations Vector which holds the course of rotational accelerations (euler angle only) over
- *time. \typedef RotorEvolution Vector holding the rotor velocities of the hexacopter over time
+ *time.
+ * \typedef RotorEvolution Vector holding the rotor velocities of the hexacopter over time
  */
 typedef std::vector<geometry_msgs::Vector3> pos_accelerations;
 typedef std::vector<double> euler_angle_accelerations;
 typedef std::vector<double> euler_angles;
-typedef std::vector<QVector<double>> RotorEvolution;
+typedef std::vector<QVector<double>> rotor_velocities_rpm;
+typedef std::vector<Eigen::Vector6f> rotor_velocities_squared;
+
+struct TrajectoryData
+{
+    // input
+    Eigen::Vector6f start_pose_;
+    trajectory::pos_accelerations pos_accs_;
+    trajectory::euler_angle_accelerations euler_angle_accs_;
+    trajectory::euler_angles euler_angles_;
+    Eigen::Vector3f euler_axis_;
+
+    // output
+    trajectory::rotor_velocities_rpm rotor_velocities_rpm_;
+    trajectory::rotor_velocities_squared rotor_velocities_squared_;
+    int i_min;
+    int i_max;
+
+    TrajectoryData(Eigen::Vector6f start_pose, trajectory::pos_accelerations pos_accs, trajectory::euler_angle_accelerations euler_angle_accs, trajectory::euler_angles euler_angles, Eigen::Vector3f euler_axis, trajectory::rotor_velocities_rpm rotor_velocities_rpm)
+        : start_pose_(start_pose),
+          pos_accs_(pos_accs),
+          euler_angle_accs_(euler_angle_accs),
+          euler_angles_(euler_angles),
+          euler_axis_(euler_axis),
+          rotor_velocities_rpm_(rotor_velocities_rpm) {}
+};
 }  // namespace trajectory
 
 /**
@@ -59,18 +85,10 @@ public:
   /**
    * \brief simulateActuatorVelocities Calculates the evolution of the rotor rotational velocities based on the
    * trajectory's pose accelerations.
-   * \param start_pose Start pose of the trajectory to retrieve initial attitude
-   * \param pos_accs Vector of positional accelerations over time
-   * \param rot_accs Vector of rotational accelerations over time
-   * \param euler_axis constant euler axis of the whole rotational manoeuvre w.r.t the starting frame
-   * \param rotor_velocities Reference to a vector of 6D-vectors to store the resulting rotor velocities over time.
-   * \param feasible True if given trajectory doesn't exceed the actuator boundaries
-   *
+   * \param trajectory_data contains the relevant inputs (startpose, accelerations...) and used to store the outputs (rotor velocities, location of maximum, minimum etc)
+   * (see trajectory::TrajectoryData)
    */
-  void simulateActuatorVelocities(Eigen::Vector6f &start_pose, trajectory::pos_accelerations &pos_accs,
-                                  trajectory::euler_angle_accelerations &rot_accs,
-                                  trajectory::euler_angles &euler_angles, geometry_msgs::Vector3 &euler_axis,
-                                  trajectory::RotorEvolution &rotor_velocities, bool &feasible);
+   void simulateActuatorVelocities(trajectory::TrajectoryData &traj_data);
 
   /**
    * \brief configCallback Callback for dynamic reconfigure of trajectory parameters
