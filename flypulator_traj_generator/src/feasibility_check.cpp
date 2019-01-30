@@ -20,6 +20,8 @@ FeasibilityCheck::FeasibilityCheck(ActuatorSimulation* actuator_simulation)
     upper_vel_limit_squ_ = pow(upper_vel_limit_ * M_PI / 30, 2);
     lower_vel_limit_squ_ = pow(lower_vel_limit_ * M_PI / 30, 2);
 
+    // register ros service client for polynomial trajectory generation service+
+    polynomial_traj_client_ = nh_.serviceClient<polynomial_trajectory>("polynomial_trajectory");
 }
 
 bool FeasibilityCheck::makeFeasible(Eigen::Vector6f &start_pose, Eigen::Vector6f &target_pose, double &duration)
@@ -43,7 +45,16 @@ bool FeasibilityCheck::makeFeasible(Eigen::Vector6f &start_pose, Eigen::Vector6f
     }
 
     // check if trajectory is feasible
-    //callTrajectoryGenerator();
+    callTrajectoryGenerator(start_pose, target_pose, duration, false);
+    if (cur_traj_data_->rot_vel_squ_max_ > upper_vel_limit_squ_ || cur_traj_data_->rot_vel_squ_min_ < lower_vel_limit_squ_)
+    {
+        // trajectory not feasible -> calculate feasible duration
+        ROS_INFO("Trajectory duration not feasible. Retrieving feasible alternative...");
+        retrieveFeasibleDuration(duration);
+    }
+
+    ROS_INFO("The feasible duration is %f ", duration);
+    return true;
 
 }
 
@@ -116,55 +127,102 @@ double FeasibilityCheck::findFeasbileEulerAngle(double rotvel_init, double rotve
     return theta_k;
 }
 
-//void FeasibilityCheck::callTrajectoryGenerator(bool start_tracking)
-//{
-//  // Create references to retrieve the current trajectory setup from user interface
-//  Eigen::Vector6f start_pose;
-//  Eigen::Vector6f target_pose;
-//  double duration;
+void FeasibilityCheck::retrieveFeasibleDuration(double &initial_duration)
+{
+    // the actuator limit, which gets exceeded most and the indices of the corresponding rotor velocities
+    double critical_limit;
+    indices critical_indices;
+    double critical_rotor_velocity;
 
-//  // create service
-//  polynomial_trajectory pt_srv;
+    // the optimized duration
+    double optimal_duration = initial_duration;
 
-//  // fill service parameters
-//  pt_srv.request.p_start.x = start_pose[0];
-//  pt_srv.request.p_start.y = start_pose[1];
-//  pt_srv.request.p_start.z = start_pose[2];
-//  pt_srv.request.rpy_start.x = start_pose[3];
-//  pt_srv.request.rpy_start.y = start_pose[4];
-//  pt_srv.request.rpy_start.z = start_pose[5];
+    while (!withinActuatorLimits(critical_limit, critical_indices, critical_rotor_velocity))
+    {
+        // retrieve the orientation at the time the critical rotor velocity occur
+        double crit_euler_angle = cur_traj_data_->euler_angles_[critical_indices.second];
+        Eigen::Quaternionf q_krit = actuator_simulation_->eulerParamsToQuat(cur_traj_data_->start_pose_.tail(3), cur_traj_data_->euler_axis_, crit_euler_angle);
 
-//  pt_srv.request.p_end.x = target_pose[0];
-//  pt_srv.request.p_end.y = target_pose[1];
-//  pt_srv.request.p_end.z = target_pose[2];
-//  pt_srv.request.rpy_end.x = target_pose[3];
-//  pt_srv.request.rpy_end.y = target_pose[4];
-//  pt_srv.request.rpy_end.z = target_pose[5];
+        // retrieve gravitational component of the critical rotor velocity (W_inv(crit, 3) * mg)
+        double grav_rotvel_component = actuator_simulation_->getGravitationalVelocityComponent(q_krit, critical_indices.first);
 
-//  pt_srv.request.duration = duration;
+        optimal_duration = optimal_duration * sqrt((critical_limit - grav_rotvel_component)/ (critical_rotor_velocity - grav_rotvel_component));
 
-//  pt_srv.request.start_tracking = start_tracking;
+        callTrajectoryGenerator(cur_traj_data_->start_pose_, cur_traj_data_->target_pose_, optimal_duration, false);
+    }
 
-//  if (!polynomial_traj_client_.call(pt_srv))
-//  {
-//    ROS_ERROR("[flypulator_traj_generator] Failed to call polynomial trajectory service.");
-//    return;
-//  }
+}
 
-//  // Create Vector to store rotor velocity evolution
-//  size_t s = pt_srv.response.p_acc.size();
-//  trajectory::rotor_velocities_rpm rotor_velocities(6, QVector<double>(s));
+bool FeasibilityCheck::withinActuatorLimits(double &critical_limit, indices &critical_indices, double &critical_rotor_velocity)
+{
+    // get amount (per rad²/s²) by which the actuator boundaries get exceeded
+    double upper_exceeding = cur_traj_data_->rot_vel_squ_max_ - upper_vel_limit_squ_ - 0.1;
+    double lower_exceeding = lower_vel_limit_squ_ + 0.1 - cur_traj_data_->rot_vel_squ_min_;
 
-//  // boolean to check feasibility
-//  bool feasible = true;
+    // if exceeding amounts are negative, all rotor velocities are within the feasible range -> trajectory is feasible
+    if (upper_exceeding <= 0 && lower_exceeding <= 0)
+    {
+        return true;
+    }
+    else if (upper_exceeding > lower_exceeding)
+    {
+        critical_limit = upper_vel_limit_squ_;
+        critical_indices = cur_traj_data_->i_max_;
+        critical_rotor_velocity = cur_traj_data_-> rot_vel_squ_max_;
+    }
+    else
+    {
+        critical_limit = lower_vel_limit_squ_;
+        critical_indices = cur_traj_data_->i_min_;
+        critical_rotor_velocity = cur_traj_data_-> rot_vel_squ_min_;
+    }
 
-//  // simulate the rotor velocities for the current trajectory
-//  actuator_simulation_->simulateActuatorVelocities(start_pose, pt_srv.response.p_acc, pt_srv.response.euler_angle_acc,
-//                                                   pt_srv.response.euler_angle, pt_srv.response.euler_axis,
-//                                                   rotor_velocities, feasible);
+    // trajectory not feasible otherwise
+    return false;
+}
 
-//  // convert timestamps to qvector
-//  QVector<double> time_stamps = QVector<double>::fromStdVector(pt_srv.response.time_stamps);
-//}
+void FeasibilityCheck::callTrajectoryGenerator(Eigen::Vector6f start_pose, Eigen::Vector6f target_pose, double duration, bool start_tracking)
+{
+  // create service
+  polynomial_trajectory pt_srv;
 
+  // fill service parameters
+  pt_srv.request.p_start.x = start_pose[0];
+  pt_srv.request.p_start.y = start_pose[1];
+  pt_srv.request.p_start.z = start_pose[2];
+  pt_srv.request.rpy_start.x = start_pose[3];
+  pt_srv.request.rpy_start.y = start_pose[4];
+  pt_srv.request.rpy_start.z = start_pose[5];
+
+  pt_srv.request.p_end.x = target_pose[0];
+  pt_srv.request.p_end.y = target_pose[1];
+  pt_srv.request.p_end.z = target_pose[2];
+  pt_srv.request.rpy_end.x = target_pose[3];
+  pt_srv.request.rpy_end.y = target_pose[4];
+  pt_srv.request.rpy_end.z = target_pose[5];
+
+  pt_srv.request.duration = duration;
+
+  pt_srv.request.start_tracking = start_tracking;
+
+  if (!polynomial_traj_client_.call(pt_srv))
+  {
+    ROS_ERROR("[flypulator_traj_generator] Failed to call polynomial trajectory service.");
+    return;
+  }
+
+  // Create Vector to store rotor velocity evolution
+  size_t size = pt_srv.response.p_acc.size();
+  trajectory::rotor_velocities_rpm rotor_velocities_rpm(6, QVector<double>(size));
+
+  // convert eulerAxis from geometry message to Vector3f
+  Eigen::Vector3f euler_axis(pt_srv.response.euler_axis.x, pt_srv.response.euler_axis.y, pt_srv.response.euler_axis.z);
+
+  // initialize trajectory data struct and fill it
+  delete cur_traj_data_;
+  cur_traj_data_ = new trajectory::TrajectoryData(start_pose, target_pose, pt_srv.response.p_acc, pt_srv.response.euler_angle_acc, pt_srv.response.euler_angle, euler_axis, rotor_velocities_rpm);
+
+  // simulate the rotor velocities for the current trajectory
+  actuator_simulation_->simulateActuatorVelocities(*cur_traj_data_);
+}
 

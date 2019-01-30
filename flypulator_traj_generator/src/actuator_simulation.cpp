@@ -2,6 +2,7 @@
  * @author Nils Dunkelberg
  */
 
+#include <limits>
 #include "actuator_simulation.h"
 
 using namespace Eigen;
@@ -71,11 +72,7 @@ Eigen::Vector6f ActuatorSimulation::getSteadyStateRotorVelocities(Eigen::Vector6
 
 Eigen::Vector6f ActuatorSimulation::getSteadyStateRotorVelocities(Eigen::Vector3f euler_axis, double euler_angle)
 {
-    Quaternionf q;
-    q.x() = euler_axis[0] * sin(euler_angle/2);
-    q.y() = euler_axis[1] * sin(euler_angle/2);
-    q.z() = euler_axis[2] * sin(euler_angle/2);
-    q.w() = cos(euler_angle/2);
+    Quaternionf q = eulerParamsToQuat(Vector3f::Zero(), euler_axis, euler_angle);
 
     // calculate rotor velocities from quaternion and return them
     return quatToSteadyStateRotorVelocities(q);
@@ -115,6 +112,10 @@ void ActuatorSimulation::simulateActuatorVelocities(trajectory::TrajectoryData &
   // static euler axis w.r.t. to the starting orientation {A}
   Vector3f euler_axis_A = traj_data.euler_axis_;
 
+  // track the indices of the maximum and minimum rotor velocities
+  double rot_vel_max = std::numeric_limits<double>::min();
+  double rot_vel_min = std::numeric_limits<double>::max();
+
   for (size_t i = 0; i < traj_data.pos_accs_.size(); i++)
   {
     // input vector holding the three force and the three torque components
@@ -152,8 +153,9 @@ void ActuatorSimulation::simulateActuatorVelocities(trajectory::TrajectoryData &
     Matrix6f W;
     getMappingMatrix(W, q);
 
-    // get squared rotor velocities
+    // get squared rotor velocities and store them
     Vector6f rot_vel_square = W.inverse() * u;
+    traj_data.rot_vel_squ_.push_back(rot_vel_square);
 
     // convert to array (to apply element-wise operations) and retrieve the square root while keeping sign
     ArrayXf rot_vel = rot_vel_square.array();
@@ -163,8 +165,22 @@ void ActuatorSimulation::simulateActuatorVelocities(trajectory::TrajectoryData &
     for (size_t j = 0; j < rot_vel.size(); j++)
     {
       double rot_vel_rpm = rot_vel[j] * 60 / (2 * M_PI);
-      traj_data.rotor_velocities_rpm_[j][i] = rot_vel_rpm;
-      traj_data.rotor_velocities_squared_.push_back(rot_vel_square);
+      traj_data.rot_vel_rpm_[j][i] = rot_vel_rpm;
+
+      // new minimum/maximum value?
+      if (rot_vel_square[j] > rot_vel_max)
+      {
+          traj_data.i_max_.first = j;
+          traj_data.i_max_.second = i;
+          rot_vel_max = rot_vel_square[j];
+      }
+
+      else if (rot_vel_square[j] < rot_vel_min)
+      {
+          traj_data.i_min_.first = j;
+          traj_data.i_min_.second = i;
+          rot_vel_min = rot_vel_square[j];
+      }
     }
 
     // todo: impelement runge kutta or other low error integration method
@@ -182,6 +198,10 @@ void ActuatorSimulation::simulateActuatorVelocities(trajectory::TrajectoryData &
 
     omeg += omeg_dot * dt_;
   }
+
+  // set minimum and maximum (squared) rotor velocities
+  traj_data.rot_vel_squ_min_ = rot_vel_min;
+  traj_data.rot_vel_squ_max_ = rot_vel_max;
 }
 
 void ActuatorSimulation::poseToEulerParams(Eigen::Vector6f pose, Eigen::Vector3f &euler_axis, double &euler_angle)
@@ -208,6 +228,20 @@ void ActuatorSimulation::poseToEulerParams(Eigen::Vector6f pose, Eigen::Vector3f
     v(2) = rot_mat(1, 0) - rot_mat(0, 1);
 
     euler_axis = 0.5 / sin(euler_angle) * v;
+}
+
+Eigen::Quaternionf ActuatorSimulation::eulerParamsToQuat(Eigen::Vector3f start_frame, Eigen::Vector3f euler_axis, double euler_angle)
+{
+    Quaternionf q_IA = AngleAxisf(start_frame[2], Vector3f::UnitZ()) * AngleAxisf(start_frame[1], Vector3f::UnitY()) *
+        AngleAxisf(start_frame[0], Vector3f::UnitX());
+
+    Quaternionf q_AB;
+    q_AB.x() = euler_axis[0] * sin(euler_angle/2);
+    q_AB.y() = euler_axis[1] * sin(euler_angle/2);
+    q_AB.z() = euler_axis[2] * sin(euler_angle/2);
+    q_AB.w() = cos(euler_angle/2);
+
+    return q_IA * q_AB;
 }
 
 inline void ActuatorSimulation::eulerParamsToRotMatrix(Eigen::Vector3f euler_axis, float euler_angle,
@@ -252,6 +286,18 @@ Vector3f ActuatorSimulation::eulerParamsToYPR(Eigen::Vector3f euler_axis, double
     return rpy_angles * 180 / M_PI;
 
 }
+
+double ActuatorSimulation::getGravitationalVelocityComponent(Eigen::Quaternionf q, uint rotor_index)
+{
+    // retrieve inverse mapping matrix for the given orientation q
+    Matrix6f W;
+    getMappingMatrix(W, q);
+    Matrix6f W_inv = W.inverse();
+
+    //return the contribution to the rotor velocity by gravitational force
+    return W_inv(rotor_index, 3) * mass_ * gravity_;
+}
+
 
 void ActuatorSimulation::getMappingMatrix(Eigen::Matrix6f &map_matrix, Quaternionf q)
 {

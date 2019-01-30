@@ -318,6 +318,17 @@ void TrajectoryUI::setTargetPose(Eigen::Vector6f target_pose)
     broadcastTargetTransform();
 }
 
+void TrajectoryUI::setDuration(double duration)
+{
+    // update locally stored duration
+    duration_ = duration;
+
+    // update ui elements
+    dur_slider_->setValue(duration * (double)start_pose_panel_.multiplier);
+    dur_value_->setValue(duration);
+
+}
+
 void TrajectoryUI::calculateFeasibleTrajectory()
 {
     Q_EMIT makeFeasible();

@@ -211,7 +211,8 @@ void TrajectoryDesigner::makeFeasibleCallback()
     // pass trajectory setup to feasibility check class and retrieve feasible alternative when required
     feasibility_check_->makeFeasible(start_pose, target_pose, duration);
 
-    // set the user interface to the new feasible target pose
+    // set the user interface to the new feasible target pose and duration
+    ui_panel_->setDuration(duration);
     ui_panel_->setTargetPose(target_pose);
 
 
@@ -263,14 +264,14 @@ void TrajectoryDesigner::callTrajectoryGenerator(bool start_tracking)
   Eigen::Vector3f euler_axis(pt_srv.response.euler_axis.x, pt_srv.response.euler_axis.y, pt_srv.response.euler_axis.z);
 
   // initialize trajectory data struct and fill it
-  trajectory::TrajectoryData traj_data(start_pose, pt_srv.response.p_acc, pt_srv.response.euler_angle_acc, pt_srv.response.euler_angle, euler_axis, rotor_velocities_rpm);
+  trajectory::TrajectoryData traj_data(start_pose, target_pose, pt_srv.response.p_acc, pt_srv.response.euler_angle_acc, pt_srv.response.euler_angle, euler_axis, rotor_velocities_rpm);
 
   // simulate the rotor velocities for the current trajectory
   actuator_simulation_->simulateActuatorVelocities(traj_data);
 
   // convert timestamps to qvector and draw actuator evolution to custom plot
   QVector<double> time_stamps = QVector<double>::fromStdVector(pt_srv.response.time_stamps);
-  actuator_plot_->plotActuatorEvolution(traj_data.rotor_velocities_rpm_, time_stamps, true);
+  actuator_plot_->plotActuatorEvolution(traj_data.rot_vel_rpm_, time_stamps, true);
 }
 
 // Destructor.

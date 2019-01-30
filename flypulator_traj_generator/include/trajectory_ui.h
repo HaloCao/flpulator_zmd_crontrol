@@ -70,6 +70,12 @@ public:
    */
   void setTargetPose(Eigen::Vector6f target_pose);
 
+  /**
+   * \brief setDuration Sets the duration includeing sliders to given new duration. Called after feasible duration is found
+   * \param duration The new feasible duration of the trajectory;
+   */
+  void setDuration(double duration);
+
 public:
 Q_SIGNALS:
 

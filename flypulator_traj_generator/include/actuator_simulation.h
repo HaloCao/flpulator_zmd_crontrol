@@ -29,6 +29,9 @@ typedef Eigen::Matrix<float, 6, 1> Vector6f;
 typedef Eigen::Matrix<float, 6, 6> Matrix6f;
 }  // namespace Eigen
 
+typedef unsigned int uint;
+typedef std::pair<uint, uint> indices;
+
 namespace trajectory
 {
 /**
@@ -47,24 +50,28 @@ struct TrajectoryData
 {
     // input
     Eigen::Vector6f start_pose_;
+    Eigen::Vector6f target_pose_;
     trajectory::pos_accelerations pos_accs_;
     trajectory::euler_angle_accelerations euler_angle_accs_;
     trajectory::euler_angles euler_angles_;
     Eigen::Vector3f euler_axis_;
 
     // output
-    trajectory::rotor_velocities_rpm rotor_velocities_rpm_;
-    trajectory::rotor_velocities_squared rotor_velocities_squared_;
-    int i_min;
-    int i_max;
+    trajectory::rotor_velocities_rpm rot_vel_rpm_;
+    trajectory::rotor_velocities_squared rot_vel_squ_;
+    indices i_min_;
+    indices i_max_;
+    double rot_vel_squ_min_;
+    double rot_vel_squ_max_;
 
-    TrajectoryData(Eigen::Vector6f start_pose, trajectory::pos_accelerations pos_accs, trajectory::euler_angle_accelerations euler_angle_accs, trajectory::euler_angles euler_angles, Eigen::Vector3f euler_axis, trajectory::rotor_velocities_rpm rotor_velocities_rpm)
+    TrajectoryData(Eigen::Vector6f start_pose, Eigen::Vector6f target_pose, trajectory::pos_accelerations pos_accs, trajectory::euler_angle_accelerations euler_angle_accs, trajectory::euler_angles euler_angles, Eigen::Vector3f euler_axis, trajectory::rotor_velocities_rpm rotor_velocities_rpm)
         : start_pose_(start_pose),
+          target_pose_(target_pose),
           pos_accs_(pos_accs),
           euler_angle_accs_(euler_angle_accs),
           euler_angles_(euler_angles),
           euler_axis_(euler_axis),
-          rotor_velocities_rpm_(rotor_velocities_rpm) {}
+          rot_vel_rpm_(rotor_velocities_rpm) {}
 };
 }  // namespace trajectory
 
@@ -126,22 +133,38 @@ public:
    */
   Eigen::Vector3f eulerParamsToYPR(Eigen::Vector3f euler_axis, double euler_angle);
 
+  /**
+   * @brief eulerParamsToQuat Calculates a quaternion from euler parameters, considering the startin frame, in which the euler parameters are defined
+   * @param start_frame Orientation of the frame, where the euler parameters are defined w.r.t. the global frame {I}
+   * @param euler_axis The euler axis describing the rotation w.r.t the start frame
+   * @param euler_angle The euler angle describing the rotation w.r.t the start frame
+   * @return Quaternion describing the orientation of the body frame {B} w.r.t. the global frame {I}
+   */
+  Eigen::Quaternionf eulerParamsToQuat(Eigen::Vector3f start_frame, Eigen::Vector3f euler_axis, double euler_angle);
+
+  /**
+   * @brief getGravitationalVelocityComponent Calculates the contribution of gravitational influence to the rotor velocity of the specified rotor
+   * @param q The quaternion describing the orientation of the hexarotor w.r.t. the global frame
+   * @param rotor_index The index of the regarded rotor
+   * @return The rotor velocity influenced by gravitational force
+   */
+  double getGravitationalVelocityComponent(Eigen::Quaternionf q, uint rotor_index);
 
 protected:
-  /**
-   * \brief eulerParamsToRotMatrix Calculates a rotation matrix from given euler axis and euler angle
-   * \param euler_axis  A 3D unit vector corresponding to the euler axis
-   * \param euler_angle The angle, indicating the current rotation around the euler axis
-   * \param rotMat  The resulting rotation matrix
-   */
-  inline void eulerParamsToRotMatrix(Eigen::Vector3f euler_axis, float euler_angle, Eigen::Matrix3f &rotMat);
-
   /**
    * @brief getMappingMatrix Writes the mapping matrix (mapping from rotor velocities to forces/torques) to a given reference
    * \param map_matrix Reference to write resulting mapping matrix to
    * \param q Quaternion indicating the hexacopter's current orientation
    */
   void getMappingMatrix(Eigen::Matrix6f &map_matrix, Eigen::Quaternionf q);
+
+  /**
+   * \brief eulerParamsToRotMatrix Calculates a rotation matrix from given euler axis and euler angle
+   * \param euler_axis  A 3D unit vector corresponding to the euler axis
+   * \param euler_angle The angle, indicating the current rotation around the euler axis
+   * \param rotMat  The resulting rotation matrix
+   */
+  inline void eulerParamsToRotMatrix(Eigen::Vector3f euler_axis, float euler_angle, Eigen::Matrix3f &rotMat);  
 
   /**
    * \brief quatToSteadyStateRotorVelocities
