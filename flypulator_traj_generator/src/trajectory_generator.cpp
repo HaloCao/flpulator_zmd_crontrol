@@ -6,7 +6,7 @@ bool TrajectoryGenerator::createAndSendTrajectory(
     const geometry_msgs::Vector3& p_start, const geometry_msgs::Vector3& p_end, const geometry_msgs::Vector3& rpy_start,
     const geometry_msgs::Vector3& rpy_end, const float duration, const bool start_tracking,
     const trajectory_types::Type traj_type, trajectory::pos_accelerations& pos_accs,
-    trajectory::euler_angle_accelerations& euler_angle_accs, trajectory::euler_angles& euler_angles,
+    trajectory::euler_angle_accelerations& euler_angle_accs, trajectory::euler_angle_velocities& euler_angle_vels, trajectory::euler_angles& euler_angles,
     geometry_msgs::Vector3& eulerAxis, std::vector<double>& time_stamps)
 {
   // save input values in 6D array
@@ -99,6 +99,7 @@ bool TrajectoryGenerator::createAndSendTrajectory(
   {
     geometry_msgs::Vector3 pos_acc;
     float euler_angle_acc;
+    float euler_angle_vel;
     float euler_angle;
 
     pos_acc.x = evaluateAcceleration(a[0][2], a[0][3], a[0][4], a[0][5], t);
@@ -106,10 +107,12 @@ bool TrajectoryGenerator::createAndSendTrajectory(
     pos_acc.z = evaluateAcceleration(a[2][2], a[2][3], a[2][4], a[2][5], t);
 
     euler_angle_acc = evaluateAcceleration(a[6][2], a[6][3], a[6][4], a[6][5], t);
+    euler_angle_vel = evaluateVelocity(a[6][1], a[6][2], a[6][3], a[6][4], a[6][5], t);
     euler_angle = evaluatePosition(a[6][0], a[6][1], a[6][2], a[6][3], a[6][4], a[6][5], t);
 
     pos_accs.push_back(pos_acc);
     euler_angle_accs.push_back(euler_angle_acc);
+    euler_angle_vels.push_back(euler_angle_vel);
     euler_angles.push_back(euler_angle);
     time_stamps.push_back(t);
 
@@ -253,6 +256,11 @@ void TrajectoryGenerator::euler2Quaternion(const float roll, const float pitch, 
 inline float TrajectoryGenerator::evaluateAcceleration(float a2, float a3, float a4, float a5, float t)
 {
   return 2 * a2 + 6 * a3 * t + 12 * a4 * pow(t, 2) + 20 * a5 * pow(t, 3);
+}
+
+inline float TrajectoryGenerator::evaluateVelocity(float a1, float a2, float a3, float a4, float a5, float t)
+{
+    return a1 + 2 * a2 * t + 3 * a3 * pow(t, 2) + 4 * a4 * pow(t, 3) + 5 * a5 * pow(t, 4);
 }
 
 inline float TrajectoryGenerator::evaluatePosition(float a0, float a1, float a2, float a3, float a4, float a5, float t)

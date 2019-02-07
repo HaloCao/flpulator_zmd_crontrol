@@ -205,6 +205,10 @@ void TrajectoryDesigner::makeFeasibleCallback()
   // Write references (orientation in degrees)
   ui_panel_->getTrajectorySetup(start_pose, target_pose, duration);
 
+  // determine execution time
+  ros::WallTime start_, end_;
+  start_ = ros::WallTime::now();
+
   // pass trajectory setup to feasibility check class and retrieve feasible alternative when required
   if (!feasibility_check_->makeFeasible(start_pose, target_pose, duration))
   {
@@ -216,6 +220,11 @@ void TrajectoryDesigner::makeFeasibleCallback()
     ui_panel_->setDuration(duration);
     ui_panel_->setTargetPose(target_pose);
   }
+
+  end_ = ros::WallTime::now();
+  // inform user about execution time
+  double execution_time = (end_ - start_).toNSec() * 1e-6;
+  ROS_INFO_STREAM("Exectution time (ms): " << execution_time);
 }
 
 void TrajectoryDesigner::updateTrajectoryCallback(bool start_tracking)

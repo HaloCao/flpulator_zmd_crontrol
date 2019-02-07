@@ -245,7 +245,7 @@ void FeasibilityCheck::callTrajectoryGenerator(Eigen::Vector6f start_pose, Eigen
   // initialize trajectory data struct and fill it
   delete cur_traj_data_;
   cur_traj_data_ =
-      new trajectory::TrajectoryData(start_pose, target_pose, pt_srv.response.p_acc, pt_srv.response.euler_angle_acc,
+      new trajectory::TrajectoryData(start_pose, target_pose, pt_srv.response.p_acc, pt_srv.response.euler_angle_acc, pt_srv.response.euler_angle_vel,
                                      pt_srv.response.euler_angle, euler_axis, rotor_velocities_rpm, time_stamps);
 
   // simulate the rotor velocities for the current trajectory

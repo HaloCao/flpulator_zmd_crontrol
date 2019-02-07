@@ -87,14 +87,11 @@ void ActuatorSimulation::simulateActuatorVelocities(trajectory::TrajectoryData &
   q = AngleAxisf(start_ori[2], Vector3f::UnitZ()) * AngleAxisf(start_ori[1], Vector3f::UnitY()) *
       AngleAxisf(start_ori[0], Vector3f::UnitX());
 
-  // Derivation of UAV attitude
-  Quaternionf q_dot;
-
-  // Angular velocity over time
-  Vector3f omeg(0.0f, 0.0f, 0.0f);
+  // starting orientation as rotation matrix
+  Matrix3f R_IA = q.matrix();
 
   // static euler axis w.r.t. to the starting orientation {A}
-  Vector3f euler_axis_A = traj_data.euler_axis_;
+  Vector3f kA = traj_data.euler_axis_;
 
   // track the indices of the maximum and minimum rotor velocities
   double rot_vel_max = std::numeric_limits<double>::min();
@@ -114,24 +111,23 @@ void ActuatorSimulation::simulateActuatorVelocities(trajectory::TrajectoryData &
     u[2] = mass_ * (pos_acc.z + gravity_);
 
     // ######### rotational (torque) components ################
-    // retrieve orientation of {B} w.r.t. {SA} where A is the starting frame, where the euler axis is defined
-    Matrix3f R_AB;
-    eulerParamsToRotMatrix(euler_axis_A, traj_data.euler_angles_[i], R_AB);
+    // retrieve angular velocites and acceleration w.r.t. {B}
+    Vector3f omega;
+    Vector3f domega;
 
-    // current orientation of the body frame is the tranposed matrix
-    Matrix3f R_BA = R_AB.transpose();
+    double the = traj_data.euler_angles_[i];
+    double dthe = traj_data.euler_angle_vels_[i];
+    double ddthe = traj_data.euler_angle_accs_[i];
 
-    // retrieve euler axis w.r.t. the current body frame
-    Vector3f eulerAxis_B = R_BA * euler_axis_A;
-
-    // the angular acceleration w.r.t. the body frame points to the same direction, as the euler axis w.r.t. to the body
-    // frame it consequently equals the scalar euler angle acceleration multiplied by the euler axis w.r.t. {B}
-    Vector3f omeg_dot = eulerAxis_B * traj_data.euler_angle_accs_[i];
+    angularVelocityFromEulerParams(R_IA, kA, the, dthe, ddthe, omega, domega);
 
     // retrieve corresponding torques referring the state space model
-    u[3] = (omeg_dot[0] - omeg_dot[1] * omeg_dot[2] * (i_yy_ - i_zz_ / i_xx_)) * i_xx_;
-    u[4] = (omeg_dot[1] - omeg_dot[0] * omeg_dot[2] * (i_zz_ - i_xx_ / i_yy_)) * i_yy_;
-    u[5] = (omeg_dot[2] - omeg_dot[0] * omeg_dot[1] * (i_xx_ - i_yy_ / i_zz_)) * i_zz_;
+    u[3] = (domega[0] - omega[1] * omega[2] * (i_yy_ - i_zz_ / i_xx_)) * i_xx_;
+    u[4] = (domega[1] - omega[0] * omega[2] * (i_zz_ - i_xx_ / i_yy_)) * i_yy_;
+    u[5] = (domega[2] - omega[0] * omega[1] * (i_xx_ - i_yy_ / i_zz_)) * i_zz_;
+
+    // retrieve current attitude of {B} w.r.t. {I} as quaternion
+    q = eulerParamsToQuat(start_ori, kA, the);
 
     // retrieve inverse mapping matrix
     Matrix6f W;
@@ -166,26 +162,70 @@ void ActuatorSimulation::simulateActuatorVelocities(trajectory::TrajectoryData &
         rot_vel_min = rot_vel_square[j];
       }
     }
-
-    // todo: impelement runge kutta or other low error integration method
-    // get derivation of attitude referring to state space model
-    q_dot.x() = 0.5 * (q.w() * omeg[0] - q.z() * omeg[1] + q.y() * omeg[2]);
-    q_dot.y() = 0.5 * (q.z() * omeg[0] + q.w() * omeg[1] - q.x() * omeg[2]);
-    q_dot.z() = 0.5 * (-q.y() * omeg[0] + q.x() * omeg[1] + q.w() * omeg[2]);
-    q_dot.w() = -0.5 * (q.x() * omeg[0] + q.y() * omeg[1] + q.z() * omeg[2]);
-
-    // integrate
-    q.x() += q_dot.x() * dt_;
-    q.y() += q_dot.y() * dt_;
-    q.z() += q_dot.z() * dt_;
-    q.w() += q_dot.w() * dt_;
-
-    omeg += omeg_dot * dt_;
   }
 
   // set minimum and maximum (squared) rotor velocities
   traj_data.rot_vel_squ_min_ = rot_vel_min;
   traj_data.rot_vel_squ_max_ = rot_vel_max;
+}
+
+
+inline void ActuatorSimulation::angularVelocityFromEulerParams(Matrix3f R_IA, Vector3f kA, double the, double dthe, double ddthe, Vector3f &omeg, Vector3f &omeg_dot)
+{
+    //abbreviations
+    double sthe = sin(the);
+    double cthe = cos(the);
+
+    double k_x = kA[0];
+    double k_y = kA[1];
+    double k_z = kA[2];
+
+    // current orientation of {B} w.r.t. the starting orientation {A}
+    Matrix3f R_AB;
+    R_AB(0,0) = cthe-(k_x*k_x)*(cthe-1.0);
+    R_AB(0,1) = -k_z*sthe-k_x*k_y*(cthe-1.0);
+    R_AB(0,2) = k_y*sthe-k_x*k_z*(cthe-1.0);
+    R_AB(1,0) = k_z*sthe-k_x*k_y*(cthe-1.0);
+    R_AB(1,1) = cthe-(k_y*k_y)*(cthe-1.0);
+    R_AB(1,2) = -k_x*sthe-k_y*k_z*(cthe-1.0);
+    R_AB(2,0) = -k_y*sthe-k_x*k_z*(cthe-1.0);
+    R_AB(2,1) = k_x*sthe-k_y*k_z*(cthe-1.0);
+    R_AB(2,2) = cthe-(k_z*k_z)*(cthe-1.0);
+
+
+    // first derivative of R_AB
+    Matrix3f dR_AB;
+    dR_AB(0,0) = -dthe*sthe+dthe*(k_x*k_x)*sthe;
+    dR_AB(0,1) = -cthe*dthe*k_z+dthe*k_x*k_y*sthe;
+    dR_AB(0,2) = cthe*dthe*k_y+dthe*k_x*k_z*sthe;
+    dR_AB(1,0) = cthe*dthe*k_z+dthe*k_x*k_y*sthe;
+    dR_AB(1,1) = -dthe*sthe+dthe*(k_y*k_y)*sthe;
+    dR_AB(1,2) = -cthe*dthe*k_x+dthe*k_y*k_z*sthe;
+    dR_AB(2,0) = -cthe*dthe*k_y+dthe*k_x*k_z*sthe;
+    dR_AB(2,1) = cthe*dthe*k_x+dthe*k_y*k_z*sthe;
+    dR_AB(2,2) = -dthe*sthe+dthe*(k_z*k_z)*sthe;
+
+    // second derivative of R_AB
+    Matrix3f ddR_AB;
+    ddR_AB(0,0) = -ddthe*sthe-cthe*(dthe*dthe)+ddthe*(k_x*k_x)*sthe+cthe*(dthe*dthe)*(k_x*k_x);
+    ddR_AB(0,1) = (dthe*dthe)*k_z*sthe-cthe*ddthe*k_z+ddthe*k_x*k_y*sthe+cthe*(dthe*dthe)*k_x*k_y;
+    ddR_AB(0,2) = -(dthe*dthe)*k_y*sthe+cthe*ddthe*k_y+ddthe*k_x*k_z*sthe+cthe*(dthe*dthe)*k_x*k_z;
+    ddR_AB(1,0) = -(dthe*dthe)*k_z*sthe+cthe*ddthe*k_z+ddthe*k_x*k_y*sthe+cthe*(dthe*dthe)*k_x*k_y;
+    ddR_AB(1,1) = -ddthe*sthe-cthe*(dthe*dthe)+ddthe*(k_y*k_y)*sthe+cthe*(dthe*dthe)*(k_y*k_y);
+    ddR_AB(1,2) = (dthe*dthe)*k_x*sthe-cthe*ddthe*k_x+ddthe*k_y*k_z*sthe+cthe*(dthe*dthe)*k_y*k_z;
+    ddR_AB(2,0) = (dthe*dthe)*k_y*sthe-cthe*ddthe*k_y+ddthe*k_x*k_z*sthe+cthe*(dthe*dthe)*k_x*k_z;
+    ddR_AB(2,1) = -(dthe*dthe)*k_x*sthe+cthe*ddthe*k_x+ddthe*k_y*k_z*sthe+cthe*(dthe*dthe)*k_y*k_z;
+    ddR_AB(2,2) = -ddthe*sthe-cthe*(dthe*dthe)+ddthe*(k_z*k_z)*sthe+cthe*(dthe*dthe)*(k_z*k_z);
+
+    // transform to inertial frame {I}
+    Matrix3f R_IB = R_IA * R_AB;
+    Matrix3f dR_IB = R_IA * dR_AB;
+    Matrix3f ddR_IB = R_IA * ddR_AB;
+
+    // retrieve skew matrices
+    Matrix3f omega_skew = dR_IB * R_IB.transpose();
+    Matrix3f domega_skew = ddR_IB * R_IB.transpose() + dR_IB * dR_IB.transpose();
+
 }
 
 void ActuatorSimulation::poseToEulerParams(Eigen::Vector6f pose, Eigen::Vector3f &euler_axis, double &euler_angle)

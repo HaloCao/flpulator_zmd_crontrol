@@ -44,6 +44,7 @@ namespace trajectory
  */
 typedef std::vector<geometry_msgs::Vector3> pos_accelerations;
 typedef std::vector<double> euler_angle_accelerations;
+typedef std::vector<double> euler_angle_velocities;
 typedef std::vector<double> euler_angles;
 typedef std::vector<QVector<double>> rotor_velocities_rpm;
 typedef std::vector<Eigen::Vector6f> rotor_velocities_squared;
@@ -59,6 +60,7 @@ struct TrajectoryData
   Eigen::Vector6f target_pose_;
   trajectory::pos_accelerations pos_accs_;
   trajectory::euler_angle_accelerations euler_angle_accs_;
+  trajectory::euler_angle_velocities euler_angle_vels_;
   trajectory::euler_angles euler_angles_;
   Eigen::Vector3f euler_axis_;
 
@@ -73,13 +75,14 @@ struct TrajectoryData
   bool feasible_;
 
   TrajectoryData(Eigen::Vector6f start_pose, Eigen::Vector6f target_pose, trajectory::pos_accelerations pos_accs,
-                 trajectory::euler_angle_accelerations euler_angle_accs, trajectory::euler_angles euler_angles,
+                 trajectory::euler_angle_accelerations euler_angle_accs, trajectory::euler_angle_velocities euler_angle_vels, trajectory::euler_angles euler_angles,
                  Eigen::Vector3f euler_axis, trajectory::rotor_velocities_rpm rotor_velocities_rpm,
                  QVector<double> time_stamps)
     : start_pose_(start_pose)
     , target_pose_(target_pose)
     , pos_accs_(pos_accs)
     , euler_angle_accs_(euler_angle_accs)
+    , euler_angle_vels_(euler_angle_vels)
     , euler_angles_(euler_angles)
     , euler_axis_(euler_axis)
     , rot_vel_rpm_(rotor_velocities_rpm)
@@ -188,6 +191,18 @@ protected:
    * \return 6D-Vector of rotor velocities per rad²/s²
    */
   Eigen::Vector6f quatToSteadyStateRotorVelocities(Eigen::Quaternionf q);
+
+  /**
+   * \brief angularVelocityFromEulerParams Calculates the angular velocity and acceleration w.r.t. the body frame based on current euler parameters
+   * \param R_IA The rotation matrix describing the starting orientation w.r.t. {I}
+   * \param kA The euler axis defined w.r.t. the starting orientation
+   * \param the Current euler angle
+   * \param dthe First derivative of current euler angle
+   * \param ddthe Second derivative of current euler angle
+   * \param omeg Reference to the current angular velocity
+   * \param omeg_dot Reference to the current angular acceleration
+   */
+  inline void angularVelocityFromEulerParams(Eigen::Matrix3f R_IA, Eigen::Vector3f kA, double the, double dthe, double ddthe, Eigen::Vector3f &omeg, Eigen::Vector3f &omeg_dot);
 
 private:
   // simulation parameters

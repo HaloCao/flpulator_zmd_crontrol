@@ -11,6 +11,7 @@ bool start_tracking             # if true, the trajectory gets instantly publish
 ---
 geometry_msgs/Vector3[] p_acc   # acceleration of the resulting positional part over time
 float64[] euler_angle_acc       # course of the acceleration of the euler angle (referring euler params) over time 
+float64[] euler_angle_vel       # course of the velocity of the euler angle (referring euler params) over time 
 float64[] euler_angle           # course of the euler angle (referring euler params) over time 
 geometry_msgs/Vector3 euler_axis# constant euler axis of the rotational trajectory w.r.t the start frame
 float64[] time_stamps           # time stamps of each step

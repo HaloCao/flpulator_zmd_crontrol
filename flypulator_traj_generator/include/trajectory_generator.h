@@ -38,6 +38,7 @@ namespace trajectory
 {
 typedef std::vector<geometry_msgs::Vector3> pos_accelerations;
 typedef std::vector<double> euler_angle_accelerations;
+typedef std::vector<double> euler_angle_velocities;
 typedef std::vector<double> euler_angles;
 }  // namespace trajectory
 
@@ -56,6 +57,7 @@ public:  // constructor takes publisher to publish message
                                const float duration, const bool start_tracking, const trajectory_types::Type traj_type,
                                trajectory::pos_accelerations& pos_accs,
                                trajectory::euler_angle_accelerations& euler_angle_accs,
+                               trajectory::euler_angle_velocities& euler_angle_vels,
                                trajectory::euler_angles& euler_angles, geometry_msgs::Vector3& eulerAxis,
                                std::vector<double>& time_stamps);
 
@@ -82,6 +84,8 @@ private:
   void convertTo6DArray(const geometry_msgs::Vector3& x_1, const geometry_msgs::Vector3& x_2, float destination[]);
   // evaluate acceleration polynom at a given time
   inline float evaluateAcceleration(float a2, float a3, float a4, float a5, float t);
+  // evaluate velocity polynom at a given time
+  inline float evaluateVelocity(float a1, float a2, float a3, float a4, float a5, float t);
   // evaluate position polynom at a given time
   inline float evaluatePosition(float a0, float a1, float a2, float a3, float a4, float a5, float t);
   // calculate euler parameters
