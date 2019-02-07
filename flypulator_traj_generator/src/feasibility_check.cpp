@@ -12,8 +12,8 @@ FeasibilityCheck::FeasibilityCheck() : actuator_simulation_(new ActuatorSimulati
   ros::param::param<double>("/trajectory/boundary_buffer", rotvel_buffer_, 150);
 
   // actuator velocity boundaries
-  ros::param::param<double>("/uav/rotor_vel_max", upper_vel_limit_, 5700);
-  ros::param::param<double>("/uav/rotor_vel_min", lower_vel_limit_, 0);
+  ros::param::param<double>("/trajectory/rotor_vel_max", upper_vel_limit_, 5700);
+  ros::param::param<double>("/trajectory/rotor_vel_min", lower_vel_limit_, 0);
 
   // store actuator boundaries as rad²/s² as well
   upper_vel_limit_squ_ = pow(upper_vel_limit_ * M_PI / 30, 2);
@@ -118,8 +118,9 @@ void FeasibilityCheck::retrieveFeasibleEndpose(Eigen::Vector6f &target_pose, Eig
   //######### result #####################
   // apply new target pose orientation to the original target pose (only roll and pitch angle considered)
   Eigen::Vector3f rpy_angles = actuator_simulation_->eulerParamsToYPR(euler_axis, feasible_euler_angle);
-  target_pose.segment(3, 2) =
-      rpy_angles.head(2);  // segment (starting at coefficient 3, containing 2 successive entrys (roll and pitch))
+  // round down to two decimals
+  target_pose[3] = floor(rpy_angles[0] * 100) / 100;
+  target_pose[4] = floor(rpy_angles[1] * 100) / 100;
 }
 
 double FeasibilityCheck::findFeasbileEulerAngle(double rotvel_init, double rotvel_limit, Eigen::Vector3f euler_axis,
@@ -129,6 +130,7 @@ double FeasibilityCheck::findFeasbileEulerAngle(double rotvel_init, double rotve
   double theta_k = 0;             // holds the corresponding euler angle of each step which will be optimized
   double newt_epsilon = pow(newt_epsilon_ * M_PI / 10, 2);  // terminating condition per rad²/s²
 
+  int i = 0;
   // loop until terminating condition is met
   while (abs(rotvel_limit - rotvel_k) > newt_epsilon)
   {
@@ -141,7 +143,9 @@ double FeasibilityCheck::findFeasbileEulerAngle(double rotvel_init, double rotve
     theta_k += (rotvel_limit - rotvel_k) / d_rotvel;
     Eigen::Vector6f rotvels_k = actuator_simulation_->getSteadyStateRotorVelocities(euler_axis, theta_k);
     rotvel_k = rotvels_k[index];
+    i++;
   }
+  ROS_INFO("Finding feasible end pose took %d iterations", i);
   return theta_k;
 }
 
@@ -152,15 +156,20 @@ void FeasibilityCheck::retrieveFeasibleDuration(double &duration)
   indices critical_indices;
   double critical_rotor_velocity;
 
-  // the factor by which the new time gets dilated
-  double dilation_factor = 1.001;
+  // starting orientation (RPY angles in rad)
+  Eigen::Vector3f start_orientation = cur_traj_data_->start_pose_.tail(3) * M_PI/180;
 
-  // maximum amount of iterations
+  // the factor by which the new time gets dilated
+  double dilation_factor = 1.0001;
+
+  // count iterations (debug purpose)
+  int i = 0;
+
   while (!withinActuatorLimits(critical_limit, critical_indices, critical_rotor_velocity))
   {
     // retrieve the orientation at the time the critical rotor velocity occur
     double crit_euler_angle = cur_traj_data_->euler_angles_[critical_indices.second];
-    Eigen::Quaternionf q_krit = actuator_simulation_->eulerParamsToQuat(cur_traj_data_->start_pose_.tail(3),
+    Eigen::Quaternionf q_krit = actuator_simulation_->eulerParamsToQuat(start_orientation,
                                                                         cur_traj_data_->euler_axis_, crit_euler_angle);
 
     // retrieve gravitational component of the critical rotor velocity (W_inv(crit, 3) * mg)
@@ -171,7 +180,14 @@ void FeasibilityCheck::retrieveFeasibleDuration(double &duration)
                 sqrt((critical_rotor_velocity - grav_rotvel_component) / (critical_limit - grav_rotvel_component));
 
     callTrajectoryGenerator(cur_traj_data_->start_pose_, cur_traj_data_->target_pose_, duration, false);
+
+    i++;
   }
+
+  ROS_INFO("Finding feasible duration took %d iterations", i);
+
+  // round duration to two decimal places
+  duration = ceil(duration * 100) / (double) 100;
 }
 
 bool FeasibilityCheck::withinActuatorLimits(double &critical_limit, indices &critical_indices,

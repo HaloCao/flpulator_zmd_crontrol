@@ -72,9 +72,6 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
   path_->subProp("Topic")->setValue("trajectory/visualization");
   path_->subProp("Arrow Length")->setValue(0.03);
 
-  // apply keypresses
-  qApp->installEventFilter(this);
-
   // connect ui_panel poseupdate signal to local slot to get informed about updates in the trajectory set-up
   connect(ui_panel_, SIGNAL(startTracking(bool)), this, SLOT(updateTrajectoryCallback(bool)));
 
@@ -149,50 +146,6 @@ void TrajectoryDesigner::configCallback(flypulator_traj_generator::traj_paramete
 
   // restart simulation
   updateTrajectoryCallback(false);
-}
-
-bool TrajectoryDesigner::eventFilter(QObject *object, QEvent *event)
-{
-  static int i = 0;
-  if (event->type() == QEvent::KeyPress)
-  {
-    QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
-    switch (keyEvent->key())
-    {
-      case Qt::Key_F:
-        if (isFullScreen())
-        {
-          ROS_INFO("fullscreen disabled by keypress");
-          showNormal();
-        }
-        else
-        {
-          ROS_INFO("fullscreen enabled by keypress");
-          showFullScreen();
-        }
-        return true;
-
-      case Qt::Key_M:
-        if (isMaximized())
-        {
-          ROS_INFO("maximized disabled by keypress");
-          showNormal();
-        }
-        else
-        {
-          ROS_INFO("maximized enabled by keypress");
-          showMaximized();
-        }
-        return true;
-
-      case Qt::Key_Q:
-        ROS_INFO("shutdown by keypress");
-        ros::shutdown();
-        qApp->quit();
-        return true;
-    }
-  }
-  return false;
 }
 
 void TrajectoryDesigner::makeFeasibleCallback()

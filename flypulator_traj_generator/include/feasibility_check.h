@@ -119,10 +119,10 @@ private:
   double newt_epsilon_;   ///< Terminating condition for newton approach, used for feasible target pose calculation
 
   // actuator boundaries for feasibility calculation
-  double upper_vel_limit_;      ///< The maximum feasible rotational velocity of a propeller per rpm.
-  double lower_vel_limit_;      ///< The minimum feasible rotational velocity of a propeller per rpm.
-  double upper_vel_limit_squ_;  ///< The maximum feasible velocity per rad²/s²
-  double lower_vel_limit_squ_;  ///< The minimum feasible velocity per rad²/s²
+  double upper_vel_limit_;      ///< The maximum allowed rotational velocity of a propeller per rpm.
+  double lower_vel_limit_;      ///< The minimum allowed rotational velocity of a propeller per rpm.
+  double upper_vel_limit_squ_;  ///< The maximum allowed velocity per rad²/s²
+  double lower_vel_limit_squ_;  ///< The minimum allowed velocity per rad²/s²
 
   trajectory::TrajectoryData *cur_traj_data_;  ///< stores the data of the current trajectory
 };

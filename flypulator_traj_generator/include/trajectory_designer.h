@@ -49,16 +49,6 @@ public:
   TrajectoryDesigner(QWidget* parent = nullptr);
   virtual ~TrajectoryDesigner();
 
-protected:
-  /**
-   * \brief Callback for a key event.
-   * Key Declarations:
-   * F ~ Toggle Fullscreen
-   * M ~ Toggle Maximize/Minimize
-   * Q ~ Quit Application
-   */
-  bool eventFilter(QObject* object, QEvent* event);
-
 private Q_SLOTS:
 
   /**

@@ -143,35 +143,35 @@ public:
   void poseToEulerParams(Eigen::Vector6f pose, Eigen::Vector3f &euler_axis, double &euler_angle);
 
   /**
-   * @brief eulerParamsToYPR Converts from euler parameters to yaw-pitch-roll - angles
-   * @param euler_axis The euler axis of the given orientation
-   * @param euler_angle The euler angle of the given rotation
-   * @return The resulting roll pitch yaw angles following y-p-r-Sequence with consecutive axes (in degrees)
+   * \brief eulerParamsToYPR Converts from euler parameters to yaw-pitch-roll - angles
+   * \param euler_axis The euler axis of the given orientation
+   * \param euler_angle The euler angle of the given rotation
+   * \return The resulting roll pitch yaw angles following y-p-r-Sequence with consecutive axes (in degrees)
    */
   Eigen::Vector3f eulerParamsToYPR(Eigen::Vector3f euler_axis, double euler_angle);
 
   /**
-   * @brief eulerParamsToQuat Calculates a quaternion from euler parameters, considering the startin frame, in which the
+   * \brief eulerParamsToQuat Calculates a quaternion from euler parameters, considering the startin frame, in which the
    * euler parameters are defined
-   * @param start_frame Orientation of the frame, where the euler parameters are defined w.r.t. the global frame {I}
-   * @param euler_axis The euler axis describing the rotation w.r.t the start frame
-   * @param euler_angle The euler angle describing the rotation w.r.t the start frame
-   * @return Quaternion describing the orientation of the body frame {B} w.r.t. the global frame {I}
+   * \param start_frame rpy-Angles (rad) of the frame, where the euler parameters are defined w.r.t. the global frame {I}
+   * \param euler_axis The euler axis describing the rotation w.r.t the start frame
+   * \param euler_angle The euler angle describing the rotation w.r.t the start frame
+   * \return Quaternion describing the orientation of the body frame {B} w.r.t. the global frame {I}
    */
   Eigen::Quaternionf eulerParamsToQuat(Eigen::Vector3f start_frame, Eigen::Vector3f euler_axis, double euler_angle);
 
   /**
-   * @brief getGravitationalVelocityComponent Calculates the contribution of gravitational influence to the rotor
+   * \brief getGravitationalVelocityComponent Calculates the contribution of gravitational influence to the rotor
    * velocity of the specified rotor
-   * @param q The quaternion describing the orientation of the hexarotor w.r.t. the global frame
-   * @param rotor_index The index of the regarded rotor
-   * @return The rotor velocity influenced by gravitational force
+   * \param q The quaternion describing the orientation of the hexarotor w.r.t. the global frame
+   * \param rotor_index The index of the regarded rotor
+   * \return The rotor velocity influenced by gravitational force
    */
   double getGravitationalVelocityComponent(Eigen::Quaternionf q, uint rotor_index);
 
 protected:
   /**
-   * @brief getMappingMatrix Writes the mapping matrix (mapping from rotor velocities to forces/torques) to a given
+   * \brief getMappingMatrix Writes the mapping matrix (mapping from rotor velocities to forces/torques) to a given
    * reference \param map_matrix Reference to write resulting mapping matrix to \param q Quaternion indicating the
    * hexacopter's current orientation
    */

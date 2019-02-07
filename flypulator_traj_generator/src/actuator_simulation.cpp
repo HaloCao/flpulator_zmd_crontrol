@@ -257,9 +257,11 @@ void ActuatorSimulation::poseToEulerParams(Eigen::Vector6f pose, Eigen::Vector3f
 Eigen::Quaternionf ActuatorSimulation::eulerParamsToQuat(Eigen::Vector3f start_frame, Eigen::Vector3f euler_axis,
                                                          double euler_angle)
 {
+  // start orientation as quaternion
   Quaternionf q_IA = AngleAxisf(start_frame[2], Vector3f::UnitZ()) * AngleAxisf(start_frame[1], Vector3f::UnitY()) *
                      AngleAxisf(start_frame[0], Vector3f::UnitX());
 
+  // attitude of {B} w.r.t. the start orientation
   Quaternionf q_AB;
   q_AB.x() = euler_axis[0] * sin(euler_angle / 2);
   q_AB.y() = euler_axis[1] * sin(euler_angle / 2);
