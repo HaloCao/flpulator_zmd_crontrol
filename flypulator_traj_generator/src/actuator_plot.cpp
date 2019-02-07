@@ -20,8 +20,8 @@ ActuatorPlot::ActuatorPlot(QWidget *parent) : QWidget(parent), actuator_plot_(ne
   setLayout(main_layout);
 
   // retrieve actuator velocity boundaries
-  ros::param::param<double>("/uav/rotor_vel_max", upper_vel_limit_, 5700);
-  ros::param::param<double>("/uav/rotor_vel_min", lower_vel_limit_, 0);
+  ros::param::param<double>("/trajectory/rotor_vel_max", upper_vel_limit_, 5700);
+  ros::param::param<double>("/trajectory/rotor_vel_min", lower_vel_limit_, 0);
 
   // label axes
   actuator_plot_->xAxis->setLabel("Time [s]");

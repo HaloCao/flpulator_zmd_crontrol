@@ -64,8 +64,8 @@ private:
   QCPItemLine *upper_limit_line_;  ///< Constant line to visualize the upper limit of actuator velocity space.
   QCPItemLine *lower_limit_line_;  ///< Constant line to visualize the lower limit of actuator velocity space.
 
-  double upper_vel_limit_;  ///< The maximum feasible rotational velocity of a propeller.
-  double lower_vel_limit_;  ///< The minimum feasible rotational velocity of a propeller.
+  double upper_vel_limit_;  ///< The maximum allowed rotational velocity of a propeller.
+  double lower_vel_limit_;  ///< The minimum allowed rotational velocity of a propeller.
 };
 
 #endif  // ACTUATORPLOT_H
