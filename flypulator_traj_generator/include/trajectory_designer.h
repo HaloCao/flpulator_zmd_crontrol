@@ -75,6 +75,7 @@ private Q_SLOTS:
   void makeFeasibleCallback();
 
 private:
+  bool visualize_;      ///< true if the 3d render scene and the actuator_plot shall be shown
   ros::NodeHandle nh_;  ///< Interface to register standard ros components
 
   ros::ServiceClient polynomial_traj_client_;     ///< Service client which calls ros-service to create polynomial

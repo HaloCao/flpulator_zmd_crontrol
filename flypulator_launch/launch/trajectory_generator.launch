@@ -1,10 +1,9 @@
 <launch>
 	<!-- load trajectory parametrization to parameter server-->
 	<rosparam command="load" file="$(find flypulator_traj_generator)/cfg/traj_gen_parameter.yaml" />
-
-	
-	<!-- start trajectory generation user interface-->
-	<node name="trajectory_uinterface" pkg="flypulator_traj_generator" type="trajectory_designer" 			output="screen">
+            
+	<!-- start trajectory generation user interface. Set the _visualize argument (parameter) to "false", in order to hide the 3D rviz render scene and the plot of the rotor velocities-->
+	<node name="trajectory_uinterface" pkg="flypulator_traj_generator" args="_visualize:=true" type="trajectory_designer" 			output="screen">
 	</node>
 	
 	<!-- launch trajectory generator service-->

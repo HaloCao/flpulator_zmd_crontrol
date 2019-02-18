@@ -22,7 +22,6 @@ int main(int argc, char** argv)
 
   TrajectoryDesigner* td = new TrajectoryDesigner();
   td->setWindowTitle("Flypulator - Trajectory Designer");
-  td->showMaximized();
 
   app.exec();
 

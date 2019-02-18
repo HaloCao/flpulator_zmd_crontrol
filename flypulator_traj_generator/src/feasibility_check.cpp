@@ -130,7 +130,6 @@ double FeasibilityCheck::findFeasbileEulerAngle(double rotvel_init, double rotve
   double theta_k = 0;             // holds the corresponding euler angle of each step which will be optimized
   double newt_epsilon = pow(newt_epsilon_ * M_PI / 10, 2);  // terminating condition per rad²/s²
 
-  int i = 0;
   // loop until terminating condition is met
   while (abs(rotvel_limit - rotvel_k) > newt_epsilon)
   {
@@ -143,9 +142,7 @@ double FeasibilityCheck::findFeasbileEulerAngle(double rotvel_init, double rotve
     theta_k += (rotvel_limit - rotvel_k) / d_rotvel;
     Eigen::Vector6f rotvels_k = actuator_simulation_->getSteadyStateRotorVelocities(euler_axis, theta_k);
     rotvel_k = rotvels_k[index];
-    i++;
   }
-  ROS_INFO("Finding feasible end pose took %d iterations", i);
   return theta_k;
 }
 
@@ -161,9 +158,6 @@ void FeasibilityCheck::retrieveFeasibleDuration(double &duration)
 
   // the factor by which the new time gets dilated
   double dilation_factor = 1.0001;
-
-  // count iterations (debug purpose)
-  int i = 0;
 
   while (!withinActuatorLimits(critical_limit, critical_indices, critical_rotor_velocity))
   {
@@ -181,10 +175,8 @@ void FeasibilityCheck::retrieveFeasibleDuration(double &duration)
 
     callTrajectoryGenerator(cur_traj_data_->start_pose_, cur_traj_data_->target_pose_, duration, false);
 
-    i++;
   }
 
-  ROS_INFO("Finding feasible duration took %d iterations", i);
 
   // round duration to two decimal places
   duration = ceil(duration * 100) / (double)100;

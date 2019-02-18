@@ -24,6 +24,10 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
   , feasibility_check_(new FeasibilityCheck())
 
 {
+  // load visualization parameter (whether to show 3d rviz scene and actuator plot)
+  ros::NodeHandle private_nh("~");
+  private_nh.param<bool>("visualize", visualize_, true);
+
   // set user interface panel to fixed width and actuator plot widget to fixed height
   ui_panel_->setFixedWidth(500);
   actuator_plot_->setFixedHeight(400);
@@ -35,7 +39,7 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
   main_layout->setSpacing(0);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
-  // add user interface panel and the 3D View
+  // add user interface panel and the 3D View optionally
   main_layout->addWidget(ui_panel_, 0, 0, 2, 1);
   main_layout->addWidget(render_panel_, 0, 1);
   main_layout->addWidget(actuator_plot_, 1, 1);
@@ -89,6 +93,18 @@ TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
   QTimer *t = new QTimer(this);
   QObject::connect(t, SIGNAL(timeout()), this, SLOT(rosUpdate()));
   t->start(20);
+
+  // set window size
+  if (visualize_)
+  {
+    showMaximized();
+  }
+  else
+  {
+    actuator_plot_->hide();
+    render_panel_->hide();
+    show();
+  }
 }
 
 void TrajectoryDesigner::rosUpdate()
@@ -182,6 +198,9 @@ void TrajectoryDesigner::makeFeasibleCallback()
 
 void TrajectoryDesigner::updateTrajectoryCallback(bool start_tracking)
 {
+  // only perform for visualization or tracking of the trajectory
+  if (!visualize_ && !start_tracking) return;
+
   // Create references to retrieve the current trajectory setup from user interface
   Eigen::Vector6f start_pose;
   Eigen::Vector6f target_pose;
@@ -201,7 +220,10 @@ void TrajectoryDesigner::updateTrajectoryCallback(bool start_tracking)
   feasibility_check_->getPlotData(rotor_velocities_rpm, time_stamps, feasible);
 
   // update plot
-  actuator_plot_->plotActuatorEvolution(rotor_velocities_rpm, time_stamps, feasible);
+  if (visualize_)
+  {
+    actuator_plot_->plotActuatorEvolution(rotor_velocities_rpm, time_stamps, feasible);
+  }
 }
 
 // Destructor.
