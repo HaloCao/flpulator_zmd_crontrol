@@ -169,63 +169,71 @@ void ActuatorSimulation::simulateActuatorVelocities(trajectory::TrajectoryData &
   traj_data.rot_vel_squ_max_ = rot_vel_max;
 }
 
-
-inline void ActuatorSimulation::angularVelocityFromEulerParams(Matrix3f R_IA, Vector3f kA, double the, double dthe, double ddthe, Vector3f &omeg, Vector3f &omeg_dot)
+inline void ActuatorSimulation::angularVelocityFromEulerParams(Matrix3f R_IA, Vector3f kA, double the, double dthe,
+                                                               double ddthe, Vector3f &omeg, Vector3f &omeg_dot)
 {
-    //abbreviations
-    double sthe = sin(the);
-    double cthe = cos(the);
+  // abbreviations
+  double sthe = sin(the);
+  double cthe = cos(the);
 
-    double k_x = kA[0];
-    double k_y = kA[1];
-    double k_z = kA[2];
+  double k_x = kA[0];
+  double k_y = kA[1];
+  double k_z = kA[2];
 
-    // current orientation of {B} w.r.t. the starting orientation {A}
-    Matrix3f R_AB;
-    R_AB(0,0) = cthe-(k_x*k_x)*(cthe-1.0);
-    R_AB(0,1) = -k_z*sthe-k_x*k_y*(cthe-1.0);
-    R_AB(0,2) = k_y*sthe-k_x*k_z*(cthe-1.0);
-    R_AB(1,0) = k_z*sthe-k_x*k_y*(cthe-1.0);
-    R_AB(1,1) = cthe-(k_y*k_y)*(cthe-1.0);
-    R_AB(1,2) = -k_x*sthe-k_y*k_z*(cthe-1.0);
-    R_AB(2,0) = -k_y*sthe-k_x*k_z*(cthe-1.0);
-    R_AB(2,1) = k_x*sthe-k_y*k_z*(cthe-1.0);
-    R_AB(2,2) = cthe-(k_z*k_z)*(cthe-1.0);
+  // current orientation of {B} w.r.t. the starting orientation {A}
+  Matrix3f R_AB;
+  R_AB(0, 0) = cthe - (k_x * k_x) * (cthe - 1.0);
+  R_AB(0, 1) = -k_z * sthe - k_x * k_y * (cthe - 1.0);
+  R_AB(0, 2) = k_y * sthe - k_x * k_z * (cthe - 1.0);
+  R_AB(1, 0) = k_z * sthe - k_x * k_y * (cthe - 1.0);
+  R_AB(1, 1) = cthe - (k_y * k_y) * (cthe - 1.0);
+  R_AB(1, 2) = -k_x * sthe - k_y * k_z * (cthe - 1.0);
+  R_AB(2, 0) = -k_y * sthe - k_x * k_z * (cthe - 1.0);
+  R_AB(2, 1) = k_x * sthe - k_y * k_z * (cthe - 1.0);
+  R_AB(2, 2) = cthe - (k_z * k_z) * (cthe - 1.0);
 
+  // first derivative of R_AB
+  Matrix3f dR_AB;
+  dR_AB(0, 0) = -dthe * sthe + dthe * (k_x * k_x) * sthe;
+  dR_AB(0, 1) = -cthe * dthe * k_z + dthe * k_x * k_y * sthe;
+  dR_AB(0, 2) = cthe * dthe * k_y + dthe * k_x * k_z * sthe;
+  dR_AB(1, 0) = cthe * dthe * k_z + dthe * k_x * k_y * sthe;
+  dR_AB(1, 1) = -dthe * sthe + dthe * (k_y * k_y) * sthe;
+  dR_AB(1, 2) = -cthe * dthe * k_x + dthe * k_y * k_z * sthe;
+  dR_AB(2, 0) = -cthe * dthe * k_y + dthe * k_x * k_z * sthe;
+  dR_AB(2, 1) = cthe * dthe * k_x + dthe * k_y * k_z * sthe;
+  dR_AB(2, 2) = -dthe * sthe + dthe * (k_z * k_z) * sthe;
 
-    // first derivative of R_AB
-    Matrix3f dR_AB;
-    dR_AB(0,0) = -dthe*sthe+dthe*(k_x*k_x)*sthe;
-    dR_AB(0,1) = -cthe*dthe*k_z+dthe*k_x*k_y*sthe;
-    dR_AB(0,2) = cthe*dthe*k_y+dthe*k_x*k_z*sthe;
-    dR_AB(1,0) = cthe*dthe*k_z+dthe*k_x*k_y*sthe;
-    dR_AB(1,1) = -dthe*sthe+dthe*(k_y*k_y)*sthe;
-    dR_AB(1,2) = -cthe*dthe*k_x+dthe*k_y*k_z*sthe;
-    dR_AB(2,0) = -cthe*dthe*k_y+dthe*k_x*k_z*sthe;
-    dR_AB(2,1) = cthe*dthe*k_x+dthe*k_y*k_z*sthe;
-    dR_AB(2,2) = -dthe*sthe+dthe*(k_z*k_z)*sthe;
+  // second derivative of R_AB
+  Matrix3f ddR_AB;
+  ddR_AB(0, 0) = -ddthe * sthe - cthe * (dthe * dthe) + ddthe * (k_x * k_x) * sthe + cthe * (dthe * dthe) * (k_x * k_x);
+  ddR_AB(0, 1) =
+      (dthe * dthe) * k_z * sthe - cthe * ddthe * k_z + ddthe * k_x * k_y * sthe + cthe * (dthe * dthe) * k_x * k_y;
+  ddR_AB(0, 2) =
+      -(dthe * dthe) * k_y * sthe + cthe * ddthe * k_y + ddthe * k_x * k_z * sthe + cthe * (dthe * dthe) * k_x * k_z;
+  ddR_AB(1, 0) =
+      -(dthe * dthe) * k_z * sthe + cthe * ddthe * k_z + ddthe * k_x * k_y * sthe + cthe * (dthe * dthe) * k_x * k_y;
+  ddR_AB(1, 1) = -ddthe * sthe - cthe * (dthe * dthe) + ddthe * (k_y * k_y) * sthe + cthe * (dthe * dthe) * (k_y * k_y);
+  ddR_AB(1, 2) =
+      (dthe * dthe) * k_x * sthe - cthe * ddthe * k_x + ddthe * k_y * k_z * sthe + cthe * (dthe * dthe) * k_y * k_z;
+  ddR_AB(2, 0) =
+      (dthe * dthe) * k_y * sthe - cthe * ddthe * k_y + ddthe * k_x * k_z * sthe + cthe * (dthe * dthe) * k_x * k_z;
+  ddR_AB(2, 1) =
+      -(dthe * dthe) * k_x * sthe + cthe * ddthe * k_x + ddthe * k_y * k_z * sthe + cthe * (dthe * dthe) * k_y * k_z;
+  ddR_AB(2, 2) = -ddthe * sthe - cthe * (dthe * dthe) + ddthe * (k_z * k_z) * sthe + cthe * (dthe * dthe) * (k_z * k_z);
 
-    // second derivative of R_AB
-    Matrix3f ddR_AB;
-    ddR_AB(0,0) = -ddthe*sthe-cthe*(dthe*dthe)+ddthe*(k_x*k_x)*sthe+cthe*(dthe*dthe)*(k_x*k_x);
-    ddR_AB(0,1) = (dthe*dthe)*k_z*sthe-cthe*ddthe*k_z+ddthe*k_x*k_y*sthe+cthe*(dthe*dthe)*k_x*k_y;
-    ddR_AB(0,2) = -(dthe*dthe)*k_y*sthe+cthe*ddthe*k_y+ddthe*k_x*k_z*sthe+cthe*(dthe*dthe)*k_x*k_z;
-    ddR_AB(1,0) = -(dthe*dthe)*k_z*sthe+cthe*ddthe*k_z+ddthe*k_x*k_y*sthe+cthe*(dthe*dthe)*k_x*k_y;
-    ddR_AB(1,1) = -ddthe*sthe-cthe*(dthe*dthe)+ddthe*(k_y*k_y)*sthe+cthe*(dthe*dthe)*(k_y*k_y);
-    ddR_AB(1,2) = (dthe*dthe)*k_x*sthe-cthe*ddthe*k_x+ddthe*k_y*k_z*sthe+cthe*(dthe*dthe)*k_y*k_z;
-    ddR_AB(2,0) = (dthe*dthe)*k_y*sthe-cthe*ddthe*k_y+ddthe*k_x*k_z*sthe+cthe*(dthe*dthe)*k_x*k_z;
-    ddR_AB(2,1) = -(dthe*dthe)*k_x*sthe+cthe*ddthe*k_x+ddthe*k_y*k_z*sthe+cthe*(dthe*dthe)*k_y*k_z;
-    ddR_AB(2,2) = -ddthe*sthe-cthe*(dthe*dthe)+ddthe*(k_z*k_z)*sthe+cthe*(dthe*dthe)*(k_z*k_z);
+  // transform to inertial frame {I}
+  Matrix3f R_IB = R_IA * R_AB;
+  Matrix3f dR_IB = R_IA * dR_AB;
+  Matrix3f ddR_IB = R_IA * ddR_AB;
 
-    // transform to inertial frame {I}
-    Matrix3f R_IB = R_IA * R_AB;
-    Matrix3f dR_IB = R_IA * dR_AB;
-    Matrix3f ddR_IB = R_IA * ddR_AB;
+  // retrieve skew matrices
+  Matrix3f omega_skew = dR_IB * R_IB.transpose();
+  Matrix3f domega_skew = ddR_IB * R_IB.transpose() + dR_IB * dR_IB.transpose();
 
-    // retrieve skew matrices
-    Matrix3f omega_skew = dR_IB * R_IB.transpose();
-    Matrix3f domega_skew = ddR_IB * R_IB.transpose() + dR_IB * dR_IB.transpose();
-
+  // retrieve angular acceleration and velocity
+  omeg << omega_skew(2, 1), omega_skew(0, 2), omega_skew(0, 1);
+  omeg_dot << domega_skew(2, 1), domega_skew(0, 2), domega_skew(0, 1);
 }
 
 void ActuatorSimulation::poseToEulerParams(Eigen::Vector6f pose, Eigen::Vector3f &euler_axis, double &euler_angle)

@@ -71,27 +71,33 @@ private:
       const float p[6], const float p_dot[6], const float p_ddot[6], const Eigen::Quaternionf& q,
       const Eigen::Vector3f& omega, const Eigen::Vector3f& omega_dot, const ros::Duration& time_from_start);
 
-  // calculate angular velocity from euler angles and its derivatives, following Fje94 p.42
-  void calculateOmega(const float roll, const float roll_dot, const float pitch, const float pitch_dot, const float yaw,
-                      const float yaw_dot, Eigen::Vector3f& omega);
-  // calculate angular acceleration from euler angles and its derivatives, following Fje94 p.42 derivated
-  void calculateOmegaDot(const float roll, const float roll_dot, const float roll_ddot, const float pitch,
-                         const float pitch_dot, const float pitch_ddot, const float yaw, const float yaw_dot,
-                         const float yaw_ddot, Eigen::Vector3f& omega_dot);
-  // convert Euler angles to quaternions using roll-pitch-yaw sequence
-  void euler2Quaternion(const float roll, const float pitch, const float yaw, Eigen::Quaternionf& q);
-  // convert 2 messages of Vector3 type to 6D float array
-  void convertTo6DArray(const geometry_msgs::Vector3& x_1, const geometry_msgs::Vector3& x_2, float destination[]);
   // evaluate acceleration polynom at a given time
   inline float evaluateAcceleration(float a2, float a3, float a4, float a5, float t);
+
   // evaluate velocity polynom at a given time
   inline float evaluateVelocity(float a1, float a2, float a3, float a4, float a5, float t);
+
   // evaluate position polynom at a given time
   inline float evaluatePosition(float a0, float a1, float a2, float a3, float a4, float a5, float t);
+
   // calculate euler parameters
-  inline void calculateEulerParameters(Eigen::Matrix3d rotMat, Eigen::EulerParams& eulerParams);
+  inline void calculateEulerParameters(Eigen::Matrix3f rotMat, Eigen::EulerParams& eulerParams);
+
   // convert RPY-Angles to discrete cosine matrix
-  inline void rpyToRotMat(float roll, float pitch, float yaw, Eigen::Matrix3d& rotMatrix);
+  inline void rpyToRotMat(float roll, float pitch, float yaw, Eigen::Matrix3f& rotMatrix);
+
+  // extract start and target position and extract corresponding euler parameters
+  void extractStartAndTargetPose(const geometry_msgs::Vector3& p_start, const geometry_msgs::Vector3& p_end,
+                                 const geometry_msgs::Vector3& rpy_start, const geometry_msgs::Vector3& rpy_end,
+                                 float pose_start[], float pose_end[], Eigen::EulerParams& eulerParams,
+                                 Eigen::Quaternionf& q_start);
+
+  // convert euler parameters to quaternion
+  void eulerParamsToQuat(Eigen::Vector3f euler_axis, float euler_angle, Eigen::Quaternionf& q_AB);
+
+  // get angular velocity and acceleration from euler angle and its derivatives
+  void angularVelocityFromEulerParams(Eigen::Quaternionf q_IA, Eigen::Vector3f kA, float the, float dthe, float ddthe,
+                                      Eigen::Vector3f& omeg, Eigen::Vector3f& omeg_dot);
 };
 
 #endif  // TRAJECTORY_GENERATOR_H

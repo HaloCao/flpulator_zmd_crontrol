@@ -75,7 +75,8 @@ struct TrajectoryData
   bool feasible_;
 
   TrajectoryData(Eigen::Vector6f start_pose, Eigen::Vector6f target_pose, trajectory::pos_accelerations pos_accs,
-                 trajectory::euler_angle_accelerations euler_angle_accs, trajectory::euler_angle_velocities euler_angle_vels, trajectory::euler_angles euler_angles,
+                 trajectory::euler_angle_accelerations euler_angle_accs,
+                 trajectory::euler_angle_velocities euler_angle_vels, trajectory::euler_angles euler_angles,
                  Eigen::Vector3f euler_axis, trajectory::rotor_velocities_rpm rotor_velocities_rpm,
                  QVector<double> time_stamps)
     : start_pose_(start_pose)
@@ -153,10 +154,10 @@ public:
   /**
    * \brief eulerParamsToQuat Calculates a quaternion from euler parameters, considering the startin frame, in which the
    * euler parameters are defined
-   * \param start_frame rpy-Angles (rad) of the frame, where the euler parameters are defined w.r.t. the global frame {I}
-   * \param euler_axis The euler axis describing the rotation w.r.t the start frame
-   * \param euler_angle The euler angle describing the rotation w.r.t the start frame
-   * \return Quaternion describing the orientation of the body frame {B} w.r.t. the global frame {I}
+   * \param start_frame rpy-Angles (rad) of the frame, where the euler parameters are defined w.r.t. the global frame
+   * {I} \param euler_axis The euler axis describing the rotation w.r.t the start frame \param euler_angle The euler
+   * angle describing the rotation w.r.t the start frame \return Quaternion describing the orientation of the body frame
+   * {B} w.r.t. the global frame {I}
    */
   Eigen::Quaternionf eulerParamsToQuat(Eigen::Vector3f start_frame, Eigen::Vector3f euler_axis, double euler_angle);
 
@@ -193,16 +194,14 @@ protected:
   Eigen::Vector6f quatToSteadyStateRotorVelocities(Eigen::Quaternionf q);
 
   /**
-   * \brief angularVelocityFromEulerParams Calculates the angular velocity and acceleration w.r.t. the body frame based on current euler parameters
-   * \param R_IA The rotation matrix describing the starting orientation w.r.t. {I}
-   * \param kA The euler axis defined w.r.t. the starting orientation
-   * \param the Current euler angle
-   * \param dthe First derivative of current euler angle
-   * \param ddthe Second derivative of current euler angle
-   * \param omeg Reference to the current angular velocity
-   * \param omeg_dot Reference to the current angular acceleration
+   * \brief angularVelocityFromEulerParams Calculates the angular velocity and acceleration w.r.t. the body frame based
+   * on current euler parameters \param R_IA The rotation matrix describing the starting orientation w.r.t. {I} \param
+   * kA The euler axis defined w.r.t. the starting orientation \param the Current euler angle \param dthe First
+   * derivative of current euler angle \param ddthe Second derivative of current euler angle \param omeg Reference to
+   * the current angular velocity \param omeg_dot Reference to the current angular acceleration
    */
-  inline void angularVelocityFromEulerParams(Eigen::Matrix3f R_IA, Eigen::Vector3f kA, double the, double dthe, double ddthe, Eigen::Vector3f &omeg, Eigen::Vector3f &omeg_dot);
+  inline void angularVelocityFromEulerParams(Eigen::Matrix3f R_IA, Eigen::Vector3f kA, double the, double dthe,
+                                             double ddthe, Eigen::Vector3f &omeg, Eigen::Vector3f &omeg_dot);
 
 private:
   // simulation parameters

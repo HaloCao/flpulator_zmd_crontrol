@@ -157,7 +157,7 @@ void FeasibilityCheck::retrieveFeasibleDuration(double &duration)
   double critical_rotor_velocity;
 
   // starting orientation (RPY angles in rad)
-  Eigen::Vector3f start_orientation = cur_traj_data_->start_pose_.tail(3) * M_PI/180;
+  Eigen::Vector3f start_orientation = cur_traj_data_->start_pose_.tail(3) * M_PI / 180;
 
   // the factor by which the new time gets dilated
   double dilation_factor = 1.0001;
@@ -169,8 +169,8 @@ void FeasibilityCheck::retrieveFeasibleDuration(double &duration)
   {
     // retrieve the orientation at the time the critical rotor velocity occur
     double crit_euler_angle = cur_traj_data_->euler_angles_[critical_indices.second];
-    Eigen::Quaternionf q_krit = actuator_simulation_->eulerParamsToQuat(start_orientation,
-                                                                        cur_traj_data_->euler_axis_, crit_euler_angle);
+    Eigen::Quaternionf q_krit =
+        actuator_simulation_->eulerParamsToQuat(start_orientation, cur_traj_data_->euler_axis_, crit_euler_angle);
 
     // retrieve gravitational component of the critical rotor velocity (W_inv(crit, 3) * mg)
     double grav_rotvel_component =
@@ -187,7 +187,7 @@ void FeasibilityCheck::retrieveFeasibleDuration(double &duration)
   ROS_INFO("Finding feasible duration took %d iterations", i);
 
   // round duration to two decimal places
-  duration = ceil(duration * 100) / (double) 100;
+  duration = ceil(duration * 100) / (double)100;
 }
 
 bool FeasibilityCheck::withinActuatorLimits(double &critical_limit, indices &critical_indices,
@@ -260,9 +260,9 @@ void FeasibilityCheck::callTrajectoryGenerator(Eigen::Vector6f start_pose, Eigen
 
   // initialize trajectory data struct and fill it
   delete cur_traj_data_;
-  cur_traj_data_ =
-      new trajectory::TrajectoryData(start_pose, target_pose, pt_srv.response.p_acc, pt_srv.response.euler_angle_acc, pt_srv.response.euler_angle_vel,
-                                     pt_srv.response.euler_angle, euler_axis, rotor_velocities_rpm, time_stamps);
+  cur_traj_data_ = new trajectory::TrajectoryData(
+      start_pose, target_pose, pt_srv.response.p_acc, pt_srv.response.euler_angle_acc, pt_srv.response.euler_angle_vel,
+      pt_srv.response.euler_angle, euler_axis, rotor_velocities_rpm, time_stamps);
 
   // simulate the rotor velocities for the current trajectory
   actuator_simulation_->simulateActuatorVelocities(*cur_traj_data_);

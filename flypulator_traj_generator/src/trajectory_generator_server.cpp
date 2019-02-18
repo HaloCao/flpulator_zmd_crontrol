@@ -21,9 +21,10 @@ bool createPolynomialTrajectoryCB(flypulator_traj_generator::polynomial_trajecto
   geometry_msgs::Vector3 eulerAxis;
   std::vector<double> time_stamps;
 
-  res.finished = g_generator_p->createAndSendTrajectory(
-      req.p_start, req.p_end, req.rpy_start, req.rpy_end, req.duration, req.start_tracking,
-      trajectory_types::Polynomial, pos_accelerations, euler_angle_accelerations, euler_angle_velocities, eulerAngles, eulerAxis, time_stamps);
+  res.finished = g_generator_p->createAndSendTrajectory(req.p_start, req.p_end, req.rpy_start, req.rpy_end,
+                                                        req.duration, req.start_tracking, trajectory_types::Polynomial,
+                                                        pos_accelerations, euler_angle_accelerations,
+                                                        euler_angle_velocities, eulerAngles, eulerAxis, time_stamps);
   // fill result
   res.p_acc = pos_accelerations;
   res.euler_angle_acc = euler_angle_accelerations;
