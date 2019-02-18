@@ -336,6 +336,7 @@ void TrajectoryUI::calculateFeasibleTrajectory()
 
 void TrajectoryUI::startTrajectoryTracking()
 {
+  ROS_INFO("Start Tracking");
   Q_EMIT startTracking(true);
   log("Finished Trajectory Tracking");
 }

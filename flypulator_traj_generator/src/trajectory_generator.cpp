@@ -25,17 +25,17 @@ bool TrajectoryGenerator::createAndSendTrajectory(
 
   // ####### calculation of euler parameters ###########
   // rotation matrix from start and end pose
-  Eigen::Matrix3d rotMatStart;
-  rpyToRotMat(pose_start[3], pose_start[4], pose_start[5], rotMatStart);
-  Eigen::Matrix3d rotMatEnd;
-  rpyToRotMat(pose_end[3], pose_end[4], pose_end[5], rotMatEnd);
+  Eigen::Matrix3d rot_mat_start;
+  rpyToRotMat(pose_start[3], pose_start[4], pose_start[5], rot_mat_start);
+  Eigen::Matrix3d rot_mat_end;
+  rpyToRotMat(pose_end[3], pose_end[4], pose_end[5], rot_mat_end);
 
   // retrieve difference rotation
-  Eigen::Matrix3d rDiffMat = rotMatStart.transpose() * rotMatEnd;
+  Eigen::Matrix3d rot_mat_diff = rot_mat_start.transpose() * rot_mat_end;
 
   // get euler axis and angle
   Eigen::EulerParams eulerParams;
-  calculateEulerParameters(rDiffMat, eulerParams);
+  calculateEulerParameters(rot_mat_diff, eulerParams);
 
   // assign euler axis to service response
   eulerAxis.x = eulerParams.axis[0];

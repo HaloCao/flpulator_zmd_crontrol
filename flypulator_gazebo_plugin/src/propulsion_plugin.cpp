@@ -467,6 +467,10 @@ void PropulsionPlugin::readParamsFromServer() {
     ros::param::get("uav/alpha", tilting_angle_);
     ros::param::get("urdf/bidirectional", bidirectional_);
 
+    // convert actuator boundaries from rpm to rad/s
+    vel_min_ *= M_PI / 30;
+    vel_max_ *= M_PI / 30;
+
     ROS_INFO_STREAM("propulsion_plugin: model parameters loaded.");
 
     ROS_DEBUG_STREAM("propulsion_plugin: uav/rotor_vel_min: " << vel_min_);
