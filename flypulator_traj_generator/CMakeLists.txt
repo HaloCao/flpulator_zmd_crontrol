@@ -159,12 +159,12 @@ set(SRC_FILES
   src/actuator_plot.cpp
   src/actuator_simulation.cpp
   src/qcustomplot.cpp
-  include/trajectory_designer.h
-  include/trajectory_ui.h
-  include/feasibility_check.h
-  include/actuator_plot.h
-  include/actuator_simulation.h
-  include/qcustomplot.h
+  include/${PROJECT_NAME}/trajectory_designer.h
+  include/${PROJECT_NAME}/trajectory_ui.h
+  include/${PROJECT_NAME}/feasibility_check.h
+  include/${PROJECT_NAME}/actuator_plot.h
+  include/${PROJECT_NAME}/actuator_simulation.h
+  include/${PROJECT_NAME}/qcustomplot.h
   
 )
 

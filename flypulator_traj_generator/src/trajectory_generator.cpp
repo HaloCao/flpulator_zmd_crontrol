@@ -1,4 +1,4 @@
-#include "trajectory_generator.h"
+#include "flypulator_traj_generator/trajectory_generator.h"
 #include <iostream>
 
 // create Trajectory and send it periodically

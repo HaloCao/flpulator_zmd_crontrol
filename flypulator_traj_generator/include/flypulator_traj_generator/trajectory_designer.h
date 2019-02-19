@@ -14,10 +14,10 @@
 
 #include "flypulator_traj_generator/polynomial_trajectory.h"
 
-#include "trajectory_ui.h"
-#include "actuator_plot.h"
-#include "actuator_simulation.h"
-#include "feasibility_check.h"
+#include "flypulator_traj_generator/trajectory_ui.h"
+#include "flypulator_traj_generator/actuator_plot.h"
+#include "flypulator_traj_generator/actuator_simulation.h"
+#include "flypulator_traj_generator/feasibility_check.h"
 
 #include <dynamic_reconfigure/server.h>
 #include <flypulator_traj_generator/traj_parameterConfig.h>

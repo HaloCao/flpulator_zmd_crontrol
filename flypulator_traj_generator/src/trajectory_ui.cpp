@@ -9,7 +9,7 @@
 #include <QPushButton>
 #include <QSpacerItem>
 
-#include "trajectory_ui.h"
+#include "flypulator_traj_generator/trajectory_ui.h"
 
 TrajectoryUI::TrajectoryUI(QWidget *parent)
   : QWidget(parent)

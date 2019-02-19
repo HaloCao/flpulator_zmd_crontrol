@@ -9,7 +9,7 @@
 #include <QObject>
 #include <ros/ros.h>
 
-#include "trajectory_designer.h"
+#include "flypulator_traj_generator/trajectory_designer.h"
 
 int main(int argc, char** argv)
 {

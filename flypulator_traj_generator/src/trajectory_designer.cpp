@@ -15,7 +15,7 @@
 #include "rviz/view_controller.h"
 #include "ros/ros.h"
 
-#include "trajectory_designer.h"
+#include "flypulator_traj_generator/trajectory_designer.h"
 
 TrajectoryDesigner::TrajectoryDesigner(QWidget *parent)
   : QWidget(parent)
@@ -194,12 +194,14 @@ void TrajectoryDesigner::makeFeasibleCallback()
   // inform user about execution time
   double execution_time = (end_ - start_).toNSec() * 1e-6;
   ROS_INFO_STREAM("Computation time (ms): " << execution_time);
+  ui_panel_->log("The resulting trajectory is feasible. Ready to start tracking.");
 }
 
 void TrajectoryDesigner::updateTrajectoryCallback(bool start_tracking)
 {
   // only perform for visualization or tracking of the trajectory
-  if (!visualize_ && !start_tracking) return;
+  if (!visualize_ && !start_tracking)
+    return;
 
   // Create references to retrieve the current trajectory setup from user interface
   Eigen::Vector6f start_pose;

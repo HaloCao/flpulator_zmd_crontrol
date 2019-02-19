@@ -8,7 +8,7 @@
 
 #include "ros/ros.h"
 
-#include "actuator_plot.h"
+#include "flypulator_traj_generator/actuator_plot.h"
 
 ActuatorPlot::ActuatorPlot(QWidget *parent) : QWidget(parent), actuator_plot_(new QCustomPlot(this))
 {

@@ -11,8 +11,7 @@
 #include "ros/ros.h"
 #include "flypulator_traj_generator/polynomial_trajectory.h"
 
-#include "feasibility_check.h"
-#include "actuator_simulation.h"
+#include "flypulator_traj_generator/actuator_simulation.h"
 
 //#include <dynamic_reconfigure/server.h>
 //#include <flypulator_traj_generator/traj_parameterConfig.h>

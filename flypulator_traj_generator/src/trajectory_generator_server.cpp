@@ -1,5 +1,5 @@
 #include "ros/ros.h"
-#include "trajectory_generator.h"
+#include "flypulator_traj_generator/trajectory_generator.h"
 // add additional service headers here
 
 #include "flypulator_traj_generator/linear_trajectory.h"

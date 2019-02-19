@@ -8,7 +8,7 @@
 #include <QWidget>
 #include <QVector>
 
-#include "qcustomplot.h"
+#include "flypulator_traj_generator/qcustomplot.h"
 
 namespace trajectory
 {

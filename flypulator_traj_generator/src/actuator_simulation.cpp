@@ -3,7 +3,7 @@
  */
 
 #include <limits>
-#include "actuator_simulation.h"
+#include "flypulator_traj_generator/actuator_simulation.h"
 
 using namespace Eigen;
 

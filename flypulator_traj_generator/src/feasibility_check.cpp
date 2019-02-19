@@ -2,7 +2,7 @@
  * @author Nils Dunkelberg
  */
 
-#include "feasibility_check.h"
+#include "flypulator_traj_generator/feasibility_check.h"
 
 FeasibilityCheck::FeasibilityCheck() : actuator_simulation_(new ActuatorSimulation())
 {
@@ -83,9 +83,9 @@ bool FeasibilityCheck::isFeasible(Eigen::Vector6f rotor_velocities, bool use_ome
   // add buffer to rotor velocities?
   double rotvel_buf = use_omega_buffer ? rotvel_buffer_ : 0;
 
- // set updated actuator limits (as the case may be decreased/increased by buffer velocity) and converted to rad²/s²
- double ulimit = pow((upper_vel_limit_ - rotvel_buf) * M_PI / 30, 2);
- double llimit = pow((lower_vel_limit_ + rotvel_buf) * M_PI / 30, 2);
+  // set updated actuator limits (as the case may be decreased/increased by buffer velocity) and converted to rad²/s²
+  double ulimit = pow((upper_vel_limit_ - rotvel_buf) * M_PI / 30, 2);
+  double llimit = pow((lower_vel_limit_ + rotvel_buf) * M_PI / 30, 2);
 
   // feasibility check
   return rot_vel_min >= llimit + rotvel_buf && rot_vel_max <= ulimit - rotvel_buf;
@@ -182,9 +182,7 @@ void FeasibilityCheck::retrieveFeasibleDuration(double &duration)
                 sqrt((critical_rotor_velocity - grav_rotvel_component) / (critical_limit - grav_rotvel_component));
 
     callTrajectoryGenerator(cur_traj_data_->start_pose_, cur_traj_data_->target_pose_, duration, false);
-
   }
-
 
   // round duration to two decimal places
   duration = ceil(duration * 100) / (double)100;
