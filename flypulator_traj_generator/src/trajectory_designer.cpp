@@ -193,7 +193,7 @@ void TrajectoryDesigner::makeFeasibleCallback()
   end_ = ros::WallTime::now();
   // inform user about execution time
   double execution_time = (end_ - start_).toNSec() * 1e-6;
-  ROS_INFO_STREAM("Exectution time (ms): " << execution_time);
+  ROS_INFO_STREAM("Computation time (ms): " << execution_time);
 }
 
 void TrajectoryDesigner::updateTrajectoryCallback(bool start_tracking)

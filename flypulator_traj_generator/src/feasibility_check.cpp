@@ -46,14 +46,15 @@ bool FeasibilityCheck::makeFeasible(Eigen::Vector6f &start_pose, Eigen::Vector6f
   Eigen::Vector6f rot_vel_squ_target = actuator_simulation_->getSteadyStateRotorVelocities(target_pose);
 
   // check start pose feasibility. If not feasible, user has to modify it.
-  if (!isFeasible(rot_vel_squ_start))
+  if (!isFeasible(rot_vel_squ_start, false))
   {
     ROS_INFO("Start pose not feasible. Please adjust!");
     return false;
   }
 
-  // check target pose feasibility. If not feasible, calculate closest feasible alternative.
-  if (!isFeasible(rot_vel_squ_target))
+  // check target pose feasibility. Add omega offset as described in the student thesis, chapter 4.
+  // If not feasible, calculate closest feasible alternative.
+  if (!isFeasible(rot_vel_squ_target, true))
   {
     ROS_INFO("Target pose not feasible. Retrieving feasible alternative...");
     retrieveFeasibleEndpose(target_pose, rot_vel_squ_target);
@@ -73,14 +74,21 @@ bool FeasibilityCheck::makeFeasible(Eigen::Vector6f &start_pose, Eigen::Vector6f
   return true;
 }
 
-bool FeasibilityCheck::isFeasible(Eigen::Vector6f rotor_velocities)
+bool FeasibilityCheck::isFeasible(Eigen::Vector6f rotor_velocities, bool use_omega_buffer)
 {
   // retrieve maximum and minimum rotor squared velocities
   double rot_vel_min = rotor_velocities.minCoeff();
   double rot_vel_max = rotor_velocities.maxCoeff();
 
+  // add buffer to rotor velocities?
+  double rotvel_buf = use_omega_buffer ? rotvel_buffer_ : 0;
+
+ // set updated actuator limits (as the case may be decreased/increased by buffer velocity) and converted to rad²/s²
+ double ulimit = pow((upper_vel_limit_ - rotvel_buf) * M_PI / 30, 2);
+ double llimit = pow((lower_vel_limit_ + rotvel_buf) * M_PI / 30, 2);
+
   // feasibility check
-  return rot_vel_min >= lower_vel_limit_squ_ && rot_vel_max <= upper_vel_limit_squ_;
+  return rot_vel_min >= llimit + rotvel_buf && rot_vel_max <= ulimit - rotvel_buf;
 }
 
 void FeasibilityCheck::retrieveFeasibleEndpose(Eigen::Vector6f &target_pose, Eigen::Vector6f initial_rotor_velocities)

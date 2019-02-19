@@ -48,18 +48,19 @@ public:
   bool makeFeasible(Eigen::Vector6f &start_pose, Eigen::Vector6f &target_pose, double &duration);
 
   /**
-   * @brief isFeasible Checks the given rotor velocities for feasibility
-   * @param rotor_velocities Rotor velocities to check for feasibility
-   * @return True if velocities are feasible
+   * \brief isFeasible Checks the given rotor velocities for feasibility
+   * \param rotor_velocities Rotor velocities to check for feasibility
+   * \param use_omega_offs Whether to add a buffer to the actuator boundaries (see rot_vel_buffer)
+   * \return True if velocities are feasible
    */
-  bool isFeasible(Eigen::Vector6f rotor_velocities);
+  bool isFeasible(Eigen::Vector6f rotor_velocities, bool use_omega_buffer);
 
   /**
-   * @brief callTrajectoryGenerator Calls the trajectory generation service
-   * @param start_pose Start pose of the trajectory
-   * @param target_pose Target pose of the trajectory
-   * @param duration Duration of the trajectory
-   * @param start_tracking If trajectory should also be published to the controller
+   * \brief callTrajectoryGenerator Calls the trajectory generation service
+   * \param start_pose Start pose of the trajectory
+   * \param target_pose Target pose of the trajectory
+   * \param duration Duration of the trajectory
+   * \param start_tracking If trajectory should also be published to the controller
    */
   void callTrajectoryGenerator(Eigen::Vector6f start_pose, Eigen::Vector6f target_pose, double duration,
                                bool start_tracking);
