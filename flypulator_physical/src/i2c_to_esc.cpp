@@ -12,8 +12,6 @@
 Motors *motors_ptr;
 float g_upper_limit = 6000;
 float g_lower_limit = 0;
-bool sem_i2c = true; // binary semaphore for i2c master
-std::mutex mutex_set_motors;
 
 bool flag_in_control = false;
 
