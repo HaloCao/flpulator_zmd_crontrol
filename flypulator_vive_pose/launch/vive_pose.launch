@@ -26,7 +26,7 @@
         <!-- transformation between sensor(S) frame and body(B) frame w.r.t. sensor(S) frame -->
         <param name="T_S_B_tx" type="double" value="0.0"/>
         <param name="T_S_B_ty" type="double" value="-0.0825"/>
-        <param name="T_S_B_tz" type="double" value="-0.20"/>
+        <param name="T_S_B_tz" type="double" value="-0.10"/>
         <param name="T_S_B_qx" type="double" value="0.0"/>
         <param name="T_S_B_qy" type="double" value="0.0"/>
         <param name="T_S_B_qz" type="double" value="0.0"/>
