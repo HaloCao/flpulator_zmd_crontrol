@@ -26,6 +26,10 @@ Dont forget sourcing the setup.bash file:
 ```
 source ~/your_ws/devel/setup.bash
 ```
+or if you using Zsh:
+```
+source ~/your_ws/devel/setup.zsh
+```
 To do sourcing permanently, edit the .bashrc file with `gedit ~/.bashrc` and add the source command from above (`source ~/your_ws/devel/setup.bash`). *Note that you have to start a new terminal to apply the changes*. You can check if it has worked by trying to locate a package using `rospack find flypulator_control`.
 
 ## Gazebo simulation
