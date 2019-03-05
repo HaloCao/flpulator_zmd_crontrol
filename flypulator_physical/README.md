@@ -18,18 +18,18 @@ Connect to Flypulator WIFI:
 Start SSH session:
 ```
 ssh flypulator@flypulator -L 5901:127.0.0.1:5901
-PW: IFA (to be changed to ifa)
+PW: ifa
 ```
 start Tmux:
 ```
 tmux
 ```
-
-- Make vertical split: ctrl+x v
-- Make split: ctrl+x s
-- Close split: exit
-- Make new tab: ctrl+x c
-- Move to next/previous tab: ctrl+x n/p
+prefix = ctrl+b
+- Make vertical split: ~~ctrl+x v~~ prefix "
+- Make split: ~~ctrl+x s~~ prefix %
+- Close panel: ~~exit~~ prefix x
+- Make new tab: ~~ctrl+x c~~ prefix c
+- Move to next/previous tab: ~~ctrl+x n/p~~ prefix n/p
 
 ### Start and attach to VNC server
 On the flypulator type:
@@ -56,7 +56,7 @@ roscore
 
 roslaunch flypulator_vive_pose vive_pose.launch
 
-roslaunch flypulator_physical Telem2.launch
+roslaunch flypulator_physical i2c_direct.launch
 
 roslaunch flypulator_launch controller.launch
 ```
