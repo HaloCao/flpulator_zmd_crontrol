@@ -228,8 +228,8 @@ inline void ActuatorSimulation::angularVelocityFromEulerParams(Matrix3f R_IA, Ve
   Matrix3f ddR_IB = R_IA * ddR_AB;
 
   // retrieve skew matrices
-  Matrix3f omega_skew = dR_IB * R_IB.transpose();
-  Matrix3f domega_skew = ddR_IB * R_IB.transpose() + dR_IB * dR_IB.transpose();
+  Matrix3f omega_skew = R_IB.transpose() * dR_IB;
+  Matrix3f domega_skew = dR_IB.transpose() * dR_IB + R_IB.transpose() * ddR_IB;
 
   // retrieve angular acceleration and velocity
   omeg << omega_skew(2, 1), omega_skew(0, 2), omega_skew(0, 1);
