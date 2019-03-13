@@ -9,22 +9,20 @@ geometry_msgs::Pose currPose;
 
 double calTrajTime(tf::Vector3 p_start, tf::Vector3 p_end, double track_speed)
 {
-  const double pure_rotation_track_time = 2;   // trajectory time when performing pure rotaion [s]
-  const double pure_rotation_threshold = 0.10; //[m]
+  const double pure_rotation_track_time = 2;    // trajectory time when performing pure rotaion [s]
+  const double pure_rotation_threshold = 0.10;  //[m]
   double traj_distance = p_start.distance(p_end);
 
   if (traj_distance > pure_rotation_threshold)
-    return traj_distance / track_speed; // [s]
-  else                                  // ~ pure rotation
-    return pure_rotation_track_time;    // [s]
+    return traj_distance / track_speed;  // [s]
+  else                                   // ~ pure rotation
+    return pure_rotation_track_time;     // [s]
 }
 
-void getPoseRPY(geometry_msgs::Pose pose, double &px, double &py, double &pz,
-                double &roll, double &pitch, double &yaw)
+void getPoseRPY(geometry_msgs::Pose pose, double &px, double &py, double &pz, double &roll, double &pitch, double &yaw)
 {
   // convert quaternion to roll pitch yaw angle
-  tf::Quaternion q(pose.orientation.x, pose.orientation.y,
-                   pose.orientation.z, pose.orientation.w);
+  tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
   tf::Matrix3x3 R(q);
   R.getRPY(roll, pitch, yaw);
 
@@ -36,42 +34,36 @@ void getPoseRPY(geometry_msgs::Pose pose, double &px, double &py, double &pz,
 void getPoseRPY(geometry_msgs::Pose pose, tf::Vector3 &pos, tf::Vector3 &rpy)
 {
   // convert quaternion to roll pitch yaw angle
-  tf::Quaternion q(pose.orientation.x, pose.orientation.y,
-                   pose.orientation.z, pose.orientation.w);
+  tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
   tf::Matrix3x3 R(q);
   double roll, pitch, yaw;
   R.getRPY(roll, pitch, yaw);
 
-  pos = tf::Vector3(pose.position.x,pose.position.y,pose.position.z);
+  pos = tf::Vector3(pose.position.x, pose.position.y, pose.position.z);
   rpy = tf::Vector3(roll, pitch, yaw);
 }
 
-bool gotoTarget(geometry_msgs::Pose curr_pose, tf::Vector3 target_pos,
-                tf::Vector3 target_rpy, double track_speed)
+bool gotoTarget(geometry_msgs::Pose curr_pose, tf::Vector3 target_pos, tf::Vector3 target_rpy, double track_speed)
 {
   flypulator_traj_generator::linear_trajectory traj_srv;
 
   // set start pose(current pose)
-  getPoseRPY(curr_pose, traj_srv.request.x_start.x, traj_srv.request.x_start.y, traj_srv.request.x_start.z,
+  getPoseRPY(curr_pose, traj_srv.request.p_start.x, traj_srv.request.p_start.y, traj_srv.request.p_start.z,
              traj_srv.request.rpy_start.x, traj_srv.request.rpy_start.y, traj_srv.request.rpy_start.z);
 
   // end pose
-  traj_srv.request.x_end.x = target_pos.x();
-  traj_srv.request.x_end.y = target_pos.y();
-  traj_srv.request.x_end.z = target_pos.z();
+  traj_srv.request.p_end.x = target_pos.x();
+  traj_srv.request.p_end.y = target_pos.y();
+  traj_srv.request.p_end.z = target_pos.z();
 
   traj_srv.request.rpy_end.x = target_rpy.x();
   traj_srv.request.rpy_end.y = target_rpy.y();
   traj_srv.request.rpy_end.z = target_rpy.z();
 
   // calculate the trajectory time
-  tf::Vector3 p_start(traj_srv.request.x_start.x,
-                      traj_srv.request.x_start.y,
-                      traj_srv.request.x_start.z);
-  tf::Vector3 p_end(traj_srv.request.x_end.x,
-                    traj_srv.request.x_end.y,
-                    traj_srv.request.x_end.z);
-  traj_srv.request.delta_t = calTrajTime(p_start, p_end, track_speed);
+  tf::Vector3 p_start(traj_srv.request.p_start.x, traj_srv.request.p_start.y, traj_srv.request.p_start.z);
+  tf::Vector3 p_end(traj_srv.request.p_end.x, traj_srv.request.p_end.y, traj_srv.request.p_end.z);
+  traj_srv.request.duration = calTrajTime(p_start, p_end, track_speed);
 
   // call service
   if (!traj_client.call(traj_srv))
@@ -83,36 +75,32 @@ bool gotoTarget(geometry_msgs::Pose curr_pose, tf::Vector3 target_pos,
     return true;
 }
 
-bool gotoTarget(tf::Vector3 start_pos, tf::Vector3 start_rpy, tf::Vector3 target_pos,
-                tf::Vector3 target_rpy, double track_speed)
+bool gotoTarget(tf::Vector3 start_pos, tf::Vector3 start_rpy, tf::Vector3 target_pos, tf::Vector3 target_rpy,
+                double track_speed)
 {
   flypulator_traj_generator::linear_trajectory traj_srv;
 
   // set start pose(current pose)
-  traj_srv.request.x_start.x = start_pos.x();
-  traj_srv.request.x_start.y = start_pos.y();
-  traj_srv.request.x_start.z = start_pos.z();
-  traj_srv.request.rpy_start.x = start_rpy.x();       
-  traj_srv.request.rpy_start.y = start_rpy.y();  
-  traj_srv.request.rpy_start.z = start_rpy.z();     
+  traj_srv.request.p_start.x = start_pos.x();
+  traj_srv.request.p_start.y = start_pos.y();
+  traj_srv.request.p_start.z = start_pos.z();
+  traj_srv.request.rpy_start.x = start_rpy.x();
+  traj_srv.request.rpy_start.y = start_rpy.y();
+  traj_srv.request.rpy_start.z = start_rpy.z();
 
   // end pose
-  traj_srv.request.x_end.x = target_pos.x();
-  traj_srv.request.x_end.y = target_pos.y();
-  traj_srv.request.x_end.z = target_pos.z();
+  traj_srv.request.p_end.x = target_pos.x();
+  traj_srv.request.p_end.y = target_pos.y();
+  traj_srv.request.p_end.z = target_pos.z();
 
   traj_srv.request.rpy_end.x = target_rpy.x();
   traj_srv.request.rpy_end.y = target_rpy.y();
   traj_srv.request.rpy_end.z = target_rpy.z();
 
   // calculate the trajectory time
-  tf::Vector3 p_start(traj_srv.request.x_start.x,
-                      traj_srv.request.x_start.y,
-                      traj_srv.request.x_start.z);
-  tf::Vector3 p_end(traj_srv.request.x_end.x,
-                    traj_srv.request.x_end.y,
-                    traj_srv.request.x_end.z);
-  traj_srv.request.delta_t = calTrajTime(p_start, p_end, track_speed);
+  tf::Vector3 p_start(traj_srv.request.p_start.x, traj_srv.request.p_start.y, traj_srv.request.p_start.z);
+  tf::Vector3 p_end(traj_srv.request.p_end.x, traj_srv.request.p_end.y, traj_srv.request.p_end.z);
+  traj_srv.request.duration = calTrajTime(p_start, p_end, track_speed);
 
   // call service
   if (!traj_client.call(traj_srv))
@@ -129,7 +117,7 @@ bool executeCommandCB(flypulator_highlevel_command::hl_command::Request &req,
 {
   const double v_speed = 0.3;          // vertical speed by take off and landing [m/s]
   const double track_speed = 0.4;      // speed while using 'go to' command [m/s]
-  const double landing_heigth = 0.2; // position z when the drone is landed [m]
+  const double landing_heigth = 0.2;   // position z when the drone is landed [m]
   const double take_off_height = 1.5;  // position z when the drone is hovering [m]
 
   tf::Vector3 target_pos, target_rpy;
@@ -170,7 +158,7 @@ bool executeCommandCB(flypulator_highlevel_command::hl_command::Request &req,
     gotoTarget(currPose, target_pos, target_rpy, track_speed);
   }
   // command: go home
-  // TODO: the current pose did not update during this callback function 
+  // TODO: the current pose did not update during this callback function
   else if ("go home" == req.command)
   {
     ROS_INFO_STREAM("Got: go home command!");
@@ -181,37 +169,37 @@ bool executeCommandCB(flypulator_highlevel_command::hl_command::Request &req,
     // ROS_INFO("Start position: x:%5.2f, y:%5.2f, z:%5.3f",
     //          curr_pos.x(), curr_pos.y(), curr_pos.z());
     // ROS_INFO("Start attitude: roll:%5.2f, pitch:%5.2f, yaw:%5.3f",
-            //  curr_rpy.x(), curr_rpy.y(), curr_rpy.z());
+    //  curr_rpy.x(), curr_rpy.y(), curr_rpy.z());
     target_pos = curr_pos;
     target_pos.setZ(take_off_height);
     target_rpy = tf::Vector3(0, 0, 0);
     gotoTarget(currPose, target_pos, target_rpy, track_speed);
 
-    duration.sleep(); // delay 2s
+    duration.sleep();  // delay 2s
 
     // Step 2:
     // getPoseRPY(currPose, curr_pos, curr_rpy);
     // ROS_INFO("Start position: x:%5.2f, y:%5.2f, z:%5.3f",
     //          curr_pos.x(), curr_pos.y(), curr_pos.z());
     // ROS_INFO("Start attitude: roll:%5.2f, pitch:%5.2f, yaw:%5.3f",
-            //  curr_rpy.x(), curr_rpy.y(), curr_rpy.z());
+    //  curr_rpy.x(), curr_rpy.y(), curr_rpy.z());
     start_pos = target_pos;
     start_rpy = target_rpy;
-    target_pos = tf::Vector3(0,0,take_off_height);
+    target_pos = tf::Vector3(0, 0, take_off_height);
     target_rpy = tf::Vector3(0, 0, 0);
     gotoTarget(start_pos, start_rpy, target_pos, target_rpy, track_speed);
-    
-    duration.sleep(); // delay 2s
+
+    duration.sleep();  // delay 2s
 
     // Step 3:
     // getPoseRPY(currPose, curr_pos, curr_rpy);
     // ROS_INFO("Start position: x:%5.2f, y:%5.2f, z:%5.3f",
     //          curr_pos.x(), curr_pos.y(), curr_pos.z());
     // ROS_INFO("Start attitude: roll:%5.2f, pitch:%5.2f, yaw:%5.3f",
-            //  curr_rpy.x(), curr_rpy.y(), curr_rpy.z());
+    //  curr_rpy.x(), curr_rpy.y(), curr_rpy.z());
     start_pos = target_pos;
     start_rpy = target_rpy;
-    target_pos = tf::Vector3(0,0,landing_heigth);
+    target_pos = tf::Vector3(0, 0, landing_heigth);
     target_rpy = tf::Vector3(0, 0, 0);
     gotoTarget(start_pos, start_rpy, target_pos, target_rpy, v_speed);
   }
