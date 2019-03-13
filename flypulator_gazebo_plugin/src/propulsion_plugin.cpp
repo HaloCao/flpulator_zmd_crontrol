@@ -505,6 +505,13 @@ void PropulsionPlugin::readParamsFromServer()
   }
   // ROS_DEBUG_STREAM("control joint number: " << joint_names_.size());
 
+  /*
+  for (auto i : joint_names_)
+  {
+    ROS_INFO_STREAM("test: " << i);
+  }
+  */
+
   // try to read links names from ros parameter server
   if (ros::param::get("urdf/controller_link_names", link_names_))
   {
@@ -527,6 +534,10 @@ void PropulsionPlugin::readParamsFromServer()
     ros::param::get("uav/b", b_simple_aero_);
     ros::param::get("uav/alpha", tilting_angle_);
     ros::param::get("urdf/bidirectional", bidirectional_);
+
+    // convert actuator boundaries from rpm to rad/s
+    vel_min_ *= M_PI / 30;
+    vel_max_ *= M_PI / 30;
 
     ROS_INFO_STREAM("propulsion_plugin: model parameters loaded.");
 
