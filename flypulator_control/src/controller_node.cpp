@@ -240,10 +240,9 @@ int main(int argc, char** argv)
 
   // Set up a dynamic reconfigure server following
   // https://github.com/UCSD-E4E/stingray-auv/wiki/Writing-publisher-subscriber-with-dynamic-reconfigure-and-parameter-server-(C----)
-  dynamic_reconfigure::Server<flypulator_control::ism_parameterConfig> dr_srv;
-  dynamic_reconfigure::Server<flypulator_control::ism_parameterConfig>::CallbackType cb;
-  cb = boost::bind(&BaseController::configCallback, g_drone_controller_p->getControllerReference(), _1,
-                   _2);  // set callback of controller object
+  dynamic_reconfigure::Server<flypulator_control::pid_parameterConfig> dr_srv;
+  dynamic_reconfigure::Server<flypulator_control::pid_parameterConfig>::CallbackType cb;
+  cb = boost::bind(&BaseController::configCallback, g_drone_controller_p->getControllerReference(), _1, _2);
   dr_srv.setCallback(cb);
 
   ros::spin();

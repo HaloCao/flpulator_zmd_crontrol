@@ -5,7 +5,7 @@ ControllerInterface::ControllerInterface()
 {
   // read drone parameters from ros parameter server
   readDroneParameterFromServer();
- 
+
   // read bidirectional property from ros parameter server
   use_bidirectional_propeller_ = false;
   if (ros::param::get("/controller/bidirectional", use_bidirectional_propeller_))
@@ -17,7 +17,6 @@ ControllerInterface::ControllerInterface()
     ROS_INFO("Bidirectional property cannot be read from file, take false");
   }
   ROS_DEBUG("use_bidirectional_propeller = %s", use_bidirectional_propeller_ ? "true" : "false");
-
 
   // read motor feedforward bool variable (use feedforward/dont use it)
   vel_max_ = 630.0;
@@ -43,7 +42,7 @@ ControllerInterface::ControllerInterface()
   ROS_DEBUG("use_motor_ff_control_ = %s", use_motor_ff_control_ ? "true" : "false");
 
   // read state estimation update rate, also do if boolean false to allow future dynamic reconfiguring of boolean
-  float state_estimation_sampling_time = 0.01f;
+  float state_estimation_sampling_time = 0.04f;  //
   if (ros::param::get("state_estimation/sampling_time", state_estimation_sampling_time))
   {
     ROS_DEBUG("State estimation sampling time load successfully from parameter server, sampling time = %f",
@@ -51,8 +50,7 @@ ControllerInterface::ControllerInterface()
   }
   else
   {
-    ROS_WARN("State estimation sampling time load from parameter server failed, no parameter found on "
-             "<state_estimation/sampling_time>, take default value 10ms");
+    ROS_WARN("Load sampling time failed, set to 40ms(250Hz)");
   }
   // calculate k_ff and z_p_ff, k_ff = Ts / (Ts + T_motor), z_p = T_motor / (Ts + T_motor)
   k_ff_ = state_estimation_sampling_time / (state_estimation_sampling_time + drone_parameter_["t_motor"]);
@@ -62,12 +60,12 @@ ControllerInterface::ControllerInterface()
   spinning_rates_last_ = Eigen::Matrix<float, 6, 1>::Zero();
 
   // provide mass, inertia and gravity for controller
-  float mass = (float)(drone_parameter_["mass"]);
+  float mass = float(drone_parameter_["mass"]);
   Eigen::Matrix3f inertia;
-  inertia << (float)drone_parameter_["i_xx"], 0, 0, 0, (float)drone_parameter_["i_yy"], 0, 0, 0,
-      (float)drone_parameter_["i_zz"];
+  inertia << float(drone_parameter_["i_xx"]), 0, 0, 0, float(drone_parameter_["i_yy"]), 0, 0, 0,
+      float(drone_parameter_["i_zz"]);
 
-  float gravity = (float)drone_parameter_["gravity"];
+  float gravity = float(drone_parameter_["gravity"]);
 
   // precompute mapping matrix M
   computeMappingMatrix();
@@ -75,17 +73,17 @@ ControllerInterface::ControllerInterface()
 
   // create controller object depending on desired controller type (in controller_type_, read from parameter in
   // readDroneParameterFromServer())
-  if (controller_type_.compare("ism") == 0)  // controller type ISM, create object of ism class
+  if (controller_type_.compare("pid") == 0)  // controller type ISM, create object of ism class
   {
-    controller_ = new SlidingModeController(mass, inertia, gravity);  // use new, otherwise object is destroyed after
-                                                                      // this function and pointer is a dead pointer
-                                                                      // see also
+    controller_ = new PidController(mass, inertia, gravity);  // use new, otherwise object is destroyed after
+                                                              // this function and pointer is a dead pointer
+                                                              // see also
     // https://stackoverflow.com/questions/6337294/creating-an-object-with-or-without-new?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
   }  // add other controller types here with if comparisons
   else
   {
     // Should not come here
-    ROS_ERROR("Unknown controller type in ControllerInterface class constructor, that should not happen!");
+    ROS_ERROR("Unknown controller type in ControllerInterface class constructor!");
   }
 };
 
@@ -100,32 +98,33 @@ void ControllerInterface::computeControlOutput(const PoseVelocityAcceleration& x
   mapControlForceTorqueInputToPropellerRates(x_current);
   // perform feedforward control
   if (use_motor_ff_control_)
-  motorFeedForwardControl(spinning_rates);
-  else
-      spinning_rates = spinning_rates_current_;
-  //limit spinning rate
-  for (int i = 0 ; i < 6 ; i++)
   {
-      if(spinning_rates(i, 0) > vel_max_)
-      {
-        spinning_rates(i, 0) = vel_max_;
-        ROS_INFO("Maximum positive spinrate reached");
-    } 
-      if(spinning_rates(i, 0) < -vel_max_)
-      {
-        spinning_rates(i, 0) = -vel_max_;
-        ROS_INFO("Maximum negative spinrate reached");
-    }             
-  
-  // quickfix to account for unidirectional propellers
- if (use_bidirectional_propeller_ != true && spinning_rates(i, 0)<deadband_)
-          spinning_rates(i, 0) = 0;
-
-
-
+    motorFeedForwardControl();
   }
- 
-};
+  // limit spinning rate
+  for (int i = 0; i < 6; i++)
+  {
+    if (spinning_rates_current_(i, 0) > vel_max_)
+    {
+      spinning_rates_current_(i, 0) = vel_max_;
+      ROS_WARN("Propeller[%d]: positive spinrate bound reached", i + 1);
+    }
+    if (spinning_rates_current_(i, 0) < -vel_max_)
+    {
+      spinning_rates_current_(i, 0) = -vel_max_;
+      ROS_WARN("Propeller[%d]: negative spinrate bound reached", i + 1);
+    }
+
+    // quickfix to account for unidirectional propellers
+    if ((!use_bidirectional_propeller_) && spinning_rates_current_(i, 0) < 0)
+    {
+      spinning_rates_current_(i, 0) = 0;
+      ROS_WARN("Unidirectional propeller[%d]: negative spinrate, set to 0", i + 1);
+    }
+  }
+  spinning_rates = spinning_rates_current_;        // set output
+  spinning_rates_last_ = spinning_rates_current_;  // save last value
+}
 
 void ControllerInterface::readDroneParameterFromServer()
 {
@@ -137,7 +136,7 @@ void ControllerInterface::readDroneParameterFromServer()
   else
   {  // use default parameter values
     ROS_WARN("no drone parameter available, use default values...");
-    drone_parameter_["mass"] = 10;
+    drone_parameter_["mass"] = 5;
     drone_parameter_["i_xx"] = 0.4;
     drone_parameter_["i_yy"] = 0.4;
     drone_parameter_["i_zz"] = 0.8;
@@ -175,8 +174,6 @@ void ControllerInterface::readDroneParameterFromServer()
 void ControllerInterface::mapControlForceTorqueInputToPropellerRates(const PoseVelocityAcceleration& x_current)
 {
   ROS_DEBUG("map control forces and torques to propeller rates...");
-  deadband_ = controller_->getDeadband();
-  // ROS_INFO("Deadband =  %f",deadband_);
   // [force, torqe] = ^B M * omega_spin
   // convert forces to body frame
   convert_force_part_to_b_.block(0, 0, 3, 3) = x_current.q.toRotationMatrix();
@@ -187,36 +184,25 @@ void ControllerInterface::mapControlForceTorqueInputToPropellerRates(const PoseV
   // calculate spinning rates with correct sign
   for (int i = 0; i < 6; i++)
   {
-    if (spinning_rates_current_(i, 0) >= deadband_)
+    if (spinning_rates_current_(i, 0) >= 0)
     {
-      spinning_rates_current_(i, 0) = sqrt(spinning_rates_current_(i, 0)-deadband_);
+      spinning_rates_current_(i, 0) = sqrt(spinning_rates_current_(i, 0));
     }
     else
     {
-        if (use_bidirectional_propeller_ != true) // quickfix to account for unidirectional propellers
-        {
-            ROS_INFO("Spinrates within deadband, set to zero");
-            spinning_rates_current_(i,0) = (0);    
-        }
-        else
-        {
-            spinning_rates_current_(i, 0) = -sqrt(-spinning_rates_current_(i, 0));
-        } 
-         }
+      spinning_rates_current_(i, 0) = -sqrt(-spinning_rates_current_(i, 0));
+    }
   }
-};
+}
 
 // perform feedforward control if boolean class variable use_motor_ff_control_ is true
-void ControllerInterface::motorFeedForwardControl(Eigen::Matrix<float, 6, 1>& spinning_rates)
+void ControllerInterface::motorFeedForwardControl()
 {
   // U(z) / Y(z) = k_ff * z / (z - z_p_ff); Y.. output, u.. input; -> y[k] = - z_p_ff/k_ff_ * u[k-1] + 1/k_ff * u[k]
   for (int i = 0; i < 6; i++)
   {
-      spinning_rates(i, 0) = 1 / k_ff_ * spinning_rates_current_(i, 0) - z_p_ff_ / k_ff_ * spinning_rates_last_(i, 0);
-      
-         
-       // save spinning rates in both cases for possible future dynamic reconfigure of feedforward control
-    spinning_rates_last_(i, 0) = spinning_rates_current_(i, 0);  // save last value
+    spinning_rates_current_(i, 0) =
+        1 / k_ff_ * spinning_rates_current_(i, 0) - z_p_ff_ / k_ff_ * spinning_rates_last_(i, 0);
   }
 }
 
@@ -237,9 +223,9 @@ void ControllerInterface::computeMappingMatrix()
   // compute matrix
   for (int i = 0; i < 6; i++)
   {
-    alpha = (float)drone_parameter_["alpha"] * M_PI / 180.0 * pow(-1, i);
-    beta = (float)drone_parameter_["beta"];
-    gamma = ((float)i) * M_PI / 3.0f - M_PI / 6.0f;
+    alpha = float(drone_parameter_["alpha"] * M_PI / 180.0 * pow(-1, i));
+    beta = float(drone_parameter_["beta"] * M_PI / 180.0);
+    gamma = float(i) * M_PI / 3.0f - M_PI / 6.0f;
     // compute thrust direction
     e_r = Eigen::Vector3f(cos(alpha) * sin(beta) * cos(gamma) + sin(alpha) * sin(gamma),
                           cos(alpha) * sin(beta) * sin(gamma) - sin(alpha) * cos(gamma), cos(alpha) * cos(beta));

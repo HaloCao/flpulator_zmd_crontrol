@@ -2,15 +2,11 @@
 #define SLIDING_MODE_CONTROLLER_H
 
 #include "flypulator_control/base_controller.h"
-#include <eigen3/Eigen/Dense>
+#include <flypulator_control/ism_parameterConfig.h>
 
 class SlidingModeController : public BaseController
 {
 public:
-  SlidingModeController()
-  {
-    ROS_ERROR("Sliding mode Controller, dont know why this constructor has been called");
-  };
   // initialize class variables in constructor with initialization list as best practise
   SlidingModeController(const float mass, const Eigen::Matrix3f inertia, const float gravity)
     : mass_(mass)
@@ -25,7 +21,10 @@ public:
     , s_R_I_(Eigen::Vector4f(0, 0, 0, 0))
     , u_R_I_(Eigen::Vector3f(0, 0, 0))
 
-          {};
+  {
+    // initialize t_last_ with assumed sampling time (200Hz).
+    t_last_ = ros::Time::now() - ros::Duration(0.005);
+  }
 
   // compute Control Force and Torque
   void computeControlForceTorqueInput(const PoseVelocityAcceleration& x_des, const PoseVelocityAcceleration& x_current,
@@ -95,7 +94,7 @@ private:
     {
       return -1.0f;
     }
-  };
+  }
 };
 
 #endif  // SLIDING_MODE_CONTROLLER_H
