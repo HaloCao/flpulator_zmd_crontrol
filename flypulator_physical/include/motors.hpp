@@ -26,17 +26,17 @@ class Motors
     // number of motors
     static const int N_MOTORS = 6;
     // motors' I2C address
-    uint8_t motor_i2c_addr[6] = {0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e};
+    const uint8_t motor_i2c_addr[N_MOTORS] = {0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e};
     // relationship between throttle and rpm
     // rpm = fractor_k * throttle + fractor_b
-    static constexpr float fractor_k = 30.922;
-    static constexpr float fractor_b = 122.22;
+    const float fractor_k = 30.922;
+    const float fractor_b = 122.22;
     // maximal/minimal rotational velocity(command) of the motors
-    static constexpr float MAX_MOTOR_VELOCITY = 6000;
-    static constexpr float MIN_MOTOR_VELOCITY = fractor_b + 1;
+    const float MAX_MOTOR_VELOCITY = 6000;
+    const float MIN_MOTOR_VELOCITY = fractor_b + 1;
     // maximal throttle of the ESC see: HERKULES_3_User_Manual_v040.pdf
-    static constexpr float MAX_THROTTLE = 245;
-    static constexpr float MIN_THROTTLE = 0;
+    const float MAX_THROTTLE = 245;
+    const float MIN_THROTTLE = 0;
 
 
 
