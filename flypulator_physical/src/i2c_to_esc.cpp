@@ -7,10 +7,12 @@
 #include <mutex>
 #include <algorithm>
 
+#define RADS_TO_RPM ((float)(60.0/(2*M_PI)))
+
 
 // handle for all motors
 Motors *motors_ptr;
-float g_upper_limit = 6000;
+float g_upper_limit = 6000; // [RPM]
 float g_lower_limit = 0;
 
 bool flag_in_control = false;
@@ -31,7 +33,8 @@ void controlMsgCallback(const flypulator_common_msgs::RotorVelStamped msg)
   }
 
   for (int i = 0; i < 6; ++i)
-    input[i] = std::clamp(static_cast<float>(msg.velocity[i]), g_lower_limit, g_upper_limit);
+    input[i] = std::max(g_lower_limit, std::min((float)msg.velocity[i]*RADS_TO_RPM, g_upper_limit));
+    // input[i] = std::clamp(static_cast<float>(msg.velocity[i]), g_lower_limit, g_upper_limit);
 
   motors_ptr->setMotorsVel(input);
 
@@ -82,7 +85,8 @@ void dynamicParamCallback(flypulator_mavros::offb_parameterConfig &config, uint3
     input[5] = config.motor6_speed;
 
     for (int i = 0; i < 6; ++i)
-      input[i] = std::clamp(input[i], g_lower_limit, g_upper_limit);
+      input[i] = std::max(g_lower_limit, std::min(input[i], g_upper_limit));
+      // input[i] = std::clamp(input[i], g_lower_limit, g_upper_limit);
 
     // std::lock_guard<std::mutex> lg(mutex_set_motors);
     motors_ptr->setMotorsVel(input);
