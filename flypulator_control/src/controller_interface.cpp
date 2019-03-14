@@ -154,19 +154,19 @@ void ControllerInterface::readDroneParameterFromServer()
   if (ros::param::get("/controller/type", controller_type_))
   {
     ROS_INFO("Controller type = %s", controller_type_.c_str());
-    if (!(controller_type_.compare("ism") == 0))  // add new controller types here with ||
+    if (!(controller_type_.compare("pid") == 0))  // add new controller types here with ||
                                                   // !controller_type_.equals(<newControllerTypeAsString>)
     {
-      ROS_WARN("Controller type from parameter server not known! Taking ism as default");  // add "or
+      ROS_WARN("Unknown Controller type defined in parameter server!");  // add "or
                                                                                            // <newControllerType>" for
                                                                                            // new controller type
-      controller_type_ = "ism";
+      controller_type_ = "pid";
     }
   }
   else
   {
-    ROS_WARN("Controller type could not be read from parameter server, taking ism as default");
-    controller_type_ = "ism";
+    ROS_WARN("Load controller type from parameter server failed, taking pid as default");
+    controller_type_ = "pid";
   }
 };
 

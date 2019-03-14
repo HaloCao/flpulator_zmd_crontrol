@@ -16,7 +16,8 @@ public:
     , u_R_(Eigen::Vector3f(0, 0, 0))
   {
     // initialize t_last_ with assumed sampling time (200Hz).
-    t_last_ = ros::Time::now() - ros::Duration(0.005);
+    t_last_ = ros::Time::now();
+    ROS_DEBUG("t_last initialized as %f", t_last_.toSec());
   }
 
   // compute Control Force and Torque

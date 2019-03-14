@@ -74,13 +74,8 @@ The new controller parameters are passed to the controller, which also can be wa
 
 The debug level can be changed in a GUI by running
 
-<<<<<<< HEAD
-` rosservice call /polynomial_trajectory '{x_start: [0,0,0], x_end:  [5,5,5], rpy_start: [0,0,0], rpy_end: [5,85,360], delta_t: 10}'`
-=======
-```
+
 rosrun rqt_logger_level rqt_logger_level ` or simply ` rqt_logger_level
-```
->>>>>>> trajectory_generation
 
 ## Trajectory Generator
 The Trajectory Generator is located within the `flypulator_traj_generator`-package. 
