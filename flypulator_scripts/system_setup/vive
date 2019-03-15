@@ -1,0 +1,5 @@
+Setup to use vive tracker without the USB Wireless dongle
+Make sure you are:
+- runnung the beta version
+- change "requireHmd" to false in .../SteamVR/resources/settings/default.vrsettings
+- change "hmd_presence" to "*" in ../SteamVR/drivers/htc/driver.drivermanifest  

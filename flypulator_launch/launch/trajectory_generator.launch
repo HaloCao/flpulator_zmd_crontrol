@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
 	<!-- load trajectory parametrization to parameter server-->
 	<rosparam command="load" file="$(find flypulator_traj_generator)/cfg/traj_gen_parameter.yaml" />

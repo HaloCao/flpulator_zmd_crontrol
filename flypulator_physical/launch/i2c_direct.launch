@@ -1,0 +1,4 @@
+<launch>
+
+<node name="offboard_node" pkg="flypulator_physical" type="i2c_to_esc" output="screen"></node>
+</launch>

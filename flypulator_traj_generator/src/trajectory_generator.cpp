@@ -1,3 +1,9 @@
+/**
+ * @file trajectory_generator.cpp
+ * @brief calculate trajectory
+ *
+ */
+
 #include "flypulator_traj_generator/trajectory_generator.h"
 #include <iostream>
 
@@ -59,15 +65,15 @@ bool TrajectoryGenerator::createAndSendTrajectory(
         a[dim][0] = pose_start[dim];
         a[dim][1] = 0.0f;
         a[dim][2] = 0.0f;
-        a[dim][3] = 10 * (pose_end[dim] - pose_start[dim]) / pow(duration, 3);
-        a[dim][4] = -15 * (pose_end[dim] - pose_start[dim]) / pow(duration, 4);
-        a[dim][5] = 6 * (pose_end[dim] - pose_start[dim]) / pow(duration, 5);
+        a[dim][3] = 10 * (pose_end[dim] - pose_start[dim]) / powf(duration, 3);
+        a[dim][4] = -15 * (pose_end[dim] - pose_start[dim]) / powf(duration, 4);
+        a[dim][5] = 6 * (pose_end[dim] - pose_start[dim]) / powf(duration, 5);
       }
       // ROS_INFO("Start polynomial trajectory..");
       break;
 
     default:
-      ROS_ERROR("Polynom type not well defined! Must follow enumeration");
+      ROS_ERROR("trajectory type not well defined! Must follow enumeration");
   }
 
   // retrieve simulation step size from parameter server
@@ -148,7 +154,7 @@ bool TrajectoryGenerator::createAndSendTrajectory(
   ROS_DEBUG("Start Time: %f", t.toSec());
 
   // take update rate from parameter file
-  float update_rate;
+  double update_rate;
   if (ros::param::get("/trajectory/update_rate", update_rate))
   {
     ROS_DEBUG("Update Rate = %f from parameter server", update_rate);
@@ -156,7 +162,7 @@ bool TrajectoryGenerator::createAndSendTrajectory(
   else
   {
     ROS_DEBUG("Update Rate = 10, default value (/trajectory/update_rate not available on parameter server)");
-    update_rate = 10.0f;
+    update_rate = 10.0;
   }
 
   ros::Rate r(update_rate);

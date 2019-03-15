@@ -26,30 +26,33 @@ Dont forget sourcing the setup.bash file:
 ```
 source ~/your_ws/devel/setup.bash
 ```
+or if you using Zsh:
+```
+source ~/your_ws/devel/setup.zsh
+```
 To do sourcing permanently, edit the .bashrc file with `gedit ~/.bashrc` and add the source command from above (`source ~/your_ws/devel/setup.bash`). *Note that you have to start a new terminal to apply the changes*. You can check if it has worked by trying to locate a package using `rospack find flypulator_control`.
 
 ## Gazebo simulation
 
 ### Launch:  
 
+` roslaunch flypulator_launch gazebo.launch ` 
+for old drone or
+` roslaunch flypulator_launch gazebo_hexatilt.launch ` 
+for the new model includes aerodynamics, fake sensor plugin & parameters.
+
+
+The model parameters of the hexarotor are defined in the file `drone_parameter_igs.yaml` or `drone_parameter.yaml` located at `.../flypulator/flypulator_description/param/`. They will be loaded to ROS parameter server using the provided launchfile `gazebo.launch` as well. A manual loading to the server can be performed using the following command:
+
 ```
-roslaunch flypulator_launch gazebo.launch 
-```
-
-includes aerodynamics, fake sensor plugin & parameters.
-
-
-The model parameters of the hexarotor are defined in the file `drone_parameter_igs.yaml` located at `.../flypulator/flypulator_description/param/`. They will be loaded to ROS parameter server using the provided launchfile `gazebo.launch` as well. A manual loading to the server can be performed using the following command: 
-
-```
-rosparam load flypulator_ws/src/flypulator/flypulator_description/param/drone_parameter_igs.yaml
+rosparam load flypulator_ws/src/flypulator/flypulator_description/param/[drone_parameter_igs.yaml|drone_parameter.yaml]
 ```
 
 ### Check tf in rviz: 
 roslaunch flypulator_description display.launch
 
 ## Controller
-The controller package (flypulator_control) provides a sliding mode controller for a fully actuated hexarotor. .
+The controller package (flypulator_control) provides a sliding mode controller and a PID controller with feedback linearization for a fully actuated hexarotor. .
 
 ### Start
 
@@ -71,9 +74,8 @@ The new controller parameters are passed to the controller, which also can be wa
 
 The debug level can be changed in a GUI by running
 
-```
+
 rosrun rqt_logger_level rqt_logger_level ` or simply ` rqt_logger_level
-```
 
 ## Trajectory Generator
 The Trajectory Generator is located within the `flypulator_traj_generator`-package. 

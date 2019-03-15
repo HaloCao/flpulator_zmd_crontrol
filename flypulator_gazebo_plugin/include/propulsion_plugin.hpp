@@ -122,11 +122,11 @@ private:
   std::vector<std::string> link_names_;   // link names of propeller
   // if the rotor vel smaller than 325, we will get negativ CT and moment,
   // caused by the aero dynamic eq.(Hiller's 4.57)
-  double vel_min_;                            // min rotor speed
-  double vel_max_;                            // max rotor speed
+  double vel_min_;                            // min rotor speed [rad/s]
+  double vel_max_;                            // max rotor speed [rad/s]
   std::map<std::string, double> aero_param_;  // map of aerodynamic parameters
-  double k_simple_aero_;
-  double b_simple_aero_;
+  double k_simple_aero_;                      //[N/(rad/s)^2]
+  double b_simple_aero_;                      //[Nm/(rad/s)^2]
 
   double uav_mass_;             // drone mass
   double tilting_angle_;        // [degree] rotor tilting angle along arm axis

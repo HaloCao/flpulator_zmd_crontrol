@@ -1,8 +1,9 @@
 #ifndef BASE_CONTROLLER_H
 #define BASE_CONTROLLER_H
 
-#include <flypulator_control/ism_parameterConfig.h>
+#include <ros/ros.h>
 #include <eigen3/Eigen/Dense>
+#include "flypulator_control/pid_parameterConfig.h"
 
 struct PoseVelocityAcceleration
 {
@@ -19,7 +20,9 @@ struct PoseVelocityAcceleration
     , p_dot(Eigen::Vector3f(0, 0, 0))
     , omega(Eigen::Vector3f(0, 0, 0))
     , p_ddot(Eigen::Vector3f(0, 0, 0))
-    , omega_dot(Eigen::Vector3f(0, 0, 0)){};
+    , omega_dot(Eigen::Vector3f(0, 0, 0))
+  {
+  }
   void printToROSINFO()
   {
     ROS_INFO("pose: \n \t x \t\t = [%f, %f, %f], \n \t x_dot \t\t = [%f, %f, %f], \n \t x_ddot \t = [%f, %f, %f], \n "
@@ -28,19 +31,20 @@ struct PoseVelocityAcceleration
              q.y(), q.z(), omega.x(), omega.y(), omega.z(), omega_dot.x(), omega_dot.y(), omega_dot.z());
   }
 };
-
 // Abstract class, no objects from this class allowed, following http://cpp.nope.bz/pure_virtual.html
 // Superclass for all controller types
 class BaseController
 {
 public:
-  virtual ~BaseController(){};
+  virtual ~BaseController()
+  {
+  }
   // compute Control Force and Torque
   virtual void computeControlForceTorqueInput(const PoseVelocityAcceleration& x_des,
                                               const PoseVelocityAcceleration& x_current,
                                               Eigen::Matrix<float, 6, 1>& control_force_and_torque) = 0;
   // callback for dynamic reconfigure, sets dynamic parameters (controller gains)
-  virtual void configCallback(flypulator_control::ism_parameterConfig& config, uint32_t level) = 0;
+  virtual void configCallback(flypulator_control::pid_parameterConfig& config, uint32_t level) = 0;
 };
 
 #endif  // BASE_CONTROLLER_H

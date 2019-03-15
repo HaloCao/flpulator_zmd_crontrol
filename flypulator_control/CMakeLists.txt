@@ -91,6 +91,7 @@ find_package(Eigen3 REQUIRED)
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
 generate_dynamic_reconfigure_options(
   cfg/ism_parameter.cfg
+  cfg/pid_parameter.cfg
 )
 
 ###################################
@@ -137,7 +138,7 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/controller_node_node.cpp)
 
-add_executable(controller_node src/controller_node.cpp src/controller_interface.cpp src/sliding_mode_controller.cpp)
+add_executable(controller_node src/controller_node.cpp src/controller_interface.cpp src/pid_controller.cpp)
 
 #add_executable(controller_node src/controller_node.cpp src/sliding_mode_controller.cpp)
 

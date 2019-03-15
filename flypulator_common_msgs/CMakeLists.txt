@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8.3)
 project(flypulator_common_msgs)
 
 find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  rospy
   std_msgs
   sensor_msgs
   geometry_msgs
@@ -12,6 +14,9 @@ add_message_files(FILES
   RotorVelStamped.msg
   Vector6dMsg.msg
   UavStateStamped.msg
+  PoseXYZRPYStamped.msg
+  UavStateRPYStamped.msg
+  DelayStamped.msg
 )
 
 generate_messages(DEPENDENCIES std_msgs sensor_msgs geometry_msgs)

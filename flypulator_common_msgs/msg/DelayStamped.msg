@@ -1,0 +1,10 @@
+std_msgs/Header header
+
+float32 trajToDesiredPose
+float32 desiredPoseToWrench
+float32 wrenchToRotorCmd
+float32 rotorCmdToActuatorCmd
+float32 actuatorCmdToPwm
+float32 desiredPoseToPwm
+
+

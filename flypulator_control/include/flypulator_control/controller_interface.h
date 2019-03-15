@@ -1,17 +1,13 @@
 #ifndef CONTROLLER_INTERFACE_H
 #define CONTROLLER_INTERFACE_H
 
-#include "ros/ros.h"
-
-#include <eigen3/Eigen/Dense>
-
 // include controller classes
 #include "base_controller.h"
-#include "flypulator_control/sliding_mode_controller.h"
+//#include "flypulator_control/sliding_mode_controller.h"
+#include "flypulator_control/pid_controller.h"
 
 // dynamic reconfigure includes
 #include <dynamic_reconfigure/server.h>
-#include <flypulator_control/ism_parameterConfig.h>
 
 // include message structs
 #include "geometry_msgs/Transform.h"
@@ -35,15 +31,18 @@ public:
     return controller_;
   }
 
+  // return the control force and torque
+  Eigen::Matrix<float, 6, 1> getControlWrench();
+
 private:
   // read uav parameter from ros parameter server
-  void readDroneParameterFromServer();
+  void readParameterFromServer();
   // map control forces and torques to propeller spinning rates
   void mapControlForceTorqueInputToPropellerRates(const PoseVelocityAcceleration& x_current);
   // compute mapping matrix from spinning rates to forces/torques
   void computeMappingMatrix();
   // perform feedforward-control
-  void motorFeedForwardControl(Eigen::Matrix<float, 6, 1>& spinning_rates);
+  void motorFeedForwardControl();
 
   // map of drone parameters
   std::map<std::string, double> drone_parameter_;
@@ -68,6 +67,8 @@ private:
   float z_p_ff_;
   // use feedforward control parameter
   bool use_motor_ff_control_;
+  bool use_bidirectional_propeller_;
+  float vel_max_;
 };
 
 #endif  // CONTROLLER_INTERFACE_H

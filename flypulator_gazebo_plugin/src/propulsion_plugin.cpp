@@ -17,14 +17,14 @@ PropulsionPlugin::PropulsionPlugin()
   use_ground_effect_ = false;
   use_motor_dynamic_ = true;
   use_simple_aerodynamic_ = true;
-  add_dist_ = true;
+  add_dist_ = false;
   distforce_ = ignition::math::Vector3<double>(0, 0, 0);
   // if the rotor vel smaller than 325, we will get negativ CT and moment,
   // caused by the aero dynamic eq.(Hiller's 4.57)
   vel_min_ = 0.01;
   vel_max_ = 100000;
-  k_simple_aero_ = 0.0138;
-  b_simple_aero_ = 0.00022;
+  k_simple_aero_ = 0.0000427;
+  b_simple_aero_ = 0.0000022;
   tilting_angle_ = 13.6;
   bidirectional_ = true;
 
@@ -161,7 +161,7 @@ void PropulsionPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   // This event is broadcast every simulation iteration.
   this->updateConnection_ = event::Events::ConnectWorldUpdateBegin(boost::bind(&PropulsionPlugin::onUpdate, this, _1));
 
-  ROS_INFO_STREAM("PropulsionPlugin Loaded !");
+  ROS_INFO("Loading PropulsionPlugin finished successfully!");
 }
 
 void PropulsionPlugin::onUpdate(const common::UpdateInfo &_info)  // update rate = 1kHz
@@ -497,17 +497,13 @@ void PropulsionPlugin::readParamsFromServer()
     {
       ROS_DEBUG_STREAM("propulsion_plugin: loaded control joint names : " << i);
     }
-    ROS_INFO_STREAM("propulsion_plugin: joint names loaded.");
+    ROS_INFO("propulsion_plugin: joint names loaded.");
   }
   else
   {
-    ROS_ERROR_STREAM("Can't load joint names from parameter server!");
+    ROS_ERROR("Load joint names from parameter server failed!");
   }
   // ROS_DEBUG_STREAM("control joint number: " << joint_names_.size());
-  for (auto i : joint_names_)
-  {
-    ROS_INFO_STREAM("test: " << i);
-  }
 
   // try to read links names from ros parameter server
   if (ros::param::get("urdf/controller_link_names", link_names_))
@@ -516,11 +512,11 @@ void PropulsionPlugin::readParamsFromServer()
     {
       ROS_DEBUG_STREAM("propulsion_plugin: loaded control link names : " << i);
     }
-    ROS_INFO_STREAM("propulsion_plugin: link names loaded.");
+    ROS_INFO("propulsion_plugin: link names loaded.");
   }
   else
   {
-    ROS_ERROR_STREAM("Can't load link names from parameter server!");
+    ROS_ERROR("Load link names from parameter server failed!");
   }
 
   // try to read model parameter from ros parameter server
@@ -536,23 +532,25 @@ void PropulsionPlugin::readParamsFromServer()
     vel_min_ *= M_PI / 30;
     vel_max_ *= M_PI / 30;
 
-    ROS_INFO_STREAM("propulsion_plugin: model parameters loaded.");
+    ROS_INFO("propulsion_plugin: drone parameters loaded.");
 
-    ROS_DEBUG_STREAM("propulsion_plugin: uav/rotor_vel_min: " << vel_min_);
-    ROS_DEBUG_STREAM("propulsion_plugin: uav/rotor_vel_max: " << vel_max_);
-    ROS_DEBUG_STREAM("propulsion_plugin: uav/k: " << k_simple_aero_);
-    ROS_DEBUG_STREAM("propulsion_plugin: uav/b: " << b_simple_aero_);
-    ROS_DEBUG_STREAM("propulsion_plugin: uav/alpha: " << tilting_angle_);
+    ROS_DEBUG_STREAM("propulsion_plugin: uav/rotor_vel_min: " << vel_min_ << " rad/s");
+    ROS_DEBUG_STREAM("propulsion_plugin: uav/rotor_vel_max: " << vel_max_ << " rad/s");
+    ROS_DEBUG_STREAM("propulsion_plugin: uav/k: " << k_simple_aero_ << " N/(rad/s)^2");
+    ROS_DEBUG_STREAM("propulsion_plugin: uav/b: " << b_simple_aero_ << " N/(rad/s)^2");
+    ROS_DEBUG_STREAM("propulsion_plugin: uav/alpha: " << tilting_angle_ << " degree");
     ROS_DEBUG_STREAM("propulsion_plugin: uav/bidirectional: " << bidirectional_);
-    for (auto elem : aero_param_)
-    {
-      ROS_DEBUG_STREAM("propulsion_plugin: aeroparam/" << elem.first << ": " << elem.second);
-    }
   }
   else
   {
-    ROS_WARN_STREAM("No model parameters availiable, use default values...");
+    ROS_WARN("No model parameters availiable, use default values...");
     // default values in constructor
+    ROS_INFO_STREAM("propulsion_plugin: uav/rotor_vel_min: " << vel_min_ << " rad/s");
+    ROS_INFO_STREAM("propulsion_plugin: uav/rotor_vel_max: " << vel_max_ << " rad/s");
+    ROS_INFO_STREAM("propulsion_plugin: uav/k: " << k_simple_aero_ << " N/(rad/s)^2");
+    ROS_INFO_STREAM("propulsion_plugin: uav/b: " << b_simple_aero_ << " N/(rad/s)^2");
+    ROS_INFO_STREAM("propulsion_plugin: uav/alpha: " << tilting_angle_ << " degree");
+    ROS_INFO_STREAM("propulsion_plugin: uav/bidirectional: " << bidirectional_);
   }
 
   // try to read simulation configuration from ros parameter server
@@ -567,11 +565,22 @@ void PropulsionPlugin::readParamsFromServer()
     ros::param::get("sim/use_simple_aerodynamic", use_simple_aerodynamic_);
     ros::param::get("sim/add_dist", add_dist_);
 
-    ROS_INFO_STREAM("propulsion_plugin: simulation configuration loaded.");
+    ROS_INFO("propulsion_plugin: simulation setting loaded.");
+
+    ROS_DEBUG_STREAM("propulsion_plugin: sim/add_wrench_to_drone:" << add_wrench_to_drone_);
+    ROS_DEBUG_STREAM("propulsion_plugin: sim/use_ground_effect:" << use_ground_effect_);
+    ROS_DEBUG_STREAM("propulsion_plugin: sim/use_motor_dynamic:" << use_motor_dynamic_);
+    ROS_DEBUG_STREAM("propulsion_plugin: sim/use_simple_aerodynamic:" << use_simple_aerodynamic_);
+    ROS_DEBUG_STREAM("propulsion_plugin: sim/add_dist:" << add_dist_);
   }
   else
   {
-    ROS_WARN_STREAM("No simulation configuration availiable, use default values...");
+    ROS_WARN_STREAM("Load simulation setting failed, use default values...");
+    ROS_INFO_STREAM("propulsion_plugin: sim/add_wrench_to_drone:" << add_wrench_to_drone_);
+    ROS_INFO_STREAM("propulsion_plugin: sim/use_ground_effect:" << use_ground_effect_);
+    ROS_INFO_STREAM("propulsion_plugin: sim/use_motor_dynamic:" << use_motor_dynamic_);
+    ROS_INFO_STREAM("propulsion_plugin: sim/use_simple_aerodynamic:" << use_simple_aerodynamic_);
+    ROS_INFO_STREAM("propulsion_plugin: sim/add_dist:" << add_dist_);
   }
 }
 
