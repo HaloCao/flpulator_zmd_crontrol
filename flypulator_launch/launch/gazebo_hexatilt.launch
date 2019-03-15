@@ -9,7 +9,7 @@
 
 
 
- <rosparam command="load" file="$(find flypulator_description)/param/state_estimation_param.yaml" />
+ <rosparam command="load" file="$(find flypulator_gazebo_plugin)/cfg/state_estimation_param.yaml" />
  <rosparam command="load" file="$(find flypulator_description)/param/drone_parameter.yaml" />
  <rosparam command="load" file="$(find flypulator_description)/param/aero_param.yaml" />
  <rosparam command="load" file="$(find flypulator_gazebo_plugin)/cfg/sim_parameter.yaml" />

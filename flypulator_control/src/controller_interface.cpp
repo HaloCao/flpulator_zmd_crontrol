@@ -3,60 +3,37 @@
 // constructor
 ControllerInterface::ControllerInterface()
 {
-  // read drone parameters from ros parameter server
-  readDroneParameterFromServer();
-
-  // read bidirectional property from ros parameter server
+  // default setting
   use_bidirectional_propeller_ = false;
-  if (ros::param::get("/controller/bidirectional", use_bidirectional_propeller_))
-  {
-    ROS_DEBUG("Bidirectional parameter read from file");
-  }
-  else
-  {
-    ROS_INFO("Bidirectional property cannot be read from file, take false");
-  }
-  ROS_DEBUG("use_bidirectional_propeller = %s", use_bidirectional_propeller_ ? "true" : "false");
-
-  // read motor feedforward bool variable (use feedforward/dont use it)
-  vel_max_ = 630.0;
-  if (ros::param::get("/controller/rotor_vel_max", vel_max_))
-  {
-    ROS_DEBUG("Maximum rotor velocity read from file");
-  }
-  else
-  {
-    ROS_INFO("Maximum rotor velocity cannot be read from file");
-  }
-
-  // read motor feedforward bool variable (use feedforward/dont use it)
   use_motor_ff_control_ = false;
-  if (ros::param::get("/controller/use_motor_ff", use_motor_ff_control_))
-  {
-    ROS_DEBUG("Feedforward control read boolean read from file");
-  }
-  else
-  {
-    ROS_INFO("Feedforward control cannot be read boolean from file, take false");
-  }
-  ROS_DEBUG("use_motor_ff_control_ = %s", use_motor_ff_control_ ? "true" : "false");
+  controller_type_ = "pid";
+
+  // read parameters from ros parameter server
+  readParameterFromServer();
+
+  // convert max rotor velocity from rpm to rad/s, 2*PI/60
+  vel_max_ = float(drone_parameter_["rotor_vel_max"] * M_PI / 30);
+  ROS_DEBUG_STREAM("Maximum rotor velocity: " << vel_max_ << " rad/s");
 
   // read state estimation update rate, also do if boolean false to allow future dynamic reconfiguring of boolean
-  float state_estimation_sampling_time = 0.04f;  //
+  float state_estimation_sampling_time = 0.05f;  // 200 Hz
+  // TODO: state_estimation.yaml is actually only for gazebo, how to get the actual estimation?
   if (ros::param::get("state_estimation/sampling_time", state_estimation_sampling_time))
   {
-    ROS_DEBUG("State estimation sampling time load successfully from parameter server, sampling time = %f",
-              state_estimation_sampling_time);
+    ROS_INFO("State estimation update rate: %f", 1.0 / double(state_estimation_sampling_time));
   }
   else
   {
-    ROS_WARN("Load sampling time failed, set to 40ms(250Hz)");
+    ROS_WARN("Load sampling time failed, set to 50ms (200Hz)");
   }
-  // calculate k_ff and z_p_ff, k_ff = Ts / (Ts + T_motor), z_p = T_motor / (Ts + T_motor)
-  k_ff_ = state_estimation_sampling_time / (state_estimation_sampling_time + drone_parameter_["t_motor"]);
-  z_p_ff_ = drone_parameter_["t_motor"] / (state_estimation_sampling_time + drone_parameter_["t_motor"]);
-  ROS_INFO("k_ff_ = %f, z_p_ff_ = %f", k_ff_, z_p_ff_);
 
+  // calculate k_ff and z_p_ff, k_ff = Ts / (Ts + T_motor), z_p = T_motor / (Ts + T_motor)
+  k_ff_ = state_estimation_sampling_time / (state_estimation_sampling_time + float(drone_parameter_["t_motor"]));
+  z_p_ff_ = float(drone_parameter_["t_motor"]) / (state_estimation_sampling_time + float(drone_parameter_["t_motor"]));
+  ROS_DEBUG_STREAM("k_ff = " << k_ff_ << ", "
+                             << " z_p_ff = " << z_p_ff_);
+
+  // initialized last rotor velocity with zero, right?
   spinning_rates_last_ = Eigen::Matrix<float, 6, 1>::Zero();
 
   // provide mass, inertia and gravity for controller
@@ -73,7 +50,7 @@ ControllerInterface::ControllerInterface()
 
   // create controller object depending on desired controller type (in controller_type_, read from parameter in
   // readDroneParameterFromServer())
-  if (controller_type_.compare("pid") == 0)  // controller type ISM, create object of ism class
+  if (controller_type_.compare("pid") == 0)  // controller type PID, create object of PidController class
   {
     controller_ = new PidController(mass, inertia, gravity);  // use new, otherwise object is destroyed after
                                                               // this function and pointer is a dead pointer
@@ -106,32 +83,33 @@ void ControllerInterface::computeControlOutput(const PoseVelocityAcceleration& x
   {
     if (spinning_rates_current_(i, 0) > vel_max_)
     {
+      ROS_WARN("Propeller[%d]: positive max spinrate reached with %f rad/s", i + 1, spinning_rates_current_(i, 0));
       spinning_rates_current_(i, 0) = vel_max_;
-      ROS_WARN("Propeller[%d]: positive spinrate bound reached", i + 1);
     }
     if (spinning_rates_current_(i, 0) < -vel_max_)
     {
+      ROS_WARN("Propeller[%d]: negative max spinrate reached with %f rad/s", i + 1, spinning_rates_current_(i, 0));
       spinning_rates_current_(i, 0) = -vel_max_;
-      ROS_WARN("Propeller[%d]: negative spinrate bound reached", i + 1);
     }
 
     // quickfix to account for unidirectional propellers
     if ((!use_bidirectional_propeller_) && spinning_rates_current_(i, 0) < 0)
     {
+      ROS_WARN("Unidirectional propeller[%d]: negative spinrate %f rad/s, set to 0", i + 1,
+               spinning_rates_current_(i, 0));
       spinning_rates_current_(i, 0) = 0;
-      ROS_WARN("Unidirectional propeller[%d]: negative spinrate, set to 0", i + 1);
     }
   }
   spinning_rates = spinning_rates_current_;        // set output
   spinning_rates_last_ = spinning_rates_current_;  // save last value
 }
 
-void ControllerInterface::readDroneParameterFromServer()
+void ControllerInterface::readParameterFromServer()
 {
-  // try to load parameter from ros parameter server
+  // try to load parameter from ros parameter server, parameters on server should already be printed by launch
   if (ros::param::get("/uav", drone_parameter_))
   {
-    ROS_DEBUG("Drone parameter load successfully from parameter server");
+    ROS_INFO("Load drone parameter successfully from parameter server");
   }
   else
   {  // use default parameter values
@@ -140,33 +118,62 @@ void ControllerInterface::readDroneParameterFromServer()
     drone_parameter_["i_xx"] = 0.4;
     drone_parameter_["i_yy"] = 0.4;
     drone_parameter_["i_zz"] = 0.8;
-    drone_parameter_["alpha"] = 0.7854;
-    drone_parameter_["beta"] = 0;
+    drone_parameter_["alpha"] = 30;  //[degree]
+    drone_parameter_["beta"] = 0;    //[degree]
     drone_parameter_["delta_h"] = 0;
     drone_parameter_["length"] = 0.5;
     drone_parameter_["gravity"] = 9.81;
     drone_parameter_["k"] = 0.000056;
     drone_parameter_["b"] = 0.0000011;
     drone_parameter_["t_motor"] = 0.05;
+    drone_parameter_["rotor_vel_min"] = 0;
+    drone_parameter_["rotor_vel_max"] = 5700;  // [rpm]
+    // print drone parameter if not available on parameter server
+    for (auto elem : drone_parameter_)
+    {
+      ROS_INFO_STREAM("/uav/" << elem.first << ": " << elem.second);
+    }
   }
 
-  // get controller type and ensure valid type ("ism" or ...)
+  // read bidirectional property from ros parameter server
+  if (ros::param::get("/urdf/bidirectional", use_bidirectional_propeller_))
+  {
+    // ROS_INFO("Propellers: %s", use_bidirectional_propeller_ ? "bidirectional" : "unidirectional");
+    ROS_INFO("Load propeller directional property successfully from parameter server");
+  }
+  else
+  {
+    ROS_WARN("Load propeller property failed, default: unidirectional");
+  }
+
+  // read motor feedforward bool variable (use feedforward/dont use it)
+
+  if (ros::param::get("/controller/use_motor_ff", use_motor_ff_control_))
+  {
+    // ROS_INFO("Motor feedforward: %s", use_bidirectional_propeller_ ? "enabled" : "disabled");
+    ROS_INFO("Load motor feedforward setting successfully from paramter server");
+  }
+  else
+  {
+    ROS_WARN("Load rotor feedforward setting failed, default: disabled");
+  }
+
+  // get controller type and ensure valid type ("ism" or "pid")
   if (ros::param::get("/controller/type", controller_type_))
   {
     ROS_INFO("Controller type = %s", controller_type_.c_str());
     if (!(controller_type_.compare("pid") == 0))  // add new controller types here with ||
                                                   // !controller_type_.equals(<newControllerTypeAsString>)
     {
-      ROS_WARN("Unknown Controller type defined in parameter server!");  // add "or
-                                                                                           // <newControllerType>" for
-                                                                                           // new controller type
+      ROS_WARN("Unknown controller type loaded from parameter server, reset to pid");  // add "or
+                                                                                       // <newControllerType>" for
+                                                                                       // new controller type
       controller_type_ = "pid";
     }
   }
   else
   {
-    ROS_WARN("Load controller type from parameter server failed, taking pid as default");
-    controller_type_ = "pid";
+    ROS_WARN("Load controller type from parameter server failed, default: pid");
   }
 };
 
@@ -216,16 +223,16 @@ void ControllerInterface::computeMappingMatrix()
   Eigen::Vector3f e_r;   // thrust direction
   Eigen::Vector3f mom;   // drag + thrust torque
   Eigen::Vector3f r_ti;  // vector from COM to i-th rotor
-  float k = (float)drone_parameter_["k"];
-  float b = (float)drone_parameter_["b"];
-  float l = (float)drone_parameter_["length"];
-  float dh = (float)drone_parameter_["delta_h"];
+  float k = float(drone_parameter_["k"]);
+  float b = float(drone_parameter_["b"]);
+  float l = float(drone_parameter_["length"]);
+  float dh = float(drone_parameter_["delta_h"]);
   // compute matrix
   for (int i = 0; i < 6; i++)
   {
     alpha = float(drone_parameter_["alpha"] * M_PI / 180.0 * pow(-1, i));
     beta = float(drone_parameter_["beta"] * M_PI / 180.0);
-    gamma = float(i) * M_PI / 3.0f - M_PI / 6.0f;
+    gamma = float(i * M_PI / 3.0) - float(M_PI / 6.0);
     // compute thrust direction
     e_r = Eigen::Vector3f(cos(alpha) * sin(beta) * cos(gamma) + sin(alpha) * sin(gamma),
                           cos(alpha) * sin(beta) * sin(gamma) - sin(alpha) * cos(gamma), cos(alpha) * cos(beta));

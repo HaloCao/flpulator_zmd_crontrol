@@ -1,3 +1,19 @@
+## flypulator_launch 2.0.0
+split controller.launch for simulation and real hardware, since for hw more parameters have to be loaded.
+move state estimation parameters to  gazebo_plugin package, since it is for FakeSensorPlugin.
+
+## flypulator_traj_generator 1.0.0
+generate feasible traj to avoid predictable input saturation
+
+## flypulator_control 2.0.0
+change to PID control
+
+## flypulator_gazebo_plugin 2.2.1
+optimize printed messages.
+
+## flypulator_physical 2.0.0
+add i2c adapter
+
 ## flypulator_gazebo_plugin 2.2.0
 code refactor, simple aerodynamics as default because of faulty aerodynamic model.
 

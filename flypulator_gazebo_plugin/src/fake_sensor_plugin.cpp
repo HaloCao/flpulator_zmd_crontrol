@@ -99,7 +99,7 @@ public:
 public:
   virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   {
-    ROS_INFO_STREAM("Loading FakeSensorPlugin ...");
+    ROS_INFO("Loading FakeSensorPlugin ...");
     if (_model->GetJointCount() == 0)
     {
       ROS_ERROR("Invalid joint count, plugin not loaded");
@@ -121,7 +121,7 @@ public:
     // https://stackoverflow.com/questions/36289180/boostrandomvariate-generator-change-parameters-after-construction
     if (ros::param::get("state_estimation/three_sigma_p", three_sigma_p))
     {
-      ROS_DEBUG("Three_sigma_p load successfully from parameter server");
+      ROS_DEBUG_STREAM("sensor_plugin: three_sigma_position: " << three_sigma_p << " m");
       boost::normal_distribution<> new_dist(0, three_sigma_p / 3.0f);
       g_noise_generator_x.distribution() = new_dist;
       g_noise_generator_y.distribution() = new_dist;
@@ -129,7 +129,7 @@ public:
     }
     if (ros::param::get("state_estimation/three_sigma_v", three_sigma_v))
     {
-      ROS_DEBUG("Three_sigma_v load successfully from parameter server");
+      ROS_DEBUG_STREAM("sensor_plugin: three_sigma_vel: " << three_sigma_v << " m/s");
       boost::normal_distribution<> new_dist(0, three_sigma_v / 3.0f);
       g_noise_generator_v_x.distribution() = new_dist;
       g_noise_generator_v_y.distribution() = new_dist;
@@ -137,7 +137,7 @@ public:
     }
     if (ros::param::get("state_estimation/three_sigma_phi", three_sigma_phi))
     {
-      ROS_DEBUG("Three_sigma_phi load successfully from parameter server");
+      ROS_DEBUG_STREAM("sensor_plugin: three_sigma_angle: " << three_sigma_phi << " degree");
       boost::normal_distribution<> new_dist(0, three_sigma_phi * M_PI / 180.0f / 3.0f);
       g_noise_generator_roll.distribution() = new_dist;
       g_noise_generator_pitch.distribution() = new_dist;
@@ -145,7 +145,7 @@ public:
     }
     if (ros::param::get("state_estimation/three_sigma_omega", three_sigma_omega))
     {
-      ROS_DEBUG("Three_sigma_omega load successfully from parameter server");
+      ROS_DEBUG_STREAM("sensor_plugin: three_sigma_omega: " << three_sigma_omega << " degree/s");
       boost::normal_distribution<> new_dist(0, three_sigma_omega * M_PI / 180.0f / 3.0f);
       g_noise_generator_om_x.distribution() = new_dist;
       g_noise_generator_om_y.distribution() = new_dist;
@@ -155,13 +155,13 @@ public:
     float sampling_time;
     if (ros::param::get("state_estimation/sampling_time", sampling_time))
     {
-      ROS_INFO("sampling time load successfully from parameter server");
+      ROS_DEBUG_STREAM("sensor_plugin: update rate: " << (1 / sampling_time) << " Hz");
       g_output_rate_divider = (int)(sampling_time * 1000.0);  // convert sampling time to divider
     }
     int nr_of_msg_delay;
     if (ros::param::get("state_estimation/nr_of_msg_delay", nr_of_msg_delay))
     {
-      ROS_INFO("nr of message delay load successfully from parameter server");
+      ROS_DEBUG_STREAM("sensor_plugin: delay (msg number): " << nr_of_msg_delay);
       size_of_queue = nr_of_msg_delay;
     }
 
@@ -181,7 +181,7 @@ public:
     }
     // Create our ROS node.
     this->rosNode.reset(new ros::NodeHandle("gazebo_client"));
-    ROS_INFO_STREAM("fake_sensor_plugin get node:" << this->rosNode->getNamespace());
+    ROS_INFO_STREAM("fake_sensor_plugin get node: " << this->rosNode->getNamespace());
 
     // real states of the drone
     this->pub_real_state = this->rosNode->advertise<flypulator_common_msgs::UavStateStamped>("/drone/real_state", 100);
@@ -196,7 +196,7 @@ public:
     // TODO: the callback should connect to WorldUpdateEnd signal not Begin
     this->updateConnection = event::Events::ConnectWorldUpdateBegin(boost::bind(&FakeSensorPlugin::OnUpdate, this, _1));
 
-    ROS_INFO_STREAM("FakeSensorPlugin Loaded !");
+    ROS_INFO("Loading FakeSensorPlugin finished successfully!");
   }
 
   // publish drone state
@@ -213,7 +213,7 @@ public:
       if (is_initialized == false)
       {
         offset_z = this->link0->WorldPose().Pos().Z();
-        ROS_DEBUG("offset_z: %f", offset_z);
+        ROS_DEBUG_STREAM("sensor_plugin: offset_z: " << offset_z << " m");
         is_initialized = true;
       }
       ignition::math::Pose3d drone_pose = this->link0->WorldPose();

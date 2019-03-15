@@ -36,7 +36,7 @@ public:
 
 private:
   // read uav parameter from ros parameter server
-  void readDroneParameterFromServer();
+  void readParameterFromServer();
   // map control forces and torques to propeller spinning rates
   void mapControlForceTorqueInputToPropellerRates(const PoseVelocityAcceleration& x_current);
   // compute mapping matrix from spinning rates to forces/torques

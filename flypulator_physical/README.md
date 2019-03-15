@@ -10,6 +10,9 @@ sudo apt install vinagre
 ```
 Add the following to your /etc/hosts:
 10.42.0.1 flypulator
+
+Add the IP of your ground PC to flypulator /etc/hosts:
+xx.xx.xx.xx <PC_Name>
 ### Connect to Flypulator WiFi and start SSH session
 Connect to Flypulator WIFI:
 - Network name: flypulator
@@ -45,27 +48,27 @@ On the Ground PC:
 ### Start SteamVR
 open a terminal in the remote desktop. Type:
 ```
-steamVR
+steamvr
 ```
 observe that the tracker and the two lighthouses are marked green.
 ### ROS setup
 
-On the Flypulator: (open four windows in the ssh session with tmux and launch one node in each window)
+On the Flypulator: (open severial windows in the ssh session with tmux and launch one node in each window)
 ```
 roscore
 
-roslaunch flypulator_vive_pose vive_pose.launch
+roslaunch flypulator_vive_pose vive_pose.launch // initialize VIVE system
 
-roslaunch flypulator_physical i2c_direct.launch
+roslaunch flypulator_physical i2c_direct.launch // for I2C connection to ESC
 
-roslaunch flypulator_launch controller.launch
 ```
+Now you can launch controller and trajectory generator as described in other readme files.
 
 On the Ground PC
 ```
 export ROS_MASTER_URI=http://flypulator:11311
 
-rqt
+rqt // GUI for ROS interaction
 ```
 
 
