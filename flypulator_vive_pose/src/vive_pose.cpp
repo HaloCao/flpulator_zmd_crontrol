@@ -25,7 +25,7 @@ struct T_TWIST
 // ros::Publisher pub_angular_acc_tracker;
 ros::Publisher pub_uav_state;
 ros::Publisher pub_uav_state_rpy;  // publish orientation in rpy representation
-ros::Publisher pub_tracker_state_rpy;  // publish tracker orientation and position in rpy representation
+// ros::Publisher pub_tracker_state_rpy;  // publish tracker orientation and position in rpy representation
 
 /**
  * Frame abbreviation
@@ -154,7 +154,7 @@ void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
   // get pose with reference to the inital coordinate(initial pose)
   geometry_msgs::PoseStamped pub_pose;
   tf::Transform T_out = T_WL * T_LS * T_S_B;  // body pose w.r.t. drone's world
-  tf::Transform T_in = T_WL * T_LS;           // tracker pose w.r.t. drone's world
+  // tf::Transform T_in = T_WL * T_LS;           // tracker pose w.r.t. drone's world
   // pub_pose.header.stamp = msg->header.stamp;
   // pub_pose.header.frame_id = world_id;
   // pub_pose.pose.position.x = T_out.getOrigin().getX();
@@ -176,6 +176,12 @@ void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
   {
     ROS_ERROR("vivo_pose: non-positive, delta t = %f !!!", delta_t);
   }
+  // check if delta t exceed limit
+  if (delta_t > 0.05)
+  {
+    delta_t = 0.05;
+  }
+
   // transfrom twist into inital coordinate
   linear_vel = msg->twist.twist.linear;
   // linear_vel = rotVect3(linear_vel, T_WL.getRotation());
@@ -211,7 +217,7 @@ void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
   // load UavStateStamped message
   flypulator_common_msgs::UavStateStamped uav_state_msg;
   flypulator_common_msgs::UavStateRPYStamped uav_state_rpy_msg;
-  flypulator_common_msgs::UavStateRPYStamped tracker_state_rpy_msg;
+  // flypulator_common_msgs::UavStateRPYStamped tracker_state_rpy_msg;
 
   uav_state_msg.header.stamp = msg->header.stamp;
   uav_state_rpy_msg.header.stamp = msg->header.stamp;
@@ -233,14 +239,14 @@ void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
   uav_state_rpy_msg.pose.pitch = current_pitch;
   uav_state_rpy_msg.pose.yaw = current_yaw;
 
-  tracker_state_rpy_msg.pose.x = T_in.getOrigin().getX();
-  tracker_state_rpy_msg.pose.y = T_in.getOrigin().getY();
-  tracker_state_rpy_msg.pose.z = T_in.getOrigin().getZ();
-  double tracker_current_roll, tracker_current_pitch, tracker_current_yaw;
-  tf::Matrix3x3(T_out.getRotation()).getRPY(tracker_current_roll, tracker_current_pitch, tracker_current_yaw);
-  tracker_state_rpy_msg.pose.roll = tracker_current_roll;
-  tracker_state_rpy_msg.pose.pitch = tracker_current_pitch;
-  tracker_state_rpy_msg.pose.yaw = tracker_current_yaw;
+  //  tracker_state_rpy_msg.pose.x = T_in.getOrigin().getX();
+  //  tracker_state_rpy_msg.pose.y = T_in.getOrigin().getY();
+  //  tracker_state_rpy_msg.pose.z = T_in.getOrigin().getZ();
+  //  double tracker_current_roll, tracker_current_pitch, tracker_current_yaw;
+  //  tf::Matrix3x3(T_out.getRotation()).getRPY(tracker_current_roll, tracker_current_pitch, tracker_current_yaw);
+  //  tracker_state_rpy_msg.pose.roll = tracker_current_roll;
+  //  tracker_state_rpy_msg.pose.pitch = tracker_current_pitch;
+  //  tracker_state_rpy_msg.pose.yaw = tracker_current_yaw;
 
   // velocity
   uav_state_msg.velocity.linear.x = linear_vel.x;
@@ -257,12 +263,12 @@ void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
   uav_state_rpy_msg.velocity.angular.y = angular_vel.y;
   uav_state_rpy_msg.velocity.angular.z = angular_vel.z;
 
-  tracker_state_rpy_msg.velocity.linear.x = 0.0;
-  tracker_state_rpy_msg.velocity.linear.y = 0.0;
-  tracker_state_rpy_msg.velocity.linear.z = 0.0;
-  tracker_state_rpy_msg.velocity.angular.x = 0.0;
-  tracker_state_rpy_msg.velocity.angular.y = 0.0;
-  tracker_state_rpy_msg.velocity.angular.z = 0.0;
+  //  tracker_state_rpy_msg.velocity.linear.x = 0.0;
+  //  tracker_state_rpy_msg.velocity.linear.y = 0.0;
+  //  tracker_state_rpy_msg.velocity.linear.z = 0.0;
+  //  tracker_state_rpy_msg.velocity.angular.x = 0.0;
+  //  tracker_state_rpy_msg.velocity.angular.y = 0.0;
+  //  tracker_state_rpy_msg.velocity.angular.z = 0.0;
 
   // acceleration
   uav_state_msg.acceleration.linear.x = linear_acc.x;
@@ -279,12 +285,12 @@ void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
   uav_state_rpy_msg.acceleration.angular.y = angular_acc.y;
   uav_state_rpy_msg.acceleration.angular.z = angular_acc.z;
 
-  tracker_state_rpy_msg.acceleration.linear.x = 0.0;
-  tracker_state_rpy_msg.acceleration.linear.y = 0.0;
-  tracker_state_rpy_msg.acceleration.linear.z = 0.0;
-  tracker_state_rpy_msg.acceleration.angular.x = 0.0;
-  tracker_state_rpy_msg.acceleration.angular.y = 0.0;
-  tracker_state_rpy_msg.acceleration.angular.z = 0.0;
+  //  tracker_state_rpy_msg.acceleration.linear.x = 0.0;
+  //  tracker_state_rpy_msg.acceleration.linear.y = 0.0;
+  //  tracker_state_rpy_msg.acceleration.linear.z = 0.0;
+  //  tracker_state_rpy_msg.acceleration.angular.x = 0.0;
+  //  tracker_state_rpy_msg.acceleration.angular.y = 0.0;
+  //  tracker_state_rpy_msg.acceleration.angular.z = 0.0;
   // publish all messages
 
   // pub_pose_tracker.publish(pub_pose);
@@ -344,10 +350,10 @@ int main(int argc, char **argv)
 
   pub_uav_state = nh.advertise<flypulator_common_msgs::UavStateStamped>("meas_state", 10);
   pub_uav_state_rpy = nh.advertise<flypulator_common_msgs::UavStateRPYStamped>("meas_state_rpy", 10);
-  pub_tracker_state_rpy = nh.advertise<flypulator_common_msgs::UavStateRPYStamped>("tracker_state_rpy", 10);
+  // pub_tracker_state_rpy = nh.advertise<flypulator_common_msgs::UavStateRPYStamped>("tracker_state_rpy", 10);
   ROS_INFO("running");
   // ros::Subscriber sub_pose1 = nh.subscribe<nav_msgs::Odometry>("/vive/LHR_08DDEDC9_odom", 100, vive_odom_callback);
-  ros::Subscriber sub_pose1 = nh.subscribe<nav_msgs::Odometry>("odom_msg", 100, vive_odom_callback);
+  ros::Subscriber sub_pose1 = nh.subscribe<nav_msgs::Odometry>("odom_msg", 1, vive_odom_callback);
   ros::spin();
 
   return 0;
