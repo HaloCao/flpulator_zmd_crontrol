@@ -1,4 +1,3 @@
-trajectory/update_rate: 200 # [Hz] update rate for trajectory generator
 trajectory/rotor_vel_max: 5700 # [rpm] Maximum rotor w.r.t. feasibility check of trajectories
 trajectory/rotor_vel_min: 600  #[rpm] Minimum rotor w.r.t. feasibility check of trajectories
 trajectory/simulation_step_size: 0.01 # [s] step size for numerical integration in terms of actuator rpm prediction

@@ -80,6 +80,7 @@ TrajectoryUI::TrajectoryUI(QWidget *parent)
 
   // set initial pose configuration
   resetPoseConfigurations();
+  alignStartDronePose();
 
   // broadcast transforms for start- and target_pose frame to initially update the corresponding
   // coord.axes-visualization.
@@ -265,8 +266,8 @@ void TrajectoryUI::resetPoseConfigurations()
     target_pose_panel_.pose_values_[i]->setValue(0);
   }
 
-  // set all pose components to zero except target z-Position to 10m
-  target_pose_panel_.pose_values_[2]->setValue(10);
+  // set all pose components to zero except target z-Position to 5m
+  target_pose_panel_.pose_values_[2]->setValue(5);
 
   // initial duration is 5 seconds
   dur_value_->setValue(5);
@@ -298,7 +299,7 @@ void TrajectoryUI::alignStartDronePose()
   catch (tf::TransformException &ex)
   {
     ROS_WARN("%s", ex.what());
-    log("Couldn't retrieve current pose of the hexacopter. Ensure the transform between /world and /baselink frames "
+    log("Couldn't retrieve current pose of the UAV. Ensure the transform between /world and /baselink frames "
         "being broadcasted.");
   }
 }

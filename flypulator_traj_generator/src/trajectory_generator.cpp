@@ -80,7 +80,7 @@ bool TrajectoryGenerator::createAndSendTrajectory(
   float sim_dt;
   if (!ros::param::get("/trajectory/simulation_step_size", sim_dt))
   {
-    ROS_DEBUG("[TrajectoryGenService] Step size for simulation not specified: Using default of 10ms instead.");
+    ROS_WARN("[TrajectoryGenService] Step size for simulation not specified: Using default of 10ms instead.");
     sim_dt = 0.01;
   }
 
@@ -155,14 +155,14 @@ bool TrajectoryGenerator::createAndSendTrajectory(
 
   // take update rate from parameter file
   double update_rate;
-  if (ros::param::get("/trajectory/update_rate", update_rate))
+  if (ros::param::get("/controller/update_rate", update_rate))
   {
-    ROS_DEBUG("Update Rate = %f from parameter server", update_rate);
+    ROS_DEBUG("Update Rate = %f Hz from parameter server", update_rate);
   }
   else
   {
-    ROS_DEBUG("Update Rate = 10, default value (/trajectory/update_rate not available on parameter server)");
-    update_rate = 10.0;
+    ROS_WARN("load /controller/update_rate failed, set to 100 Hz!");
+    update_rate = 100.0;
   }
 
   ros::Rate r(update_rate);
@@ -175,7 +175,7 @@ bool TrajectoryGenerator::createAndSendTrajectory(
     if (traj_type == trajectory_types::Linear || traj_type == trajectory_types::Polynomial)
     {
       // linear trajectory is also a polynomial trajectory with different coeffiencts (set before)
-      float dt = (float)(t.toSec() - t_start.toSec());
+      float dt = float(t.toSec() - t_start.toSec());
       for (int dim = 0; dim < 4; dim++)
       {
         pose_current[dim] = evaluatePosition(a[dim][0], a[dim][1], a[dim][2], a[dim][3], a[dim][4], a[dim][5], dt);
