@@ -10,6 +10,7 @@ ControllerInterface* g_drone_controller_p;
 PoseVelocityAcceleration g_current_pose;
 PoseVelocityAcceleration g_desired_pose;
 int g_rotor_vel_message_counter = 0;
+bool g_control_ref_initialized = false;
 bool g_controller_running = false;
 ros::Publisher* g_rotor_cmd_pub;
 Eigen::Matrix<float, 6, 1> g_spinning_rates;
@@ -76,7 +77,6 @@ void computeControlOutputAndPublish()
   g_rotor_cmd_pub->publish(msg);
   // end of controller block. setting flag.
   g_controller_running = false;
-  // ROS_INFO("running = false;");
 
   geometry_msgs::WrenchStamped wrench_msg;
   wrench_msg.header.stamp = ros::Time::now();
@@ -166,47 +166,47 @@ void trajectoryMessageCallback(const trajectory_msgs::MultiDOFJointTrajectoryPoi
   // encode trajectory message to PoseVelocityAcceleration object
   encodeTrajectoryMsg(msg, g_desired_pose);
 
-  ros::Duration duration = msg->time_from_start;
+  //  ros::Duration duration = msg->time_from_start;
 
-  ROS_DEBUG("Received trajectory message: x_des = [%f, %f, %f], q_des = [%f, %f, %f, %f]", g_desired_pose.p.x(),
-            g_desired_pose.p.y(), g_desired_pose.p.z(), g_desired_pose.q.w(), g_desired_pose.q.x(),
-            g_desired_pose.q.y(), g_desired_pose.q.z());
-  ROS_DEBUG("    Time from start: %f s", duration.toSec());
+  //  ROS_DEBUG("Received trajectory message: x_des = [%f, %f, %f], q_des = [%f, %f, %f, %f]", g_desired_pose.p.x(),
+  //            g_desired_pose.p.y(), g_desired_pose.p.z(), g_desired_pose.q.w(), g_desired_pose.q.x(),
+  //            g_desired_pose.q.y(), g_desired_pose.q.z());
+  //  ROS_DEBUG("    Time from start: %f s", duration.toSec());
 }
 
 // receive state estimation message
 void stateMessageCallback(const flypulator_common_msgs::UavStateStamped::ConstPtr& msg)
 {
+  // is this check meaningless? Every callback should be finished and later msg buffered in queue, when max queue size
+  // reached, old msg will be dropped.
   if (g_controller_running)
-    ROS_INFO("State msg received before controller finished last msg!");
+    ROS_WARN("Control loop is not fully excuted!");
 
-  // Tencode state message to PoseVelocityAcceleration object
+  // encode state message to PoseVelocityAcceleration object
   encodeStateMsg(msg, g_current_pose);
 
   // ros::Duration duration = msg->time_from_start;
 
-  ROS_DEBUG("Received state message: x_cur = [%f, %f, %f], q_cur = [%f, %f, %f, %f]", g_current_pose.p.x(),
-            g_current_pose.p.y(), g_current_pose.p.z(), g_current_pose.q.w(), g_current_pose.q.x(),
-            g_current_pose.q.y(), g_current_pose.q.z());
+  //  ROS_DEBUG("Received state message: x_cur = [%f, %f, %f], q_cur = [%f, %f, %f, %f]", g_current_pose.p.x(),
+  //            g_current_pose.p.y(), g_current_pose.p.z(), g_current_pose.q.w(), g_current_pose.q.x(),
+  //            g_current_pose.q.y(), g_current_pose.q.z());
   // ROS_DEBUG("    Time from start: %f s", duration.toSec());
 
+  // current position as initial reference value for control
+  if (g_control_ref_initialized == false)
+  {
+    ROS_INFO("Initialize control reference...");
+    g_desired_pose.p = g_current_pose.p;
+    g_control_ref_initialized = true;
+    g_desired_pose.printToROSINFO();
+  }
   // compute control output to updated state information
-
   g_controller_running = true;
-  //  ROS_INFO("running = true");
   computeControlOutputAndPublish();
 }
 
 int main(int argc, char** argv)
 {
-  // set inital pose.
-  // for real drone
-  g_desired_pose.p = Eigen::Vector3f(0, 0, 0);
-  g_desired_pose.q = Eigen::Quaternionf(1.0, 0.0, 0.0, 0.0);
-
-  g_current_pose.q = Eigen::Quaternionf(1.0, 0.0, 0.0, 0.0);
-  g_current_pose.p = Eigen::Vector3f(0, 0, 0);
-
   // initialize node
   ros::init(argc, argv, "controller");
 
@@ -225,10 +225,10 @@ int main(int argc, char** argv)
   g_pose_error_pub = &pose_error_pub;
 
   // suscribe to trajectory messages
-  ros::Subscriber sub = n.subscribe("trajectory", 10, trajectoryMessageCallback);
+  ros::Subscriber sub = n.subscribe("trajectory", 1, trajectoryMessageCallback);
 
   // suscribe to state estimation messages
-  ros::Subscriber sub_2 = n.subscribe("/drone/meas_state", 10, stateMessageCallback);
+  ros::Subscriber sub_2 = n.subscribe("/drone/meas_state", 1, stateMessageCallback);
 
   // ready to publish rotor command messages
   ros::Publisher rotor_cmd_pub = n.advertise<flypulator_common_msgs::RotorVelStamped>("/drone/rotor_cmd", 10);
