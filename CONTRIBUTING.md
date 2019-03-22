@@ -1,10 +1,11 @@
 # Contribution Guide
 
-## Git branches
+## Git Repository
 
  - Branches should be used actively to split development of different packages or different ROS version.
  - After validation or debug in a branch, a merge action to its mother branch should be taken in time. This branch should be removed if no need anymore. A merge action from mother branch is necessary before start new functionality development, if the branch will be kept further.
  - It is not recommanded to commit directly in master branch (protected), except editing text files.
+ - It is encouraged to keep git history clean. Recommanded workfolw: pull remote master branch -> create new branch for feature/bug -> your work -> validation and test -> Squash and Rebase -> merge to master -> push to remote master branch. (https://blog.carbonfive.com/2017/08/28/always-squash-and-rebase-your-git-commits/)
 
 ## Code Style
 
