@@ -80,7 +80,8 @@ TrajectoryUI::TrajectoryUI(QWidget *parent)
 
   // set initial pose configuration
   resetPoseConfigurations();
-  alignStartDronePose();
+  // why error /base_link not exist?
+  // alignStartDronePose();
 
   // broadcast transforms for start- and target_pose frame to initially update the corresponding
   // coord.axes-visualization.

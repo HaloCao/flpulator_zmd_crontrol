@@ -134,8 +134,8 @@ void PropulsionPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   this->rosNode_.reset(new ros::NodeHandle("gazebo_client"));
   ROS_INFO_STREAM("propulsion_plugin get node:" << this->rosNode_->getNamespace());
 
-  this->pub_thrust_torque_ratio_ =
-      this->rosNode_->advertise<flypulator_common_msgs::Vector6dMsg>("/drone/thrust_moment_ratio", 10);
+  // this->pub_thrust_torque_ratio_ =
+  //   this->rosNode_->advertise<flypulator_common_msgs::Vector6dMsg>("/drone/thrust_moment_ratio", 10);
   this->pub_joint_state_ = this->rosNode_->advertise<sensor_msgs::JointState>("/drone/joint_states", 50);
 
   for (size_t i = 0; i < joint_names_.size(); i++)
