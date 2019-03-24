@@ -16,20 +16,20 @@ ControllerInterface::ControllerInterface()
   ROS_DEBUG_STREAM("Maximum rotor velocity: " << vel_max_ << " rad/s");
 
   // read state estimation update rate, also do if boolean false to allow future dynamic reconfiguring of boolean
-  float state_estimation_sampling_time = 0.05f;  // 200 Hz
-  // TODO: state_estimation.yaml is actually only for gazebo, how to get the actual estimation?
-  if (ros::param::get("state_estimation/sampling_time", state_estimation_sampling_time))
+  float updat_rate;
+  if (ros::param::get("controller/update_rate", updat_rate))
   {
-    ROS_INFO("State estimation update rate: %f", 1.0 / double(state_estimation_sampling_time));
+    ROS_INFO("State estimation update rate: %f Hz", double(updat_rate));
   }
   else
   {
-    ROS_WARN("Load sampling time failed, set to 50ms (200Hz)");
+    updat_rate = 200;  // 200 Hz
+    ROS_WARN("Load control update rate failed, set to 50ms (200Hz)");
   }
 
   // calculate k_ff and z_p_ff, k_ff = Ts / (Ts + T_motor), z_p = T_motor / (Ts + T_motor)
-  k_ff_ = state_estimation_sampling_time / (state_estimation_sampling_time + float(drone_parameter_["t_motor"]));
-  z_p_ff_ = float(drone_parameter_["t_motor"]) / (state_estimation_sampling_time + float(drone_parameter_["t_motor"]));
+  k_ff_ = 1 / (1 + updat_rate * float(drone_parameter_["t_motor"]));
+  z_p_ff_ = float(drone_parameter_["t_motor"]) / (1 / updat_rate + float(drone_parameter_["t_motor"]));
   ROS_DEBUG_STREAM("k_ff = " << k_ff_ << ", "
                              << " z_p_ff = " << z_p_ff_);
 

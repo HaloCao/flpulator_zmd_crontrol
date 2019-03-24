@@ -19,11 +19,11 @@ bool TrajectoryGenerator::createAndSendTrajectory(
   float pose_start[4];
   float pose_end[4];
 
-  Eigen::EulerParams eulerParams;
+  Eigen::AngleAxisf euler_params;
   Eigen::Quaternionf q_start;
   // assign positional start and target components to 4d arrays (pose_start and pose_end). Calculate euler parameters
   // and retrieve them via reference
-  extractStartAndTargetPose(p_start, p_end, rpy_start, rpy_end, pose_start, pose_end, eulerParams, q_start);
+  extractStartAndTargetPose(p_start, p_end, rpy_start, rpy_end, pose_start, pose_end, euler_params, q_start);
 
   float pose_current[4];  // array for 4d poses (three positional components, one euler angle)
   float vel_current[4];   // array for 4D velocities
@@ -34,9 +34,9 @@ bool TrajectoryGenerator::createAndSendTrajectory(
   Eigen::Vector3f omega_dot_current;
 
   // assign euler axis to service response
-  eulerAxis.x = eulerParams.axis[0];
-  eulerAxis.y = eulerParams.axis[1];
-  eulerAxis.z = eulerParams.axis[2];
+  eulerAxis.x = euler_params.axis()(0);
+  eulerAxis.y = euler_params.axis()(1);
+  eulerAxis.z = euler_params.axis()(2);
 
   float a[4][6];  // polynomial coefficients for trajectory, first dimension: pose component, second dimension:
                   // coefficient (can be more than 6 for higher order polynoms)
@@ -55,7 +55,6 @@ bool TrajectoryGenerator::createAndSendTrajectory(
         a[dim][4] = 0;
         a[dim][5] = 0;
       }
-      // ROS_INFO("Start linear trajectory..");
       break;
 
     case trajectory_types::Polynomial:
@@ -69,26 +68,25 @@ bool TrajectoryGenerator::createAndSendTrajectory(
         a[dim][4] = -15 * (pose_end[dim] - pose_start[dim]) / powf(duration, 4);
         a[dim][5] = 6 * (pose_end[dim] - pose_start[dim]) / powf(duration, 5);
       }
-      // ROS_INFO("Start polynomial trajectory..");
       break;
 
     default:
-      ROS_ERROR("trajectory type not well defined! Must follow enumeration");
+      ROS_ERROR("[TrajectoryGenService] Unknow trajectory type!");
   }
 
   // retrieve simulation step size from parameter server
   float sim_dt;
   if (!ros::param::get("/trajectory/simulation_step_size", sim_dt))
   {
-    ROS_DEBUG("[TrajectoryGenService] Step size for simulation not specified: Using default of 10ms instead.");
-    sim_dt = 0.01;
+    ROS_WARN("[TrajectoryGenService] Step size for simulation not specified: Using default of 10ms instead.");
+    sim_dt = 0.01f;
   }
 
   // retrieve path poses and their orientation for visualization purpose
   geometry_msgs::PoseArray path;
   std::vector<geometry_msgs::Pose> poses;
 
-  for (double t = 0; t <= duration; t += sim_dt)
+  for (float t = 0; t <= duration; t += sim_dt)
   {
     geometry_msgs::Vector3 pos_acc;
     float euler_angle_acc;
@@ -120,10 +118,9 @@ bool TrajectoryGenerator::createAndSendTrajectory(
     q_rot_y = Eigen::AngleAxisf(-0.5 * M_PI, Eigen::Vector3f::UnitY());
 
     // retrieve orientation of {B} w.r.t. {A} via euler angle
-    float cur_euler_angle = evaluatePosition(a[3][0], a[3][1], a[3][2], a[3][3], a[3][4], a[3][5], t);
     // convert to quaternion
     Eigen::Quaternionf q_AB;
-    eulerParamsToQuat(eulerParams.axis, cur_euler_angle, q_AB);
+    q_AB = Eigen::AngleAxisf(euler_angle, euler_params.axis());
 
     // resulting orientaiton
     Eigen::Quaternionf q_res = q_start * q_AB * q_rot_y;
@@ -155,14 +152,14 @@ bool TrajectoryGenerator::createAndSendTrajectory(
 
   // take update rate from parameter file
   double update_rate;
-  if (ros::param::get("/trajectory/update_rate", update_rate))
+  if (ros::param::get("/controller/update_rate", update_rate))
   {
-    ROS_DEBUG("Update Rate = %f from parameter server", update_rate);
+    ROS_DEBUG("Update Rate = %f Hz from parameter server", update_rate);
   }
   else
   {
-    ROS_DEBUG("Update Rate = 10, default value (/trajectory/update_rate not available on parameter server)");
-    update_rate = 10.0;
+    ROS_WARN("load /controller/update_rate failed, set to 100 Hz!");
+    update_rate = 100.0;
   }
 
   ros::Rate r(update_rate);
@@ -175,7 +172,7 @@ bool TrajectoryGenerator::createAndSendTrajectory(
     if (traj_type == trajectory_types::Linear || traj_type == trajectory_types::Polynomial)
     {
       // linear trajectory is also a polynomial trajectory with different coeffiencts (set before)
-      float dt = (float)(t.toSec() - t_start.toSec());
+      float dt = float(t.toSec() - t_start.toSec());
       for (int dim = 0; dim < 4; dim++)
       {
         pose_current[dim] = evaluatePosition(a[dim][0], a[dim][1], a[dim][2], a[dim][3], a[dim][4], a[dim][5], dt);
@@ -189,13 +186,13 @@ bool TrajectoryGenerator::createAndSendTrajectory(
     // calculate quaternion from euler parameters
     Eigen::Quaternionf q_AB;
     float theta = pose_current[3];
-    eulerParamsToQuat(eulerParams.axis, theta, q_AB);
+    q_AB = Eigen::AngleAxisf(theta, euler_params.axis());
     q_current = q_start * q_AB;
 
     // calculate omega from euler angles and their derivative
     float theta_dot = vel_current[3];
     float theta_ddot = acc_current[3];
-    angularVelocityFromEulerParams(q_start, eulerParams.axis, theta, theta_dot, theta_ddot, omega_current,
+    angularVelocityFromEulerParams(q_start, euler_params.axis(), theta, theta_dot, theta_ddot, omega_current,
                                    omega_dot_current);
 
     // Concatenate informations to trajectory message
@@ -230,7 +227,7 @@ void TrajectoryGenerator::extractStartAndTargetPose(const geometry_msgs::Vector3
                                                     const geometry_msgs::Vector3& p_end,
                                                     const geometry_msgs::Vector3& rpy_start,
                                                     const geometry_msgs::Vector3& rpy_end, float pose_start[],
-                                                    float pose_end[], Eigen::EulerParams& eulerParams,
+                                                    float pose_end[], Eigen::AngleAxisf& euler_param,
                                                     Eigen::Quaternionf& q_start)
 {
   // assign positional parts
@@ -242,7 +239,7 @@ void TrajectoryGenerator::extractStartAndTargetPose(const geometry_msgs::Vector3
   pose_end[1] = p_end.y;
   pose_end[2] = p_end.z;
 
-  // extract start and target rpy angles (per rad!)
+  // extract start and target rpy angles (convert to rad!)
   float roll_start = rpy_start.x * M_PI / 180;
   float pitch_start = rpy_start.y * M_PI / 180;
   float yaw_start = rpy_start.z * M_PI / 180;
@@ -258,27 +255,18 @@ void TrajectoryGenerator::extractStartAndTargetPose(const geometry_msgs::Vector3
   Eigen::Matrix3f rot_mat_end;
   rpyToRotMat(roll_end, pitch_end, yaw_end, rot_mat_end);
 
-  // retrieve difference rotation
+  // retrieve difference rotation (from end to start)
   Eigen::Matrix3f rot_mat_diff = rot_mat_start.transpose() * rot_mat_end;
 
   // get euler axis and angle
-  calculateEulerParameters(rot_mat_diff, eulerParams);
+  euler_param = Eigen::AngleAxisf(rot_mat_diff);
 
   // assign euler angles
   pose_start[3] = 0;
-  pose_end[3] = eulerParams.angle;
+  pose_end[3] = euler_param.angle();
 
   // assign start orientation (auto conversion from matrix to quat)
   q_start = rot_mat_start;
-}
-
-void TrajectoryGenerator::eulerParamsToQuat(Eigen::Vector3f euler_axis, float euler_angle, Eigen::Quaternionf& q_AB)
-{
-  // attitude of {B} w.r.t. the start orientation
-  q_AB.x() = euler_axis[0] * sin(euler_angle / 2);
-  q_AB.y() = euler_axis[1] * sin(euler_angle / 2);
-  q_AB.z() = euler_axis[2] * sin(euler_angle / 2);
-  q_AB.w() = cos(euler_angle / 2);
 }
 
 void TrajectoryGenerator::angularVelocityFromEulerParams(Eigen::Quaternionf q_IA, Eigen::Vector3f kA, float the,
@@ -286,27 +274,27 @@ void TrajectoryGenerator::angularVelocityFromEulerParams(Eigen::Quaternionf q_IA
                                                          Eigen::Vector3f& omeg_dot)
 {
   // abbreviations
-  double sthe = sin(the);
-  double cthe = cos(the);
+  float sthe = sin(the);
+  float cthe = cos(the);
 
-  double k_x = kA[0];
-  double k_y = kA[1];
-  double k_z = kA[2];
+  float k_x = kA[0];
+  float k_y = kA[1];
+  float k_z = kA[2];
 
   // rotation matrix of starting orientation
   Eigen::Matrix3f R_IA = q_IA.matrix();
 
   // current orientation of {B} w.r.t. the starting orientation {A}
   Eigen::Matrix3f R_AB;
-  R_AB(0, 0) = cthe - (k_x * k_x) * (cthe - 1.0);
-  R_AB(0, 1) = -k_z * sthe - k_x * k_y * (cthe - 1.0);
-  R_AB(0, 2) = k_y * sthe - k_x * k_z * (cthe - 1.0);
-  R_AB(1, 0) = k_z * sthe - k_x * k_y * (cthe - 1.0);
-  R_AB(1, 1) = cthe - (k_y * k_y) * (cthe - 1.0);
-  R_AB(1, 2) = -k_x * sthe - k_y * k_z * (cthe - 1.0);
-  R_AB(2, 0) = -k_y * sthe - k_x * k_z * (cthe - 1.0);
-  R_AB(2, 1) = k_x * sthe - k_y * k_z * (cthe - 1.0);
-  R_AB(2, 2) = cthe - (k_z * k_z) * (cthe - 1.0);
+  R_AB(0, 0) = cthe - (k_x * k_x) * (cthe - 1.0f);
+  R_AB(0, 1) = -k_z * sthe - k_x * k_y * (cthe - 1.0f);
+  R_AB(0, 2) = k_y * sthe - k_x * k_z * (cthe - 1.0f);
+  R_AB(1, 0) = k_z * sthe - k_x * k_y * (cthe - 1.0f);
+  R_AB(1, 1) = cthe - (k_y * k_y) * (cthe - 1.0f);
+  R_AB(1, 2) = -k_x * sthe - k_y * k_z * (cthe - 1.0f);
+  R_AB(2, 0) = -k_y * sthe - k_x * k_z * (cthe - 1.0f);
+  R_AB(2, 1) = k_x * sthe - k_y * k_z * (cthe - 1.0f);
+  R_AB(2, 2) = cthe - (k_z * k_z) * (cthe - 1.0f);
 
   // first derivative of R_AB
   Eigen::Matrix3f dR_AB;
@@ -365,31 +353,6 @@ inline float TrajectoryGenerator::evaluateVelocity(float a1, float a2, float a3,
 inline float TrajectoryGenerator::evaluatePosition(float a0, float a1, float a2, float a3, float a4, float a5, float t)
 {
   return a0 + a1 * t + a2 * pow(t, 2) + a3 * pow(t, 3) + a4 * pow(t, 4) + a5 * pow(t, 5);
-}
-
-inline void TrajectoryGenerator::calculateEulerParameters(Eigen::Matrix3f rotMat, Eigen::EulerParams& eulerParams)
-{
-  // get euler parameters from rotation matrix
-  eulerParams.angle = acos(0.5 * (rotMat(0, 0) + rotMat(1, 1) + rotMat(2, 2) - 1));
-
-  // todo: handle singularities properly
-  if (eulerParams.angle == 0)
-  {
-    eulerParams.axis(0) = 1;
-  }
-  else if (eulerParams.angle == M_PI)
-  {
-    eulerParams.axis(0) = -1;
-  }
-  else
-  {
-    Eigen::Vector3f v;
-    v(0) = rotMat(2, 1) - rotMat(1, 2);
-    v(1) = rotMat(0, 2) - rotMat(2, 0);
-    v(2) = rotMat(1, 0) - rotMat(0, 1);
-
-    eulerParams.axis = 0.5 / sin(eulerParams.angle) * v;
-  }
 }
 
 inline void TrajectoryGenerator::rpyToRotMat(float roll, float pitch, float yaw, Eigen::Matrix3f& rotMatrix)
