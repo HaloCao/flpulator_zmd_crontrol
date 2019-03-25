@@ -1,0 +1,183 @@
+<?xml version="1.0"?>
+<!--  multirotor_base.xacro -->
+ <!-- This file contains the macros for the UAV. 
+    The following macros are defined here: 
+    * mulitirotor_base_macro 
+    * propeller_macro
+    * tilted_rotor_macro
+    * landing_gear_macro -->
+    
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- Main multirotor link -->
+  <xacro:macro name="multirotor_base_macro"
+    params="robot_namespace mass body_radius body_height mesh_file mesh_scale color *inertial_origin *inertia">
+    <link name="base_link"></link>
+
+    <joint name="base_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+      <parent link="base_link" />
+      <child link="base_link_inertia" />
+    </joint>
+
+    <link name="base_link_inertia">
+      <inertial>
+        <mass value="${mass}" />  <!-- [kg] -->
+        <xacro:insert_block name="inertial_origin" />
+        <xacro:insert_block name="inertia" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="${mesh_file}"
+            scale="${mesh_scale}" />
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+            <cylinder length="${body_height}" radius="${body_radius}" /> <!-- [m] -->
+        </geometry>
+      </collision>
+    </link>
+
+    <gazebo reference="base_link">
+    <material>Gazebo/${color}</material>
+    </gazebo>
+  </xacro:macro>
+
+  <!-- tracker joint and link -->
+  <!-- visual and inertial properties included in base_link -->
+  <xacro:macro name="tracker_macro"
+    params="robot_namespace parent height_tracker radius_tracker *origin">
+
+    <joint name="tracker_joint" type="fixed">
+      <xacro:insert_block name="origin" />
+      <parent link="${parent}" />
+      <child link="tracker_link" />
+      <axis xyz="0 0 0" />
+    </joint>
+
+    <link name="tracker_link">
+      <collision>
+        <origin xyz="0 0 -${height_tracker/3.5}" rpy="0 0 0" />
+        <geometry>
+            <cylinder length="${height_tracker}" radius="${radius_tracker}" /> <!-- [m] -->
+        </geometry>
+      </collision>
+    </link>
+  </xacro:macro>
+
+  <!-- propeller joint and link -->
+  <xacro:macro name="propeller_macro"
+    params="robot_namespace suffix direction parent mass_propeller radius_propeller max_rot_velocity number mesh_file mesh_scale color *joint_origin *inertia">
+
+    <joint name="blade_joint_${number}" type="continuous">
+      <xacro:insert_block name="joint_origin" />
+      <axis xyz="0 0 1" />
+      <parent link="${parent}" />
+      <child link="blade_link_${number}" />
+    </joint>
+    
+    <link name="blade_link_${number}">
+      <inertial>
+        <mass value="${mass_propeller}" /> <!-- [kg] -->
+        <xacro:insert_block name="inertia" />
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="${mesh_file}"
+            scale="${mesh_scale}" />
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder length="0.005" radius="${radius_propeller}" /> <!-- [m] -->
+        </geometry>
+      </collision>
+    </link>
+    <gazebo reference="blade_link_${number}">
+      <material>Gazebo/${color}</material>
+    </gazebo>
+  </xacro:macro>
+
+  <!-- motor joint and link -->
+  <xacro:macro name="tilted_rotor_macro"
+    params="robot_namespace suffix parent mass_rotor radius_rotor max_tilt_velocity number mesh_file mesh_scale color *joint_origin *inertia">
+
+    <joint name="motor_joint_${number}" type="fixed">
+      <xacro:insert_block name="joint_origin" />
+      <parent link="${parent}" />
+      <child link="motor_link_${number}" />
+      <axis xyz="1 0 0" />
+    </joint>
+
+    <link name="motor_link_${number}">
+      <inertial>
+        <mass value="${mass_rotor}" /> <!-- [kg] -->
+        <xacro:insert_block name="inertia" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="${mesh_file}"
+            scale="${mesh_scale}" />
+          <!-- <box size="${2*radius_rotor} 0.01 0.005"/> -->
+        </geometry>
+      </visual>
+      <!--
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="0.005" radius="${radius_rotor}" />
+        </geometry>
+      </collision>
+      -->
+    </link>
+    <gazebo reference="motor_link_${number}">
+      <material>Gazebo/${color}</material>
+    </gazebo>
+  </xacro:macro>
+
+  <!-- Landing gear links and joints -->
+  <xacro:macro name="landing_gear_macro"
+    params="robot_namespace suffix parent mass_leg radius_leg length_leg max_leg_velocity mesh_file mesh_scale color *joint_origin *inertia">
+
+<!-- Landing gear joint: -->
+    <joint name="leg_joint_${suffix}" type="fixed">
+      <xacro:insert_block name="joint_origin" />
+      <parent link="${parent}" />
+      <child link="leg_link_${suffix}" />
+      <axis xyz="0 0 0" />
+    </joint>
+
+<!-- Landing gear link -->
+    <link name="leg_link_${suffix}">
+      <inertial>
+        <mass value="${mass_leg}" /> <!-- [kg] -->
+        <xacro:insert_block name="inertia" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0 " />
+        <geometry>
+          <mesh filename="${mesh_file}"
+             scale="${mesh_scale}" /> 
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0 " />
+        <geometry>
+            <mesh filename="${mesh_file}"
+             scale="${mesh_scale}" /> 
+        </geometry>
+      </collision>
+    </link>
+
+    <gazebo reference="leg_link_${suffix}">
+      <material>Gazebo/${color}</material>
+    </gazebo>
+  </xacro:macro>
+</robot>
+

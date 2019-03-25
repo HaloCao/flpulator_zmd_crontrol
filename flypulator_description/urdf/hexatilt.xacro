@@ -1,237 +1,348 @@
 <?xml version="1.0"?>
 
 <robot name="hexatilt" xmlns:xacro="http://ros.org/wiki/xacro">
+
   <!--  Convenience Parameters -->
+  <xacro:property name="namespace"  value="/drone" />
+  <xacro:property name="PI"         value="3.1415926535897931"/>
+  <xacro:property name="deg_to_rad" value="0.01745329251"/>
 
-  <xacro:property name="DP" value="${load_yaml('../param/drone_parameter.yaml')}"/>
-  <xacro:property name="namespace" value="/drone" />
-  <xacro:property name="PI" value="3.1415926535897931"/>
-  <xacro:property name="deg_to_rad" value="0.017453278"/>
-  <xacro:property name="to_kgm2" value="1e-9"/>
-  <xacro:property name="sin30" value="0.5" />
-  <xacro:property name="cos30" value="0.866025403784" />
-  <xacro:property name="sqrt2" value="1.4142135623730951" />
   <!-- Mesh parameters -->
-  <xacro:property name="mesh_file" value="hexatilt_base_down.dae" />
-  <xacro:property name="mesh_scale" value="1 1 1"/>
-  <xacro:property name="mesh_scale_prop" value="1 1 1"/>
-  <xacro:property name="mesh_scale_leg" value="1 1 1"/>
+  <xacro:property name="mesh_scale_base"  value="1 1 1"/>
+  <xacro:property name="mesh_scale_prop"  value="1 1 1"/>
+  <xacro:property name="mesh_scale_motor" value="1 1 1"/>
+  <xacro:property name="mesh_scale_leg"   value="1 1 1"/>
 
-  <!-- Geometric Parameters -->
-  <!-- These parameters are pulled from the .yaml file -->
-  <xacro:property name="base_mass" 			value="${DP['urdf/base_mass']}" /> <!-- [kg] -->
-  <xacro:property name="rotor_tilt_angle"   value="${DP['urdf/alpha']}"/> <!--in [deg]-->
-  <xacro:property name="body_radius"        value="${DP['urdf/base_radius']}" /> <!-- [m] -->
-  <xacro:property name="body_height"        value="${DP['urdf/base_height']}" /> 
-  <xacro:property name="mass_prop"         	value="${DP['urdf/propeller_mass']}" /> <!-- [kg] -->
-  <xacro:property name="arm_length"       	value="${DP['urdf/arm_length']}" /> <!-- [m] -->
-  <xacro:property name="radius_leg"         value="${DP['urdf/leg_radius']}" /> <!--[m] -->
-  <xacro:property name="length_leg"         value="${DP['urdf/leg_length']}" /> <!-- [m] -->
-  <xacro:property name="mass_leg" 			value="${DP['urdf/leg_mass']}"  /> <!-- [kg] -->
-  <xacro:property name="rotor_offset_top"   value="${DP['urdf/propeller_offset_top']}"/> <!-- [m] -->
-  <xacro:property name="radius_rotor"       value="${DP['urdf/propeller_radius']}" /> <!-- [m] -->
+  <!-- Geometric Parameters, used for collision -->
+  <xacro:property name="alpha_angle"        value="30"/> <!--in [deg]-->
+  <xacro:property name="body_radius"        value="0.15" /> <!-- 0.475 [m] radius of cylinder for collision detection -->
+  <xacro:property name="body_height"        value="0.10" /> <!-- [m] height of cylinder for collision dection-->
+  <xacro:property name="tracker_height"     value="0.14" /> <!-- [m] height of cylinder for collision dection-->
+  <xacro:property name="tracker_radius"     value="0.05" /> <!-- [m] radius of cylinder for collision dection-->
+  <xacro:property name="radius_leg"         value="0.0125" /> <!--[m] -->
+  <xacro:property name="length_leg"         value="0.425" /> <!-- [m] -->
+  <xacro:property name="radius_propeller"   value="0.1905" /> <!-- [m] -->
+  <xacro:property name="radius_motor"       value="0.015" /> <!-- [m] -->
 
-   <!-- Simulation Properties -->
-  <xacro:property name="max_leg_velocity" value="0.10" /> <!-- [m] -->
-  <xacro:property name="rotor_velocity_slowdown_sim" value="10" />
-  <xacro:property name="max_rot_velocity" value="1100" /> <!-- [rad/s] -->
-  <xacro:property name="color" value="DarkGrey" />
+  <!-- Simulation Properties -->
+  <xacro:property name="max_leg_velocity"             value="0.10" /> <!-- [rad/s] -->
+  <xacro:property name="rotor_velocity_slowdown_sim"  value="10" />
+  <xacro:property name="max_rot_velocity"             value="630" /> <!-- [rad/s]  max rotor/prop velocity-->
+  <xacro:property name="max_tilt_velocity"            value="630" /> <!-- [rad/s] max tilting velocity-->
 
-  <!-- Property Blocks -->
- <!-- Mass and inertial Properties -->
-  <xacro:property name="leg_pos_side_y" value="0.11" /> <!-- [m] -->
+  <!-- Mass and inertial Properties -->
+  <xacro:property name="mass_base"          value="3.279" /> <!-- [kg] -->
+  <xacro:property name="mass_prop"          value="0.029" /> <!-- [kg] -->
+  <xacro:property name="mass_leg"           value="0.10793"  /> <!-- [kg] -->
+  <xacro:property name="mass_motor"         value="0.196"  /> <!-- [kg] -->
 
-
-  <xacro:include filename="$(find flypulator_description)/urdf/gazebo_plugins.xacro" />
-
-
-<!-- Moment of Inertia at Origin   (g mm^2) -->
-  <xacro:property name="body_inertia">
+  <!-- Moment of Inertia at Origin   (kg m^2) -->
+  <xacro:property name="base_inertia">
     <inertia
-    ixx = "${1.223E+08  *to_kgm2}"
-	ixy = "${-7.268E+04 *to_kgm2}"
-	ixz = "${-1.303E+04 *to_kgm2}"
-	iyx = "${-7.268E+04 *to_kgm2}"
-	iyy = "${1.232E+08  *to_kgm2}"
-	iyz = "${-2.035E+04 *to_kgm2}"
-	izx = "${-1.303E+04 *to_kgm2}"
-	izy = "${-2.035E+04 *to_kgm2}"
-	izz = "${2.355E+08  *to_kgm2}"     />
-    </xacro:property>
- <!-- The inertia of the legs are set to zero and the MoI of the body includes the legs. -->
+      ixx="0.024"
+      ixy="2.748E-05"
+      ixz="0.003"
+      iyy="0.031"
+      iyz="-0.0001485"
+      izz="0.029" />
+  </xacro:property>
+
+  <xacro:property name="motor_inertia">
+    <inertia
+    ixx="5.981E-05"
+    ixy="-6.9183E-07"
+    ixz="2.0904E-05"
+    iyy="0.00022254"
+    iyz="4.089E-07"
+    izz="0.00022536" />
+  </xacro:property>
+
   <xacro:property name="leg_inertia"> 
     <inertia 
-    ixx = "${ 0*to_kgm2 }"
-    ixy = "${ 0*to_kgm2 }"
-    ixz = "${ 0*to_kgm2 }" 
-    iyx = "${ 0*to_kgm2 }"
-    iyy = "${ 0*to_kgm2 }"
-    iyz = "${ 0*to_kgm2 }"
-    izx = "${ 0*to_kgm2 }"
-    izy = "${ 0*to_kgm2 }"
-    izz = "${ 0*to_kgm2 }"/>
-     </xacro:property>
+    ixx="0.0025676"
+    ixy="-1.2554E-10"
+    ixz="-1.4371E-09"
+    iyy="0.0037264"
+    iyz="-1.5172E-10"
+    izz="0.0011705" />
+  </xacro:property>
                         
-  <xacro:property name="rotor_inertia"> 
+  <xacro:property name="propeller_inertia">
     <inertia 
-    ixx = "${ 8.686E+04*to_kgm2 }"
-    iyy = "${ 3.609E+04*to_kgm2 }"
-    izz = "${ 1.079E+05*to_kgm2 }"  
-    ixy = "${ 4.600E+04*to_kgm2 }"
-	ixz = "${ 1.113E+04*to_kgm2 }"
-    izx = "${ 1.113E+04 *to_kgm2 }"
-	izy = "${ -1.849E+04*to_kgm2 }"
-	iyx = "${ 4.600E+04 *to_kgm2 }"
-    iyz = "${ -1.849E+0*to_kgm2 }"/>  
-	  </xacro:property>
+    ixx="8.699E-05"
+    ixy="-4.746E-05"
+    ixz="-3.462E-07"
+    iyy="3.148E-05"
+    iyz="1.221E-07"
+    izz="0.0001128" />
+  </xacro:property>
 
-    <!-- Included URDF Files -->
-  <xacro:include filename="$(find flypulator_description)/urdf/multirotor_base.xacro" />
+  <!-- Included gazebo plugins -->
+  <xacro:include filename="$(find flypulator_description)/urdf/gazebo_plugins.xacro" />
 
-  <!-- Instantiate multirotor_base_macro once -->
+  <!-- Included macro modules -->
+  <xacro:include filename="$(find flypulator_description)/urdf/multirotor_macro.xacro" />
+
+  <!-- Instantiate multirotor_xacro modules -->
   <xacro:multirotor_base_macro
     robot_namespace="${namespace}"
-    mass="${base_mass}"
+    mass="${mass_base}"
     body_radius="${body_radius}"
     body_height="${body_height}"
-    mesh_file="${mesh_file}"
-    mesh_scale="${mesh_scale}"
-    color="${color}">
-    <xacro:insert_block name="body_inertia" />
+    mesh_file="package://flypulator_description/meshes/hexatilt/base_link.STL"
+    mesh_scale="${mesh_scale_base}"
+    color="DarkGrey">
+    <origin xyz="0.0002569 0.0086124 0.0073036" rpy="0 0 0" />
+    <xacro:insert_block name="base_inertia" />
   </xacro:multirotor_base_macro>
 
-  <!-- Instantiate rotors -->
-  <!-- suffix, max_rot_velocity, mesh are currently unused. -->
- 
- <xacro:vertical_rotor
+  <!-- Instantiate tracker -->
+  <xacro:tracker_macro
+    robot_namespace="${namespace}"
+    parent="base_link"
+    height_tracker="${tracker_height}"
+    radius_tracker="${tracker_radius}">
+    <origin xyz="0.00400902612001602 0.0829694946474796 0.165074242050242" rpy="0 0 0" />
+  </xacro:tracker_macro>
+
+  <!-- Instantiate rotor -->
+  <!-- suffix, max_tilt_velocity are currently unused. -->
+  <xacro:tilted_rotor_macro
+    robot_namespace="${namespace}"
+    suffix="front_right"
+    parent="base_link"
+    mass_rotor="${mass_motor}"
+    radius_rotor="${radius_motor}"
+    max_tilt_velocity="${max_tilt_velocity}"
+    number="1"
+    mesh_file="package://flypulator_description/meshes/hexatilt/motor_link.STL"
+    mesh_scale="${mesh_scale_motor}"
+    color="DarkGrey">
+    <origin xyz="0.36919 -0.21244 0.021144" rpy="${alpha_angle*deg_to_rad} -4.5537E-15 -0.5236" />
+    <xacro:insert_block name="motor_inertia" />
+  </xacro:tilted_rotor_macro>
+
+  <!-- Instantiate propeller -->
+  <!-- suffix, max_rot_velocity, direction are currently unused. -->
+  <xacro:propeller_macro
     robot_namespace="${namespace}"
     suffix="front_right"
     direction="ccw"
-    parent="base_link"
+    parent="motor_link_1"
     mass_propeller="${mass_prop}"
-    radius_rotor="${radius_rotor}"
+    radius_propeller="${radius_propeller}"
     max_rot_velocity="${max_rot_velocity}"
-    motor_number="1"
-    mesh="hexatilt_prop"
+    number="1"
+    mesh_file="package://flypulator_description/meshes/hexatilt/ccw.dae"
     mesh_scale="${mesh_scale_prop}"
     color="Red">
-    <origin xyz="${arm_length*cos30} -${arm_length*sin30} ${rotor_offset_top}" rpy="-${rotor_tilt_angle*deg_to_rad} 0  ${150*deg_to_rad}" />
-    <xacro:insert_block name="rotor_inertia" />
-  </xacro:vertical_rotor>
+    <origin xyz="0 0.00056703 -0.041725" rpy="0 0 0" />
+    <xacro:insert_block name="propeller_inertia" />
+  </xacro:propeller_macro>
 
+  <!-- Instantiate rotor -->
+  <!-- suffix, max_tilt_velocity are currently unused. -->
+  <xacro:tilted_rotor_macro
+    robot_namespace="${namespace}"
+    suffix="front_left"
+    parent="base_link"
+    mass_rotor="${mass_motor}"
+    radius_rotor="${radius_motor}"
+    max_tilt_velocity="${max_tilt_velocity}"
+    number="2"
+    mesh_file="package://flypulator_description/meshes/hexatilt/motor_link.STL"
+    mesh_scale="${mesh_scale_motor}"
+    color="DarkGrey">
+    <origin xyz="0.369191938660926 0.2141984811442 0.0211441345004385" rpy="-${alpha_angle*deg_to_rad} -1.77763357731643E-14 0.523598775598322" />
+    <xacro:insert_block name="motor_inertia" />
+  </xacro:tilted_rotor_macro>
 
-  <xacro:vertical_rotor robot_namespace="${namespace}"
+  <!-- Instantiate propeller -->
+  <!-- suffix, max_rot_velocity, direction are currently unused. -->
+  <xacro:propeller_macro
+    robot_namespace="${namespace}"
     suffix="front_left"
     direction="cw"
-    parent="base_link"
+    parent="motor_link_2"
     mass_propeller="${mass_prop}"
-    radius_rotor="${radius_rotor}"
+    radius_propeller="${radius_propeller}"
     max_rot_velocity="${max_rot_velocity}"
-    motor_number="2"
-    mesh="hexatilt_prop"
+    number="2"
+    mesh_file="package://flypulator_description/meshes/hexatilt/cw.dae"
     mesh_scale="${mesh_scale_prop}"
     color="Red">
-    <origin xyz="${arm_length*cos30} ${arm_length*sin30} ${rotor_offset_top}" rpy= "${rotor_tilt_angle*deg_to_rad} 0  ${210*deg_to_rad}"/>
-    <xacro:insert_block name="rotor_inertia" />
-  </xacro:vertical_rotor>
+    <origin xyz="0 0.000567025403784131 -0.0417250000002002" rpy="0 0 0" />
+    <xacro:insert_block name="propeller_inertia" />
+  </xacro:propeller_macro>
 
+  <!-- Instantiate rotor -->
+  <!-- suffix, max_tilt_velocity are currently unused. -->
+  <xacro:tilted_rotor_macro
+    robot_namespace="${namespace}"
+    suffix="left"
+    parent="base_link"
+    mass_rotor="${mass_motor}"
+    radius_rotor="${radius_motor}"
+    max_tilt_velocity="${max_tilt_velocity}"
+    number="3"
+    mesh_file="package://flypulator_description/meshes/hexatilt/motor_link.STL"
+    mesh_scale="${mesh_scale_motor}"
+    color="DarkGrey">
+    <origin xyz="-0.00050893070932431 0.429515468442297 0.0211441345004304" rpy="${alpha_angle*deg_to_rad} 1.9592171022797E-17 1.5707963267949" />
+    <xacro:insert_block name="motor_inertia" />
+  </xacro:tilted_rotor_macro>
 
-  <xacro:vertical_rotor robot_namespace="${namespace}"
+  <!-- Instantiate propeller -->
+  <!-- suffix, max_rot_velocity, direction are currently unused. -->
+  <xacro:propeller_macro
+    robot_namespace="${namespace}"
     suffix="left"
     direction="ccw"
-    parent="base_link"
+    parent="motor_link_3"
     mass_propeller="${mass_prop}"
-    radius_rotor="${radius_rotor}"
+    radius_propeller="${radius_propeller}"
     max_rot_velocity="${max_rot_velocity}"
-    motor_number="3"
-    mesh="hexatilt_prop"
+    number="3"
+    mesh_file="package://flypulator_description/meshes/hexatilt/ccw.dae"
     mesh_scale="${mesh_scale_prop}"
     color="DarkGrey">
-    <origin xyz="0 ${arm_length} ${rotor_offset_top}" rpy="-${rotor_tilt_angle*deg_to_rad} 0  -${90*deg_to_rad}" />
-    <xacro:insert_block name="rotor_inertia" />
-  </xacro:vertical_rotor>
+    <origin xyz="0 0.000567025403784627 -0.0412486968947504" rpy="0 0 0" />
+    <xacro:insert_block name="propeller_inertia" />
+  </xacro:propeller_macro>
 
-  <xacro:vertical_rotor
+  <!-- Instantiate rotor -->
+  <!-- suffix, max_tilt_velocity are currently unused. -->
+  <xacro:tilted_rotor_macro
+    robot_namespace="${namespace}"
+    suffix="back_left"
+    parent="base_link"
+    mass_rotor="${mass_motor}"
+    radius_rotor="${radius_motor}"
+    max_tilt_velocity="${max_tilt_velocity}"
+    number="4"
+    mesh_file="package://flypulator_description/meshes/hexatilt/motor_link.STL"
+    mesh_scale="${mesh_scale_motor}"
+    color="DarkGrey">
+    <origin xyz="-0.37020980007958 0.214198481144186 0.0211441345004322" rpy="-${alpha_angle*deg_to_rad} -2.48897090446909E-15 2.6179938779915" />
+    <xacro:insert_block name="motor_inertia" />
+  </xacro:tilted_rotor_macro>
+
+  <!-- Instantiate propeller -->
+  <!-- suffix, max_rot_velocity, direction are currently unused. -->
+  <xacro:propeller_macro
     robot_namespace="${namespace}"
     suffix="back_left"
     direction="cw"
-    parent="base_link"
+    parent="motor_link_4"
     mass_propeller="${mass_prop}"
-    radius_rotor="${radius_rotor}"
+    radius_propeller="${radius_propeller}"
     max_rot_velocity="${max_rot_velocity}"
-    motor_number="4"
-    mesh="hexatilt_prop"
+    number="4"
+    mesh_file="package://flypulator_description/meshes/hexatilt/cw.dae"
     mesh_scale="${mesh_scale_prop}"
     color="DarkGrey">
-    <origin xyz="-${arm_length*cos30} ${arm_length*sin30} ${rotor_offset_top}" rpy="${rotor_tilt_angle*deg_to_rad} 0  -${30*deg_to_rad}" />
-    <xacro:insert_block name="rotor_inertia" />
-  </xacro:vertical_rotor>
+    <origin xyz="0 0.000567025403786931 -0.0417250000002" rpy="0 0 0" />
+    <xacro:insert_block name="propeller_inertia" />
+  </xacro:propeller_macro>
 
-  <xacro:vertical_rotor robot_namespace="${namespace}"
+  <!-- Instantiate rotor -->
+  <!-- suffix, max_tilt_velocity are currently unused. -->
+  <xacro:tilted_rotor_macro
+    robot_namespace="${namespace}"
+    suffix="back_right"
+    parent="base_link"
+    mass_rotor="${mass_motor}"
+    radius_rotor="${radius_motor}"
+    max_tilt_velocity="${max_tilt_velocity}"
+    number="5"
+    mesh_file="package://flypulator_description/meshes/hexatilt/motor_link.STL"
+    mesh_scale="${mesh_scale_motor}"
+    color="DarkGrey">
+    <origin xyz="-0.370209800079584 -0.212435493452024 0.0211441345004353" rpy="${alpha_angle*deg_to_rad} -7.7937794574667E-15 -2.6179938779915" />
+    <xacro:insert_block name="motor_inertia" />
+  </xacro:tilted_rotor_macro>
+
+  <!-- Instantiate propeller -->
+  <!-- suffix, max_rot_velocity, direction are currently unused. -->
+  <xacro:propeller_macro
+    robot_namespace="${namespace}"
     suffix="back_right"
     direction="ccw"
-    parent="base_link"
+    parent="motor_link_5"
     mass_propeller="${mass_prop}"
-    radius_rotor="${radius_rotor}"
+    radius_propeller="${radius_propeller}"
     max_rot_velocity="${max_rot_velocity}"
-    motor_number="5"
-    mesh="hexatilt_prop"
+    number="5"
+    mesh_file="package://flypulator_description/meshes/hexatilt/ccw.dae"
     mesh_scale="${mesh_scale_prop}"
     color="DarkGrey">
-    <origin xyz="-${arm_length*cos30} -${arm_length*sin30} ${rotor_offset_top}" rpy= "-${rotor_tilt_angle*deg_to_rad} 0  ${30*deg_to_rad}"/>
-    <xacro:insert_block name="rotor_inertia" />
-  </xacro:vertical_rotor>
+    <origin xyz="0 0.000567025403787927 -0.0417250000001999" rpy="0 0 0" />
+    <xacro:insert_block name="propeller_inertia" />
+  </xacro:propeller_macro>
 
+  <!-- Instantiate rotor -->
+  <!-- suffix, max_tilt_velocity are currently unused. -->
+  <xacro:tilted_rotor_macro
+    robot_namespace="${namespace}"
+    suffix="right"
+    parent="base_link"
+    mass_rotor="${mass_motor}"
+    radius_rotor="${radius_motor}"
+    max_tilt_velocity="${max_tilt_velocity}"
+    number="6"
+    mesh_file="package://flypulator_description/meshes/hexatilt/motor_link.STL"
+    mesh_scale="${mesh_scale_motor}"
+    color="DarkGrey">
+    <origin xyz="0.000508930709324453 -0.427752480750137 0.0211441345004304" rpy="-${alpha_angle*deg_to_rad} -1.22598720117319E-14 -1.5707963267949" />
+    <xacro:insert_block name="motor_inertia" />
+  </xacro:tilted_rotor_macro>
 
-  <xacro:vertical_rotor robot_namespace="${namespace}"
+  <!-- Instantiate propeller -->
+  <!-- suffix, max_rot_velocity, direction are currently unused. -->
+  <xacro:propeller_macro
+    robot_namespace="${namespace}"
     suffix="right"
     direction="cw"
-    parent="base_link"
+    parent="motor_link_6"
     mass_propeller="${mass_prop}"
-    radius_rotor="${radius_rotor}"
+    radius_propeller="${radius_propeller}"
     max_rot_velocity="${max_rot_velocity}"
-    motor_number="6"
-    mesh="hexatilt_prop"
+    number="6"
+    mesh_file="package://flypulator_description/meshes/hexatilt/cw.dae"
     mesh_scale="${mesh_scale_prop}"
     color="DarkGrey">
-    <origin xyz="0 -${arm_length} ${rotor_offset_top}" rpy="${rotor_tilt_angle*deg_to_rad} 0  ${90*deg_to_rad}" />
-    <xacro:insert_block name="rotor_inertia" />
-  </xacro:vertical_rotor>
+    <origin xyz="0 0.000567025403784166 -0.0417250000002" rpy="0 0 0" />
+    <xacro:insert_block name="propeller_inertia" />
+  </xacro:propeller_macro>
 
-
-
-<xacro:landing_gear robot_namespace="${namespace}"
+  <xacro:landing_gear_macro
+    robot_namespace="${namespace}"
     suffix="left"
     parent="base_link"
     mass_leg="${mass_leg}"
     radius_leg="${radius_leg}"
-    max_leg_velocity="${max_leg_velocity}"
-    leg_number="1"
-    mesh="hexatilt_leg"
     length_leg="${length_leg}"
+    max_leg_velocity="${max_leg_velocity}"
+    mesh_file="package://flypulator_description/meshes/hexatilt/leg_link.STL"
     mesh_scale="${mesh_scale_leg}"
-    color="DarkGrey"
-    reflect="-1">
-    <origin xyz="0 ${leg_pos_side_y} -0.02" rpy="0 ${10*deg_to_rad} -${90*deg_to_rad}" />
+    color="DarkGrey">
+    <origin xyz="0 0.105662111226519 -0.0210849570335256" rpy="1.57079632679489 1.13446401379632 1.57079632679489" />
     <xacro:insert_block name="leg_inertia" />
-  </xacro:landing_gear>
+  </xacro:landing_gear_macro>
 
-
-<xacro:landing_gear robot_namespace="${namespace}"
+  <xacro:landing_gear_macro
+    robot_namespace="${namespace}"
     suffix="right"
     parent="base_link"
     mass_leg="${mass_leg}"
     radius_leg="${radius_leg}"
-    max_leg_velocity="${max_leg_velocity}"
-    leg_number="2"
-    mesh="hexatilt_leg"
     length_leg="${length_leg}"
+    max_leg_velocity="${max_leg_velocity}"
+    mesh_file="package://flypulator_description/meshes/hexatilt/leg_link.STL"
     mesh_scale="${mesh_scale_leg}"
-    reflect="1"
     color="DarkGrey">
-    <origin xyz="0 -${leg_pos_side_y} -0.02" rpy="0 ${10*deg_to_rad} ${90*deg_to_rad}" />
+    <origin xyz="0 -0.103899123534355 -0.0210849570335256" rpy="-1.57079632679489 1.13446401379631 -1.57079632679489" />
     <xacro:insert_block name="leg_inertia" />
-  </xacro:landing_gear>
-
+  </xacro:landing_gear_macro>
 
 </robot>
