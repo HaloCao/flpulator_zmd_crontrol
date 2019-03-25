@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
     <rosparam command="load" file="$(find flypulator_description)/param/drone_parameter.yaml" />
-    <rosparam command="load" file="$(find flypulator_gazebo_plugin)/cfg/sim_parameter.yaml" />
 
 
     <node name="flypulator_vive_pose" pkg="flypulator_vive_pose" type="vive_pose" output="screen">

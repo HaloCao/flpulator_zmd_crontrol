@@ -7,7 +7,6 @@
   <arg name="headless" default="false"/>
   <arg name="debug" default="false"/>
  
-  <rosparam command="load" file="$(find flypulator_gazebo_plugin)/cfg/state_estimation_param.yaml" />
   <rosparam command="load" file="$(find flypulator_description)/param/drone_parameter_igs.yaml" />
   <rosparam command="load" file="$(find flypulator_description)/param/aero_param_igs.yaml" />
   <rosparam command="load" file="$(find flypulator_gazebo_plugin)/cfg/sim_parameter.yaml" />

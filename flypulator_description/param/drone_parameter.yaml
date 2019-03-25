@@ -1,34 +1,14 @@
-# Geometric properties of drone
 # Motor numbering: 
 #       ^
 #      / \
 #       |
 #
-#    2     1
+#    2     1(-alpha)
 #
 # 3           6
 #
 #    4     5
 #
-# Base
-urdf/base_height: 0.09 # [m] 
-urdf/base_radius: 0.48 # [m] radius of cylinder for collision detection
-urdf/base_mass: 4.22 # [kg] with battery, without 3.37
-# Blades
-urdf/alpha: 30 # [°]
-urdf/beta: 0.0 # [°]
-urdf/propeller_offset_top: -0.028 # [m] -0.0427
-urdf/arm_length: 0.427 # [m] displacement between rotor and body centre
-urdf/propeller_radius: 0.1905 # [m]
-urdf/propeller_mass: 0.029 # [kg]
-# Legs
-urdf/leg_radius: 0.0125 # [m] 
-urdf/leg_length: 0.425 # [m] 
-urdf/leg_mass: 0.001 # [kg] currently included in base mass
-
-#naming conventions
-urdf/controller_joint_names: ['blade_joint_1', 'blade_joint_2', 'blade_joint_3', 'blade_joint_4', 'blade_joint_5', 'blade_joint_6', ]
-urdf/controller_link_names: ['blade_link_1', 'blade_link_2', 'blade_link_3', 'blade_link_4', 'blade_link_5', 'blade_link_6', ]
 
 # UAV parameters for control, only double value is allowed for /uav
 uav/mass: 4.850 # [kg] 
@@ -41,8 +21,8 @@ uav/delta_h: -0.02 #-0.0427  [m]
 uav/length: 0.427 # [m] displacement between rotor and body centre
 
 # coefficients used for simple aerodynamic model
-uav/k: 0.00004472  # estimated from datasheet [N/(rad/s)²] , f=k*omega_i² 
-uav/b: 0.0000022 # [Nm/(rad/s)²] , tau = b * omega_i² 0.00022  0.0000012
+uav/k: 0.00004472  # [N/(rad/s)²] , f=k*omega_i² 
+uav/b: 0.0000022 # [Nm/(rad/s)²] , tau = b * omega_i²
 uav/gravity: 9.81 # [m/s²] gravity acceleration constant
 uav/t_motor: 0.040 # 0.11 old [s] motor PT1 time constant 
 uav/rotor_vel_min: 0 # [rpm] min. rotor velocity

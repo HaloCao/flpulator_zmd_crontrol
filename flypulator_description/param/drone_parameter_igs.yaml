@@ -16,6 +16,4 @@ uav/t_motor: 0.11 # [s] motor PT1 time constant
 uav/rotor_vel_min: 0 # [rpm] min. rotor velocity
 uav/rotor_vel_max: 5700 # [rpm] max. rotor velocity
 
-urdf/controller_joint_names: ['blade_joint_1', 'blade_joint_2', 'blade_joint_3', 'blade_joint_4', 'blade_joint_5', 'blade_joint_6', ]
-urdf/controller_link_names: ['blade_link_1', 'blade_link_2', 'blade_link_3', 'blade_link_4', 'blade_link_5', 'blade_link_6', ]
 urdf/bidirectional: false # thrust inversible in gazebo
