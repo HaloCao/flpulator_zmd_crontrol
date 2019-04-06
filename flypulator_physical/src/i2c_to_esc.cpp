@@ -38,6 +38,9 @@ void controlMsgCallback(const flypulator_common_msgs::RotorVelStamped msg)
 
   motors_ptr->setMotorsVel(input);
 
+  // double dt = ros::Time::now().toSec() - msg.header.stamp.toSec();
+  // std::cout << "delay: " << dt << std::endl;
+
   // ROS_INFO_STREAM_THROTTLE(0.5, "controlMsgCallback() Write Motors!");
 
   // while (!sem_i2c);

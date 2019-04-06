@@ -18,11 +18,11 @@ ros::Publisher* g_desired_pose_pub;
 ros::Publisher* g_pose_error_pub;
 ros::Publisher* g_control_wrench_pub;
 
-void computeControlOutputAndPublish()
+void computeControlOutputAndPublish(ros::Time time_stamp)
 {
   flypulator_common_msgs::UavStateRPYStamped g_desired_pose_msg;
   Eigen::Vector3f desired_rpy = g_desired_pose.q.toRotationMatrix().eulerAngles(0, 1, 2);
-  g_desired_pose_msg.header.stamp = ros::Time::now();
+  g_desired_pose_msg.header.stamp = time_stamp;
   // pose
   g_desired_pose_msg.pose.x = g_desired_pose.p.x();
   g_desired_pose_msg.pose.y = g_desired_pose.p.y();
@@ -47,7 +47,7 @@ void computeControlOutputAndPublish()
   g_desired_pose_pub->publish(g_desired_pose_msg);
 
   flypulator_common_msgs::PoseXYZRPYStamped pose_error_msg;
-  pose_error_msg.header.stamp = ros::Time::now();
+  pose_error_msg.header.stamp = time_stamp;
   pose_error_msg.x = g_desired_pose.p.x() - g_current_pose.p.x();
   pose_error_msg.y = g_desired_pose.p.y() - g_current_pose.p.y();
   pose_error_msg.z = g_desired_pose.p.z() - g_current_pose.p.z();
@@ -67,7 +67,7 @@ void computeControlOutputAndPublish()
   control_wrench = g_drone_controller_p->getControlWrench();
   // build message
   flypulator_common_msgs::RotorVelStamped msg;
-  msg.header.stamp = ros::Time::now();
+  msg.header.stamp = time_stamp;
   for (int i = 0; i < 6; i++)
   {
     msg.velocity.push_back(g_spinning_rates(i, 0));
@@ -79,7 +79,7 @@ void computeControlOutputAndPublish()
   g_controller_running = false;
 
   geometry_msgs::WrenchStamped wrench_msg;
-  wrench_msg.header.stamp = ros::Time::now();
+  wrench_msg.header.stamp = time_stamp;
   wrench_msg.wrench.force.x = control_wrench(0, 0);
   wrench_msg.wrench.force.y = control_wrench(1, 0);
   wrench_msg.wrench.force.z = control_wrench(2, 0);
@@ -202,7 +202,7 @@ void stateMessageCallback(const flypulator_common_msgs::UavStateStamped::ConstPt
   }
   // compute control output to updated state information
   g_controller_running = true;
-  computeControlOutputAndPublish();
+  computeControlOutputAndPublish(msg->header.stamp);
 }
 
 int main(int argc, char** argv)
@@ -225,10 +225,10 @@ int main(int argc, char** argv)
   g_pose_error_pub = &pose_error_pub;
 
   // suscribe to trajectory messages
-  ros::Subscriber sub = n.subscribe("trajectory", 1, trajectoryMessageCallback);
+  ros::Subscriber sub = n.subscribe("trajectory", 1000, trajectoryMessageCallback);
 
   // suscribe to state estimation messages
-  ros::Subscriber sub_2 = n.subscribe("/drone/meas_state", 1, stateMessageCallback);
+  ros::Subscriber sub_2 = n.subscribe("/drone/meas_state", 100, stateMessageCallback, ros::TransportHints().tcpNoDelay());
 
   // ready to publish rotor command messages
   ros::Publisher rotor_cmd_pub = n.advertise<flypulator_common_msgs::RotorVelStamped>("/drone/rotor_cmd", 10);

@@ -239,7 +239,7 @@ void ControllerInterface::computeMappingMatrix()
     // compute r_ti vector;
     r_ti << l * cos(gamma), l * sin(gamma), dh;
     // compute thrust and drag torque
-    mom = k * r_ti.cross(e_r) + b * pow(-1, i) * e_r;  // k * r_ti.cross(e_r) + b * pow(-1,i) * e_r;
+    mom = k * r_ti.cross(e_r) + b * pow(-1, i+1) * e_r;  // k * r_ti.cross(e_r) + b * pow(-1,i+1) * e_r;
     // save to class variable map_matrix
     map_matrix_.block(0, i, 3, 1) = k * e_r;  // k*e_r
     map_matrix_.block(3, i, 3, 1) = mom;

@@ -126,6 +126,14 @@ T_TWIST transfromTwist(tf::Transform &T_WL, tf::Transform &T_SB, tf::Transform &
 
 void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 {
+  // static double last_time = 0;
+
+  // double dt = ros::Time::now().toSec() - last_time;
+  // last_time= ros::Time::now().toSec();
+  
+  // std::cout << "dt: " << dt << std::endl;
+
+
   static tf::TransformBroadcaster tf_br;
   static bool isTfInit = false;
   double current_time_stamp = msg->header.stamp.toSec();
@@ -220,6 +228,8 @@ void vive_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
   // flypulator_common_msgs::UavStateRPYStamped tracker_state_rpy_msg;
 
   uav_state_msg.header.stamp = msg->header.stamp;
+  // uav_state_msg.header.stamp = ros::Time::now();
+
   uav_state_rpy_msg.header.stamp = msg->header.stamp;
   // pose
   uav_state_msg.pose.position.x = T_out.getOrigin().getX();
@@ -353,7 +363,7 @@ int main(int argc, char **argv)
   // pub_tracker_state_rpy = nh.advertise<flypulator_common_msgs::UavStateRPYStamped>("tracker_state_rpy", 10);
   ROS_INFO("running");
   // ros::Subscriber sub_pose1 = nh.subscribe<nav_msgs::Odometry>("/vive/LHR_08DDEDC9_odom", 100, vive_odom_callback);
-  ros::Subscriber sub_pose1 = nh.subscribe<nav_msgs::Odometry>("odom_msg", 1, vive_odom_callback);
+  ros::Subscriber sub_pose1 = nh.subscribe<nav_msgs::Odometry>("odom_msg", 100, vive_odom_callback, ros::TransportHints().tcpNoDelay());
   ros::spin();
 
   return 0;
