@@ -12,6 +12,7 @@ void SlidingModeController::configCallback(flypulator_control::ism_parameterConf
            config.ism_lambda_T, config.ism_k_T, config.ism_k_T_I, config.ism_I_max_R, config.ism_lambda_R,
            config.ism_k_R, config.ism_k_R_I, config.ism_I_max_T, config.w_deadband);
   // set new values to class variables
+  g_controller_enabled = config.control_enabled;
   lambda_T_ = float(config.ism_lambda_T);
   lambda_R_ = float(config.ism_lambda_R);
   omega_deadband_ = float(config.w_deadband);

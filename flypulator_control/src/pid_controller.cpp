@@ -13,9 +13,9 @@ void PidController::configCallback(flypulator_control::pid_parameterConfig& conf
   ROS_INFO("Reconfigure Request: \n k_T_P_z = %f, \n k_T_I_z \t  = %f, \n k_T_D_z \t  = %f, \n", config.pid_k_T_P_z,
            config.pid_k_T_I_z, config.pid_k_T_D_z);
   // set new values to class variables
-
-  pid_I_max_T = float(config.pid_I_max_T);
-  pid_I_max_R = float(config.pid_I_max_R);
+  g_controller_enabled = config.control_enabled;
+  pid_I_max_T_ = float(config.pid_I_max_T);
+  pid_I_max_R_ = float(config.pid_I_max_R);
   K_T_P_ << config.pid_k_T_P, 0, 0, 0, config.pid_k_T_P, 0, 0, 0, config.pid_k_T_P_z;
   K_T_I_ << config.pid_k_T_I, 0, 0, 0, config.pid_k_T_I, 0, 0, 0, config.pid_k_T_I_z;
   K_T_D_ << config.pid_k_T_D, 0, 0, 0, config.pid_k_T_D, 0, 0, 0, config.pid_k_T_D_z;
@@ -100,22 +100,22 @@ void PidController::computeControlForceTorqueInput(const PoseVelocityAcceleratio
   // anti windup
   for (int i = 0; i < 3; i++)
   {
-    if (p_integral_err_[i] > pid_I_max_T)
+    if (p_integral_err_[i] > pid_I_max_T_)
     {
-      p_integral_err_[i] = pid_I_max_T;
+      p_integral_err_[i] = pid_I_max_T_;
     }
-    else if (p_integral_err_[i] < (-pid_I_max_T))
+    else if (p_integral_err_[i] < (-pid_I_max_T_))
     {
-      p_integral_err_[i] = -pid_I_max_T;
+      p_integral_err_[i] = -pid_I_max_T_;
     }
 
-    if (rotation_integral_err_[i] > pid_I_max_R)
+    if (rotation_integral_err_[i] > pid_I_max_R_)
     {
-      rotation_integral_err_[i] = pid_I_max_R;
+      rotation_integral_err_[i] = pid_I_max_R_;
     }
-    else if (rotation_integral_err_[i] < (-pid_I_max_R))
+    else if (rotation_integral_err_[i] < (-pid_I_max_R_))
     {
-      rotation_integral_err_[i] = -pid_I_max_R;
+      rotation_integral_err_[i] = -pid_I_max_R_;
     }
   }
   // calculate the virtual input

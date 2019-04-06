@@ -3,6 +3,15 @@
 
 #include "flypulator_control/base_controller.h"
 
+// declare global variable
+extern bool g_controller_enabled;
+
+/**
+ * \class The PidController class
+ * \brief The PidController class implements the PID controller with exact feedback linearization There is basically one
+ * central method which takes the desired and current value to calculate the desired force and torque with the control
+ * law. Controller parameters are dynamically reconfigurable during the runtime. The controller is disabled by default.
+ */
 class PidController : public BaseController
 {
 public:
@@ -15,22 +24,31 @@ public:
     , u_T_(Eigen::Vector3f(0, 0, 0))
     , u_R_(Eigen::Vector3f(0, 0, 0))
   {
-    // initialize t_last_ with assumed sampling time (200Hz).
+    // initialize t_last_
     t_last_ = ros::Time::now();
     ROS_DEBUG("t_last initialized as %f", t_last_.toSec());
   }
 
-  // compute Control Force and Torque
+  /**
+   * \brief computeControlForceTorqueInput is an overload function which calculates the desired force and torque
+   * according to the control law
+   * \param x_des contains the desired pose vel and acc
+   * \param x_current contains the feedback
+   * \param control_force_and_torque desired body wrench as result of the control law
+   */
   void computeControlForceTorqueInput(const PoseVelocityAcceleration& x_des, const PoseVelocityAcceleration& x_current,
                                       Eigen::Matrix<float, 6, 1>& control_force_and_torque);
 
-  // callback for dynamic reconfigure, sets dynamic parameters (controller gains)
+  /**
+   * \brief configCallback is callback of the dynamic reconfiguration. It sets all dynamically reconfigurable parameters
+   * \param config contains the new parameters
+   */
   void configCallback(flypulator_control::pid_parameterConfig& config, uint32_t level);
 
 private:
   float mass_;
-  float pid_I_max_T;
-  float pid_I_max_R;
+  float pid_I_max_T_;
+  float pid_I_max_R_;
   Eigen::Matrix3f inertia_;
   Eigen::Matrix3f inertia_inv_;
   Eigen::Vector3f gravity_;

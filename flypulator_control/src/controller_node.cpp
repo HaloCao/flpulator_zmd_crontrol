@@ -9,15 +9,18 @@
 ControllerInterface* g_drone_controller_p;
 PoseVelocityAcceleration g_current_pose;
 PoseVelocityAcceleration g_desired_pose;
-int g_rotor_vel_message_counter = 0;
 bool g_control_ref_initialized = false;
 bool g_controller_running = false;
+bool g_controller_enabled = false;
 ros::Publisher* g_rotor_cmd_pub;
 Eigen::Matrix<float, 6, 1> g_spinning_rates;
 ros::Publisher* g_desired_pose_pub;
 ros::Publisher* g_pose_error_pub;
 ros::Publisher* g_control_wrench_pub;
 
+/**
+ * \brief computeControlOutputAndPublish Excute controller and allocation
+ */
 void computeControlOutputAndPublish()
 {
   flypulator_common_msgs::UavStateRPYStamped g_desired_pose_msg;
@@ -88,6 +91,11 @@ void computeControlOutputAndPublish()
   wrench_msg.wrench.torque.z = control_wrench(5, 0);
   g_control_wrench_pub->publish(wrench_msg);
 }
+
+/**
+ * \brief GetMax Return the larger value
+ * \return larger value
+ */
 template <class T>
 T GetMax(T a, T b)
 {
@@ -96,7 +104,12 @@ T GetMax(T a, T b)
   return (result);
 }
 
-// encode a trajectory_msgs::MultiDOFJointTrajectoryPoint message to PoseVelocityAcceleration object
+/**
+ * \brief encodeTrajectoryMsg Encode trajectory_msgs::MultiDOFJointTrajectoryPoint message to PoseVelocityAcceleration
+ * object, store it in global variable for usage
+ * \param msg trajectory message
+ * \param pose_dest desired state
+ */
 void encodeTrajectoryMsg(const trajectory_msgs::MultiDOFJointTrajectoryPoint::ConstPtr& msg,
                          PoseVelocityAcceleration& pose_dest)
 {
@@ -129,6 +142,12 @@ void encodeTrajectoryMsg(const trajectory_msgs::MultiDOFJointTrajectoryPoint::Co
   pose_dest.omega_dot = omega_dot_des;
 }
 
+/**
+ * \brief encodeStateMsg Encode UavStateStamped message to PoseVelocityAcceleration
+ * object, store it in global variable for usage
+ * \param msg state feedback message
+ * \param pose_dest current state
+ */
 void encodeStateMsg(const flypulator_common_msgs::UavStateStamped::ConstPtr& msg, PoseVelocityAcceleration& pose_dest)
 {
   geometry_msgs::Pose transform = msg->pose;
@@ -160,7 +179,10 @@ void encodeStateMsg(const flypulator_common_msgs::UavStateStamped::ConstPtr& msg
   pose_dest.omega_dot = omega_dot_des;
 }
 
-// receive trajectory message
+/**
+ * \brief trajectoryMessageCallback Callback of trajectory message
+ * \param msg trajectory message
+ */
 void trajectoryMessageCallback(const trajectory_msgs::MultiDOFJointTrajectoryPoint::ConstPtr& msg)
 {
   // encode trajectory message to PoseVelocityAcceleration object
@@ -174,9 +196,15 @@ void trajectoryMessageCallback(const trajectory_msgs::MultiDOFJointTrajectoryPoi
   //  ROS_DEBUG("    Time from start: %f s", duration.toSec());
 }
 
-// receive state estimation message
+/**
+ * \brief stateMessageCallback Callback of state feedback message, The whole control loop is driven by feedback
+ * \param msg State feedback
+ */
 void stateMessageCallback(const flypulator_common_msgs::UavStateStamped::ConstPtr& msg)
 {
+  if (!g_controller_enabled)
+    return;
+
   // is this check meaningless? Every callback should be finished and later msg buffered in queue, when max queue size
   // reached, old msg will be dropped.
   if (g_controller_running)

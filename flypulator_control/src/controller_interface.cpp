@@ -7,6 +7,7 @@ ControllerInterface::ControllerInterface()
   use_bidirectional_propeller_ = false;
   use_motor_ff_control_ = false;
   controller_type_ = "pid";
+  ramp_coeff_ = 0;
 
   // read parameters from ros parameter server
   readParameterFromServer();
@@ -71,13 +72,23 @@ void ControllerInterface::computeControlOutput(const PoseVelocityAcceleration& x
 {
   // call controller to compute Force and Torque output
   controller_->computeControlForceTorqueInput(x_des, x_current, control_force_and_torque_);
+
   // map control force and torque to spinning velocities of the propellers resp. rotors
   mapControlForceTorqueInputToPropellerRates(x_current);
+
+  // ramp for spinning rate to start up rotors gently
+  if (ramp_coeff_ < (1 - ramp_increment_))  // compare with one step margin for numerical error
+  {
+    ramp_coeff_ = ramp_coeff_ + ramp_increment_;
+    spinning_rates_current_ = ramp_coeff_ * spinning_rates_current_;
+  }
+
   // perform feedforward control
   if (use_motor_ff_control_)
   {
     motorFeedForwardControl();
   }
+
   // limit spinning rate
   for (int i = 0; i < 6; i++)
   {
@@ -246,7 +257,12 @@ void ControllerInterface::computeMappingMatrix()
   }
 }
 
-Eigen::Matrix<float, 6, 1> ControllerInterface::getControlWrench()
+BaseController* ControllerInterface::getControllerReference() const
+{
+  return controller_;
+}
+
+Eigen::Matrix<float, 6, 1> ControllerInterface::getControlWrench() const
 {
   return control_force_and_torque_;
 }

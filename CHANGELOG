@@ -1,6 +1,13 @@
+## flypulator_control 2.1.0
+add switch for controller
+add a ramp generator for rotor_cmd to start up rotors gently
+
+## flypulator_description 2.0.0
+integrate new CAD model from fusion 360
+
 ## flypulator_launch 2.0.0
-split controller.launch for simulation and real hardware, since for hw more parameters have to be loaded.
 move state estimation parameters to  gazebo_plugin package, since it is for FakeSensorPlugin.
+remove parameter duplication
 
 ## flypulator_traj_generator 1.0.0
 generate feasible traj to avoid predictable input saturation
