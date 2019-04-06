@@ -21,27 +21,48 @@ class ControllerInterface
 public:
   ControllerInterface();  // constructor implemented in .cpp file
 
-  // compute spinning rates from current and desired pose
+  /**
+   * \brief computeControlForceTorqueInput Calculates the desired rotor command
+   * according to current UAV states
+   * \param x_des contains the desired pose vel and acc
+   * \param x_current contains the feedback
+   * \param spinning_rates desired rotor command
+   */
   void computeControlOutput(const PoseVelocityAcceleration& x_des, const PoseVelocityAcceleration& x_current,
                             Eigen::Matrix<float, 6, 1>& spinning_rates);
 
-  // return a reference to controller for dynamic reconfigure
-  BaseController* getControllerReference()
-  {
-    return controller_;
-  }
+  /**
+   * \brief getControllerReference Return a reference to controller object for dynamic reconfigure
+   * \return reference to controllerobject
+   */
+  BaseController* getControllerReference() const;
 
-  // return the control force and torque
-  Eigen::Matrix<float, 6, 1> getControlWrench();
+  /**
+   * \brief getControllerReference Return Return the control force and torque
+   * \return control wrench
+   */
+  Eigen::Matrix<float, 6, 1> getControlWrench() const;
 
 private:
-  // read uav parameter from ros parameter server
+  /**
+   * \brief readParameterFromServer Read uav parameter from ros parameter server
+   */
   void readParameterFromServer();
-  // map control forces and torques to propeller spinning rates
+
+  /**
+   * \brief mapControlForceTorqueInputToPropellerRates Map control wrench to propeller spinning rates
+   * \param x_current Current states requested by transform of force to body frame
+   */
   void mapControlForceTorqueInputToPropellerRates(const PoseVelocityAcceleration& x_current);
-  // compute mapping matrix from spinning rates to forces/torques
+
+  /**
+   * \brief computeMappingMatrix compute mapping matrix from spinning rates to forces/torques
+   */
   void computeMappingMatrix();
-  // perform feedforward-control
+
+  /**
+   * \brief motorFeedForwardControl perform motor feedforward compensation
+   */
   void motorFeedForwardControl();
 
   // map of drone parameters
@@ -69,6 +90,8 @@ private:
   bool use_motor_ff_control_;
   bool use_bidirectional_propeller_;
   float vel_max_;
+  const float ramp_increment_ = 0.002f;
+  float ramp_coeff_;
 };
 
 #endif  // CONTROLLER_INTERFACE_H

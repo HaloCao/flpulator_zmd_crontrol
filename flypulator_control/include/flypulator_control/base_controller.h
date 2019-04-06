@@ -5,6 +5,10 @@
 #include <eigen3/Eigen/Dense>
 #include "flypulator_control/pid_parameterConfig.h"
 
+/**
+ * \struct The PoseVelocityAcceleration struct
+ * \brief The PoseVelocityAcceleration struct defines UAV states, The only method print out all the states.
+ */
 struct PoseVelocityAcceleration
 {
   Eigen::Vector3f p;
@@ -31,19 +35,34 @@ struct PoseVelocityAcceleration
              q.y(), q.z(), omega.x(), omega.y(), omega.z(), omega_dot.x(), omega_dot.y(), omega_dot.z());
   }
 };
-// Abstract class, no objects from this class allowed, following http://cpp.nope.bz/pure_virtual.html
-// Superclass for all controller types
+
+/**
+ * \class The BaseController class
+ * \brief The BaseController class is the Superclass for all controller types, universal variable and methodes are
+ * defined within this class. It is a abstract class, no objects from this class allowed, following
+ * http://cpp.nope.bz/pure_virtual.html
+ */
 class BaseController
 {
 public:
   virtual ~BaseController()
   {
   }
-  // compute Control Force and Torque
+
+  /**
+   * \brief computeControlForceTorqueInput Calculates the desired force and torque according to the control law
+   * \param x_des contains the desired pose vel and acc
+   * \param x_current contains the feedback
+   * \param control_force_and_torque desired body wrench as result of the control law
+   */
   virtual void computeControlForceTorqueInput(const PoseVelocityAcceleration& x_des,
                                               const PoseVelocityAcceleration& x_current,
                                               Eigen::Matrix<float, 6, 1>& control_force_and_torque) = 0;
-  // callback for dynamic reconfigure, sets dynamic parameters (controller gains)
+
+  /**
+   * \brief configCallback is callback of the dynamic reconfiguration. It sets all dynamically reconfigurable parameters
+   * \param config contains the new parameters
+   */
   virtual void configCallback(flypulator_control::pid_parameterConfig& config, uint32_t level) = 0;
 };
 

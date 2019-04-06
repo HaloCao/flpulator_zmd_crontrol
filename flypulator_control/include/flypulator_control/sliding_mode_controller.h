@@ -4,6 +4,15 @@
 #include "flypulator_control/base_controller.h"
 #include <flypulator_control/ism_parameterConfig.h>
 
+// declare global variable
+extern bool g_controller_enabled;
+
+/**
+ * \class The SlidingModeController class
+ * \brief The SlidingModeController class implements the Sliding Mode Control. There is basically one
+ * central method which takes the desired and current value to calculate the desired force and torque with the control
+ * law. Controller parameters are dynamically reconfigurable during the runtime. The controller is disabled by default.
+ */
 class SlidingModeController : public BaseController
 {
 public:
@@ -26,15 +35,26 @@ public:
     t_last_ = ros::Time::now() - ros::Duration(0.005);
   }
 
-  // compute Control Force and Torque
+  /**
+   * \brief computeControlForceTorqueInput is an overload function which calculates the desired force and torque
+   * according to the control law
+   * \param x_des contains the desired pose vel and acc
+   * \param x_current contains the feedback
+   * \param control_force_and_torque desired body wrench as result of the control law
+   */
   void computeControlForceTorqueInput(const PoseVelocityAcceleration& x_des, const PoseVelocityAcceleration& x_current,
                                       Eigen::Matrix<float, 6, 1>& control_force_and_torque);
 
-  // callback for dynamic reconfigure, sets dynamic parameters (controller gains)
+  /**
+   * \brief configCallback is callback of the dynamic reconfiguration. It sets all dynamically reconfigurable parameters
+   * \param config contains the new parameters
+   */
   void configCallback(flypulator_control::ism_parameterConfig& config, uint32_t level);
+
   float getDeadband();
 
 private:
+  // bool controller_enabled_;
   float mass_;
   Eigen::Matrix3f inertia_;
   Eigen::Matrix3f inertia_inv_;
