@@ -203,7 +203,7 @@ public:
   {
     static int loop_cnt = 0;
 
-    if (loop_cnt >= (g_output_rate_divider - 1))
+    if (loop_cnt >= g_output_rate_divider)
     {
       loop_cnt = 0;  // reset loop counter
       // ROS_INFO_STREAM("I am fake sensor:"<<this->world->SimTime().Double());
