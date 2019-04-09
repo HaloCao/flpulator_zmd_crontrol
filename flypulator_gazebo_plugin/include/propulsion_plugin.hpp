@@ -48,15 +48,21 @@ public:
   /// \param[in] _sdf A pointer to the plugin's SDF element.
   virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
 
-  /// \brief The onUpdate function is called by Gazebo for every simulation
-  /// iteration. Update rate = 1 KHz
-  /// \param[in] _info Update infomation.
+  /** \brief The onUpdate function is called by Gazebo for every simulation
+   * iteration. Update rate = 1 KHz
+   * \param[in] _info Update infomation.
+   */
   void onUpdate(const common::UpdateInfo &_info);
 
   /// \brief The onRosWindMsg function is called every update of the
   /// topic for wind.
   /// \param[in] _wind_msg wind command message.
   void onRosWindMsg(const geometry_msgs::Vector3ConstPtr &_wind_msg);
+
+  /** \brief The onRosDistMsg function is called every update of the topic for disturbance wrench
+   * \param[in] _dist_msg Update information.
+   */
+  void onRosDistMsg(const geometry_msgs::WrenchConstPtr &_dist_msg);
 
   /// \brief The onControlMsg function is called every update of the
   /// topic for rotor command.
@@ -160,7 +166,8 @@ private:
   Eigen::Vector3d aero_force_[6];   // aerodynamic forces
   Eigen::Vector3d aero_torque_[6];  // aerodynamic torques
 
-  ignition::math::Vector3<double> distforce_;  // disturbance force
+  ignition::math::Vector3<double> dist_force_;   // disturbance force
+  ignition::math::Vector3<double> dist_torque_;  // disturbance torque
 
   // dynamic model of rotors
   flypulator::MotorModel motor1_;
@@ -175,6 +182,7 @@ private:
 
   physics::LinkPtr ctrl_link_ptr_[6];  // pointer to control links
   physics::LinkPtr link0_;             // point to base link
+  unsigned int joint_cnt_;
 
   physics::JointPtr ctrl_joint_ptr_[6];  // pointer to control joints
 
@@ -184,6 +192,8 @@ private:
   event::ConnectionPtr updateConnection_;
 
   ros::Subscriber rosSubWind_;
+
+  ros::Subscriber rosSubDist_;
 
   ros::Subscriber rosSubControl_;
 
