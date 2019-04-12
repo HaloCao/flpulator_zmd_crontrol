@@ -1,65 +1,10 @@
-#ifndef _FAKE_SENSOR_PLUGIN_HH_
-#define _FAKE_SENSOR_PLUGIN_HH_
-
-#include <vector>
-#include <queue>
-#include <iostream>
-#include <math.h>
-#include <thread>
-#include <fstream>
-
-#include <gazebo/gazebo.hh>
-#include <gazebo/physics/physics.hh>
-
 #include "fake_sensor_plugin.hpp"
 
 namespace gazebo
 {
 FakeSensorPlugin::FakeSensorPlugin()
+  : output_rate_divider_(10), three_sigma_p_(0), three_sigma_v_(0), three_sigma_phi_(0), three_sigma_omega_(0)
 {
-  // initial values for noise generators if no noise specified in state_estimation_param.yaml
-  double default_sigma_p = 0;      // 1 / 3.0f;
-  double default_sigma_v = 0;      // sqrt(2)*default_sigma_p/(g_output_rate_divider/1000) / 3.0f;
-  double default_sigma_phi = 0;    // M_PI / 180.0f * 1 / 3.0f;
-  double default_sigma_omega = 0;  // sqrt(2)*default_sigma_phi/(g_output_rate_divider/1000) / 3.0f;
-  // https://stackoverflow.com/questions/25193991/how-to-initialize-boostmt19937-with-multiple-values-without-using-c11
-  boost::random::seed_seq seed_x({1ul, 2ul, 3ul, 4ul});
-  boost::random::seed_seq seed_y({5ul, 6ul, 7ul, 8ul});
-  boost::random::seed_seq seed_z({9ul, 10ul, 11ul, 12ul});
-  boost::random::seed_seq seed_v_x({13ul, 14ul, 15ul, 16ul});
-  boost::random::seed_seq seed_v_y({17ul, 18ul, 19ul, 20ul});
-  boost::random::seed_seq seed_v_z({21ul, 22ul, 23ul, 24ul});
-  boost::random::seed_seq seed_roll({25ul, 26ul, 27ul, 28ul});
-  boost::random::seed_seq seed_pitch({29ul, 30ul, 31ul, 32ul});
-  boost::random::seed_seq seed_yaw({33ul, 34ul, 35ul, 36ul});
-  boost::random::seed_seq seed_om_x({37ul, 38ul, 39ul, 40ul});
-  boost::random::seed_seq seed_om_y({41ul, 42ul, 43ul, 44ul});
-  boost::random::seed_seq seed_om_z({45ul, 46ul, 47ul, 48ul});
-
-  noise_generator_x_ = boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
-      boost::mt19937(seed_x), boost::normal_distribution<>(0, default_sigma_p));
-  noise_generator_y_ = boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
-      boost::mt19937(seed_y), boost::normal_distribution<>(0, default_sigma_p));
-  noise_generator_z_ = boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
-      boost::mt19937(seed_z), boost::normal_distribution<>(0, default_sigma_p));
-  noise_generator_v_x_ = boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
-      boost::mt19937(seed_v_x), boost::normal_distribution<>(0, default_sigma_v));
-  noise_generator_v_y_ = boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
-      boost::mt19937(seed_v_y), boost::normal_distribution<>(0, default_sigma_v));
-  noise_generator_v_z_ = boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
-      boost::mt19937(seed_v_z), boost::normal_distribution<>(0, default_sigma_v));
-  noise_generator_roll_ = boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
-      boost::mt19937(seed_roll), boost::normal_distribution<>(0, default_sigma_phi));
-  noise_generator_pitch_ = boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
-      boost::mt19937(seed_pitch), boost::normal_distribution<>(0, default_sigma_phi));
-  noise_generator_yaw_ = boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
-      boost::mt19937(seed_yaw), boost::normal_distribution<>(0, default_sigma_phi));
-  noise_generator_om_x_ = boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
-      boost::mt19937(seed_om_x), boost::normal_distribution<>(0, default_sigma_omega));
-  noise_generator_om_y_ = boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
-      boost::mt19937(seed_om_y), boost::normal_distribution<>(0, default_sigma_omega));
-  noise_generator_om_z_ = boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
-      boost::mt19937(seed_om_z), boost::normal_distribution<>(0, default_sigma_omega));
 }
 
 void FakeSensorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
@@ -72,68 +17,62 @@ void FakeSensorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   }
 
   // Store the model pointer for convenience
-  this->model = _model;
-  this->world = _model->GetWorld();
+  this->model_ = _model;
+  this->world_ = _model->GetWorld();
 
-  this->link0 = _model->GetChildLink("base_link");
+  this->link0_ = _model->GetChildLink("base_link");
 
-  float three_sigma_p = 0;
-  float three_sigma_v = 0;
-  float three_sigma_phi = 0;
-  float three_sigma_omega = 0;
   // take noise values from parameter server
   // and change distributions if value read from file
   // https://stackoverflow.com/questions/36289180/boostrandomvariate-generator-change-parameters-after-construction
-  if (ros::param::get("state_estimation/three_sigma_p", three_sigma_p))
+  if (ros::param::get("state_estimation/three_sigma_p", three_sigma_p_))
   {
-    ROS_DEBUG_STREAM("sensor_plugin: three_sigma_position: " << three_sigma_p << " m");
-    boost::normal_distribution<> new_dist(0, three_sigma_p / 3.0f);
-    noise_generator_x_.distribution() = new_dist;
-    noise_generator_y_.distribution() = new_dist;
-    noise_generator_z_.distribution() = new_dist;
+    ROS_DEBUG_STREAM("sensor_plugin: three_sigma_position: " << three_sigma_p_ << " m");
+    boost::normal_distribution<> new_dist(0, three_sigma_p_ / 3.0);
+    noise_generator_x.distribution() = new_dist;
+    noise_generator_y.distribution() = new_dist;
+    noise_generator_z.distribution() = new_dist;
   }
-  if (ros::param::get("state_estimation/three_sigma_v", three_sigma_v))
+  if (ros::param::get("state_estimation/three_sigma_v", three_sigma_v_))
   {
-    ROS_DEBUG_STREAM("sensor_plugin: three_sigma_vel: " << three_sigma_v << " m/s");
-    boost::normal_distribution<> new_dist(0, three_sigma_v / 3.0f);
-    noise_generator_v_x_.distribution() = new_dist;
-    noise_generator_v_y_.distribution() = new_dist;
-    noise_generator_v_z_.distribution() = new_dist;
+    ROS_DEBUG_STREAM("sensor_plugin: three_sigma_vel: " << three_sigma_v_ << " m/s");
+    boost::normal_distribution<> new_dist(0, three_sigma_v_ / 3.0);
+    noise_generator_v_x.distribution() = new_dist;
+    noise_generator_v_y.distribution() = new_dist;
+    noise_generator_v_z.distribution() = new_dist;
   }
-  if (ros::param::get("state_estimation/three_sigma_phi", three_sigma_phi))
+  if (ros::param::get("state_estimation/three_sigma_phi", three_sigma_phi_))
   {
-    ROS_DEBUG_STREAM("sensor_plugin: three_sigma_angle: " << three_sigma_phi << " degree");
-    boost::normal_distribution<> new_dist(0, three_sigma_phi * M_PI / 180.0f / 3.0f);
-    noise_generator_roll_.distribution() = new_dist;
-    noise_generator_pitch_.distribution() = new_dist;
-    noise_generator_yaw_.distribution() = new_dist;
+    ROS_DEBUG_STREAM("sensor_plugin: three_sigma_angle: " << three_sigma_phi_ << " degree");
+    boost::normal_distribution<> new_dist(0, three_sigma_phi_ * M_PI / 180.0 / 3.0);
+    noise_generator_roll.distribution() = new_dist;
+    noise_generator_pitch.distribution() = new_dist;
+    noise_generator_yaw.distribution() = new_dist;
   }
-  if (ros::param::get("state_estimation/three_sigma_omega", three_sigma_omega))
+  if (ros::param::get("state_estimation/three_sigma_omega", three_sigma_omega_))
   {
-    ROS_DEBUG_STREAM("sensor_plugin: three_sigma_omega: " << three_sigma_omega << " degree/s");
-    boost::normal_distribution<> new_dist(0, three_sigma_omega * M_PI / 180.0f / 3.0f);
-    noise_generator_om_x_.distribution() = new_dist;
-    noise_generator_om_y_.distribution() = new_dist;
-    noise_generator_om_z_.distribution() = new_dist;
+    ROS_DEBUG_STREAM("sensor_plugin: three_sigma_omega: " << three_sigma_omega_ << " degree/s");
+    boost::normal_distribution<> new_dist(0, three_sigma_omega_ * M_PI / 180.0 / 3.0);
+    noise_generator_om_x.distribution() = new_dist;
+    noise_generator_om_y.distribution() = new_dist;
+    noise_generator_om_z.distribution() = new_dist;
   }
 
-  float sampling_time;
-  if (ros::param::get("state_estimation/sampling_time", sampling_time))
+  if (ros::param::get("state_estimation/sampling_time", sampling_time_))
   {
-    ROS_DEBUG_STREAM("sensor_plugin: update rate: " << (1 / sampling_time) << " Hz");
-    g_output_rate_divider = (int)(sampling_time * 1000.0);  // convert sampling time to divider
+    ROS_DEBUG_STREAM("sensor_plugin: update rate: " << (1 / sampling_time_) << " Hz");
+    output_rate_divider_ = int(sampling_time_ * 1000.0);  // convert sampling time to divider
   }
-  int nr_of_msg_delay;
-  if (ros::param::get("state_estimation/nr_of_msg_delay", nr_of_msg_delay))
+  if (ros::param::get("state_estimation/nr_of_msg_delay", nr_of_msg_delay_))
   {
-    ROS_DEBUG_STREAM("sensor_plugin: delay (msg number): " << nr_of_msg_delay);
-    size_of_queue = nr_of_msg_delay;
+    ROS_DEBUG_STREAM("sensor_plugin: delay (msg number): " << nr_of_msg_delay_);
+    size_of_queue = nr_of_msg_delay_;
   }
 
   if (write_data_2_file)
   {
-    result_file.open(file_path);
-    result_file << "time,x,y,z,roll,pitch,yaw" << std::endl;
+    result_file_.open(file_path);
+    result_file_ << "time,x,y,z,roll,pitch,yaw" << std::endl;
   }
 
   // Initialize ros, if it has not already bee initialized.
@@ -145,44 +84,42 @@ void FakeSensorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
     ROS_WARN_STREAM("Create gazebo_client node");
   }
   // Create our ROS node.
-  this->rosNode.reset(new ros::NodeHandle("gazebo_client"));
-  ROS_INFO_STREAM("fake_sensor_plugin get node: " << this->rosNode->getNamespace());
+  this->rosNode_.reset(new ros::NodeHandle("gazebo_client"));
+  ROS_INFO_STREAM("fake_sensor_plugin get node: " << this->rosNode_->getNamespace());
 
   // real states of the drone
-  this->pub_real_state = this->rosNode->advertise<flypulator_common_msgs::UavStateStamped>("/drone/real_state", 100);
+  this->pub_real_state_ = this->rosNode_->advertise<flypulator_common_msgs::UavStateStamped>("/drone/real_state", 100);
   // measured states of the drone
-  this->pub_meas_state = this->rosNode->advertise<flypulator_common_msgs::UavStateStamped>("/drone/meas_state", 100);
+  this->pub_meas_state_ = this->rosNode_->advertise<flypulator_common_msgs::UavStateStamped>("/drone/meas_state", 100);
 
   // Spin up the queue helper thread.
-  this->rosQueueThread = std::thread(std::bind(&FakeSensorPlugin::QueueThread, this));
+  this->rosQueueThread_ = std::thread(std::bind(&FakeSensorPlugin::QueueThread, this));
 
   // This event is broadcast every simulation iteration.
   // Get pose of the drone and publish.
   // TODO: the callback should connect to WorldUpdateEnd signal not Begin
-  this->updateConnection = event::Events::ConnectWorldUpdateBegin(boost::bind(&FakeSensorPlugin::OnUpdate, this, _1));
+  this->updateConnection_ = event::Events::ConnectWorldUpdateBegin(boost::bind(&FakeSensorPlugin::OnUpdate, this, _1));
 
   ROS_INFO("Loading FakeSensorPlugin finished successfully!");
 }
 
-// publish drone state
-public:
-void OnUpdate(const common::UpdateInfo &_info)  // update rate = 1kHz
+void FakeSensorPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate = 1kHz
 {
   static int loop_cnt = 0;
 
-  if (loop_cnt >= g_output_rate_divider)
+  if (loop_cnt >= output_rate_divider_)
   {
     loop_cnt = 0;  // reset loop counter
     // ROS_INFO_STREAM("I am fake sensor:"<<this->world->SimTime().Double());
 
-    ignition::math::Pose3d drone_pose = this->link0->WorldPose();
-    ignition::math::Vector3<double> drone_vel_linear = this->link0->WorldLinearVel();
-    ignition::math::Vector3<double> drone_vel_angular = this->link0->RelativeAngularVel();
-    ignition::math::Vector3<double> drone_acc_linear = this->link0->WorldLinearAccel();
-    ignition::math::Vector3<double> drone_acc_angular = this->link0->RelativeAngularAccel();
+    ignition::math::Pose3d drone_pose = this->link0_->WorldPose();
+    ignition::math::Vector3<double> drone_vel_linear = this->link0_->WorldLinearVel();
+    ignition::math::Vector3<double> drone_vel_angular = this->link0_->RelativeAngularVel();
+    ignition::math::Vector3<double> drone_acc_linear = this->link0_->WorldLinearAccel();
+    ignition::math::Vector3<double> drone_acc_angular = this->link0_->RelativeAngularAccel();
 
     flypulator_common_msgs::UavStateStamped uav_state_msg;
-    uav_state_msg.header.stamp = ros::Time(this->world->SimTime().Double());
+    uav_state_msg.header.stamp = ros::Time(this->world_->SimTime().Double());
     // pose
     uav_state_msg.pose.position.x = drone_pose.Pos().X();
     uav_state_msg.pose.position.y = drone_pose.Pos().Y();
@@ -245,20 +182,20 @@ void OnUpdate(const common::UpdateInfo &_info)  // update rate = 1kHz
     uav_state_meas_msg.acceleration.angular.y = drone_acc_angular.Y();
     uav_state_meas_msg.acceleration.angular.z = drone_acc_angular.Z();
 
-    uav_state_meas_msg.header.stamp = ros::Time(this->world->SimTime().Double());
+    uav_state_meas_msg.header.stamp = ros::Time(this->world_->SimTime().Double());
 
     // publish real states of the simulated drone
-    pub_real_state.publish(uav_state_msg);
+    pub_real_state_.publish(uav_state_msg);
 
     // delay measurement messages by multiplies of T_s
     // push message to queue
-    queue.push(uav_state_meas_msg);  // pushes new messages to the back
+    queue_.push(uav_state_meas_msg);  // pushes new messages to the back
     // at beginning, queue must be filled, so no pop
-    if (queue.size() > size_of_queue)
+    if (queue_.size() > size_of_queue)
     {
       // publish measured states of the simulated drone
-      pub_meas_state.publish(queue.front());  // take first element and publish
-      queue.pop();                            // delete first element
+      pub_meas_state_.publish(queue_.front());  // take first element and publish
+      queue_.pop();                             // delete first element
     }
   }
   else
@@ -273,65 +210,27 @@ void OnUpdate(const common::UpdateInfo &_info)  // update rate = 1kHz
   }
 }
 
-private:
-void QueueThread()
+void FakeSensorPlugin::QueueThread()
 {
   static const double timeout = 0.01;
-  while (this->rosNode->ok())
+  while (this->rosNode_->ok())
   {
-    this->rosQueue.callAvailable(ros::WallDuration(timeout));
+    this->rosQueue_.callAvailable(ros::WallDuration(timeout));
   }
 }
 
-void streamDataToFile()
+void FakeSensorPlugin::streamDataToFile()
 {
-  result_file.setf(std::ios::fixed, std::ios::floatfield);
-  result_file.precision(5);
-  ignition::math::Pose3d drone_pose = this->link0->WorldPose();
+  result_file_.setf(std::ios::fixed, std::ios::floatfield);
+  result_file_.precision(5);
+  ignition::math::Pose3d drone_pose = this->link0_->WorldPose();
   ignition::math::Vector3<double> eul(drone_pose.Rot().Roll(), drone_pose.Rot().Pitch(), drone_pose.Rot().Yaw());
-  result_file << this->model->GetWorld()->SimTime().Double() << ",";
-  result_file << drone_pose.Pos().X() << "," << drone_pose.Pos().Y() << "," << drone_pose.Pos().Z() << "," << eul.X()
-              << "," << eul.Y() << "," << eul.Z();
-  result_file << std::endl;
+  result_file_ << this->model_->GetWorld()->SimTime().Double() << ",";
+  result_file_ << drone_pose.Pos().X() << "," << drone_pose.Pos().Y() << "," << drone_pose.Pos().Z() << "," << eul.X()
+               << "," << eul.Y() << "," << eul.Z();
+  result_file_ << std::endl;
 }
-
-/// \brief Pointer to the model.
-private:
-physics::ModelPtr model;
-physics::WorldPtr world;
-
-private:
-physics::LinkPtr link0;
-
-/// \brief A node use for ROS transport
-private:
-std::unique_ptr<ros::NodeHandle> rosNode;
-
-private:
-ros::Subscriber rosSubLink;
-
-/// \brief A ROS callbackqueue that helps process messages
-private:
-ros::CallbackQueue rosQueue;
-
-/// \brief A thread the keeps running the rosQueue
-private:
-std::thread rosQueueThread;
-
-private:
-event::ConnectionPtr updateConnection;
-
-private:
-ros::Publisher pub_real_state;
-ros::Publisher pub_meas_state;
-
-std::ofstream result_file;
-
-std::queue<flypulator_common_msgs::UavStateStamped> queue;
-};  // namespace gazebo
 
 // Tell Gazebo about this plugin, so that Gazebo can call Load on this plugin.
 GZ_REGISTER_MODEL_PLUGIN(FakeSensorPlugin)
 }  // namespace gazebo
-
-#endif /*_FAKE_SENSOR_PLUGIN_HH_*/
