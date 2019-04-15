@@ -26,6 +26,7 @@
   <exec_depend>flypulator_control</exec_depend>
   <exec_depend>hector_gazebo_plugins</exec_depend>
   <exec_depend>flypulator_imp_control</exec_depend>
+  <exec_depend>flypulator_zmd_control</exec_depend>
 
   <!--
   <export>

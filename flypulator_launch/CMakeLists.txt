@@ -14,5 +14,6 @@ catkin_package(
   flypulator_teleoperation 
   flypulator_control
   hector_gazebo_plugins 
-  flypulator_imp_control
+  #flypulator_imp_control
+  flypulator_zmd_control
 )

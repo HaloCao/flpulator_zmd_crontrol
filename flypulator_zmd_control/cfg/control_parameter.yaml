@@ -1,0 +1,3 @@
+controller/type: "zmd" #controller type, "zmd" for zero_moment_direction controller
+controller/use_motor_ff: false # enable or disable feedforward motor control
+controller/update_rate: 200 # [Hz] update_rate of control loop, used by motor FF and traj. generator
