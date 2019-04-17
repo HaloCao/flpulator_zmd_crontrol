@@ -1,20 +1,19 @@
 <package format="2">
   <name>flypulator_zmd_control</name>
-  <version>2.0.0</version>
+  <version>1.0.0</version>
   <description>The controller package for flypulator project</description>
 
-  <maintainer email="jan.krieglstein@tu-dresden.de">Jan Krieglstein</maintainer>
   <maintainer email="chao.yao@tu-dresden.de">Chao Yao</maintainer>
 
   <license>BSD</license>
 
-  <author email="jan.krieglstein@tu-dresden.de">Jan Krieglstein</author> 
+  <author email="bozhicao@gmail.com">Bozhi Cao</author> 
 
 
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/sliding_mode_controller</url> -->
+  <!-- <url type="website">http://wiki.ros.org/</url> -->
 
 
   <!-- Author tags are optional, multiple are allowed, one per tag -->

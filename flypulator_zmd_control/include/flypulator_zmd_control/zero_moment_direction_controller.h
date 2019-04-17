@@ -39,15 +39,16 @@ private:
   Eigen::Matrix3f inertia_;
   Eigen::Matrix3f inertia_inv_;
   Eigen::Vector3f gravity_;
-  // translational variables
   Eigen::Vector3f e_p_;
   Eigen::Vector3f e_p_sum_;
   Eigen::Vector3f e_v_;
   Eigen::Vector3f f_r_;
   Eigen::Vector3f e3_;
+  //translational pid regler
   float K_pp_;
   float K_pi_;
   float K_pd_;
+
   Eigen::Vector3f f_del_;
   float f_;
   Eigen::Vector3f _d_;
@@ -73,6 +74,8 @@ private:
   Eigen::Vector3f w_rd_;
   Eigen::Vector3f w_d_;
   float K_q_;
+  
+  //rotation pid regler
   float K_ap_;
   float K_ai_;
   float K_ad_;

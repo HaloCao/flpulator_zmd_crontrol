@@ -50,7 +50,7 @@ ControllerInterface::ControllerInterface()
 
   // create controller object depending on desired controller type (in controller_type_, read from parameter in
   // readDroneParameterFromServer())
-  if (controller_type_.compare("zmd") == 0)  // controller type PID, create object of PidController class
+  if (controller_type_.compare("zmd") == 0)  // controller type ZMD, create object of ZmdController class
   {
     controller_ = new ZeroMomentDirectionController(mass, inertia, gravity);  // use new, otherwise object is destroyed after
                                                               // this function and pointer is a dead pointer

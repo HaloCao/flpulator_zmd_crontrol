@@ -3,8 +3,6 @@
 
 // include controller classes
 #include "base_controller.h"
-//#include "flypulator_control/sliding_mode_controller.h"
-//#include "flypulator_control/pid_controller.h"
 #include "flypulator_zmd_control/zero_moment_direction_controller.h"
 
 
