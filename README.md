@@ -52,25 +52,25 @@ rosparam load flypulator_ws/src/flypulator/flypulator_description/param/[drone_p
 roslaunch flypulator_description display.launch
 
 ## Controller
-The controller package (flypulator_control) provides a sliding mode controller and a PID controller with feedback linearization for a fully actuated hexarotor. .
 
+The controller package (flypulator_zmd_control) provides a zero_moment_direction controller for a fully actuated hexarotor. .
 ### Start
 
-To start the controller node and load the `control_parameter.yaml`, where e.g. the controller type is defined, a launch file is provided in `flypulator_launch/launch` named `controller.launch`, which can be executed using the following command:
+To start the controller node and load the `control_parameter.yaml`, where e.g. the controller type is defined, a launch file is provided in `flypulator_launch/launch` named `zmd_controller.launch`, which can be executed using the following command:
 
 ```
-roslaunch flypulator_launch controller.launch
+roslaunch flypulator_launch zmd_controller.launch
 ```
 
 ### Parameters
 
-The control parameters including the distinct rotational and translational gains of the ISM controller can be changed via runtime using the [dynamic_reconfigure package](http://wiki.ros.org/dynamic_reconfigure). The default values are defined in the files `ism_parameter.cfg` located at `flypulator_control/cfg/`. To start the dynamic reconfigure GUI, use the following command:
+The control parameters including the  rotational and translational gains of the ZMD controller can be changed via runtime using the [dynamic_reconfigure package](http://wiki.ros.org/dynamic_reconfigure). The default values are defined in the files `zmd_parameter.cfg` located at `flypulator_zmd_control/cfg/`. To start the dynamic reconfigure GUI, use the following command:
 
 ```
 rosrun rqt_reconfigure rqt_reconfigure
 ```
 
-The new controller parameters are passed to the controller, which also can be watched in console output. Note that the parameters are for an ISM controller; to support additional controllers, they need to implement the BaseController interface/abstract class and the file `control_parameter.cfg` needs to be adapted as well as the ControllerInterface class, where the new controller type has to be registered.
+The new controller parameters are passed to the controller, which also can be watched in console output. Note that the parameters are for an ZMD controller; to support additional controllers, they need to implement the BaseController interface/abstract class and the file `control_parameter.cfg` needs to be adapted as well as the ControllerInterface class, where the new controller type has to be registered.
 
 The debug level can be changed in a GUI by running
 
