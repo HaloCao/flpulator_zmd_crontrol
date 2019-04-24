@@ -2,6 +2,67 @@
 
 namespace gazebo
 {
+bool write_data_2_file = true;  // save pose data to file
+std::string file_path = "/home/chao/flypulator_ws/src/flypulator/flypulator_gazebo_plugin/position_data_refstep.csv";
+
+// number of messages which meas_state messages are delayed by if not specified in state_estimation_param_yaml
+unsigned size_of_queue = 2;
+
+// initial values for noise generators if no noise specified in state_estimation_param.yaml
+double default_sigma_p = 0;      // 1 / 3.0f;
+double default_sigma_v = 0;      // sqrt(2)*default_sigma_p/(g_output_rate_divider/1000) / 3.0f;
+double default_sigma_phi = 0;    // M_PI / 180.0f * 1 / 3.0f;
+double default_sigma_omega = 0;  // sqrt(2)*default_sigma_phi/(g_output_rate_divider/1000) / 3.0f;
+// https://stackoverflow.com/questions/25193991/how-to-initialize-boostmt19937-with-multiple-values-without-using-c11
+boost::random::seed_seq seed_x({1ul, 2ul, 3ul, 4ul});
+boost::random::seed_seq seed_y({5ul, 6ul, 7ul, 8ul});
+boost::random::seed_seq seed_z({9ul, 10ul, 11ul, 12ul});
+boost::random::seed_seq seed_v_x({13ul, 14ul, 15ul, 16ul});
+boost::random::seed_seq seed_v_y({17ul, 18ul, 19ul, 20ul});
+boost::random::seed_seq seed_v_z({21ul, 22ul, 23ul, 24ul});
+boost::random::seed_seq seed_roll({25ul, 26ul, 27ul, 28ul});
+boost::random::seed_seq seed_pitch({29ul, 30ul, 31ul, 32ul});
+boost::random::seed_seq seed_yaw({33ul, 34ul, 35ul, 36ul});
+boost::random::seed_seq seed_om_x({37ul, 38ul, 39ul, 40ul});
+boost::random::seed_seq seed_om_y({41ul, 42ul, 43ul, 44ul});
+boost::random::seed_seq seed_om_z({45ul, 46ul, 47ul, 48ul});
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>> noise_generator_x =
+    boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
+        boost::mt19937(seed_x), boost::normal_distribution<>(0, default_sigma_p));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>> noise_generator_y =
+    boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
+        boost::mt19937(seed_y), boost::normal_distribution<>(0, default_sigma_p));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>> noise_generator_z =
+    boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
+        boost::mt19937(seed_z), boost::normal_distribution<>(0, default_sigma_p));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>> noise_generator_v_x =
+    boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
+        boost::mt19937(seed_v_x), boost::normal_distribution<>(0, default_sigma_v));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>> noise_generator_v_y =
+    boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
+        boost::mt19937(seed_v_y), boost::normal_distribution<>(0, default_sigma_v));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>> noise_generator_v_z =
+    boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
+        boost::mt19937(seed_v_z), boost::normal_distribution<>(0, default_sigma_v));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>> noise_generator_roll =
+    boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
+        boost::mt19937(seed_roll), boost::normal_distribution<>(0, default_sigma_phi));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>> noise_generator_pitch =
+    boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
+        boost::mt19937(seed_pitch), boost::normal_distribution<>(0, default_sigma_phi));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>> noise_generator_yaw =
+    boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
+        boost::mt19937(seed_yaw), boost::normal_distribution<>(0, default_sigma_phi));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>> noise_generator_om_x =
+    boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
+        boost::mt19937(seed_om_x), boost::normal_distribution<>(0, default_sigma_omega));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>> noise_generator_om_y =
+    boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
+        boost::mt19937(seed_om_y), boost::normal_distribution<>(0, default_sigma_omega));
+boost::variate_generator<boost::mt19937, boost::normal_distribution<>> noise_generator_om_z =
+    boost::variate_generator<boost::mt19937, boost::normal_distribution<>>(
+        boost::mt19937(seed_om_z), boost::normal_distribution<>(0, default_sigma_omega));
+        
 FakeSensorPlugin::FakeSensorPlugin()
   : output_rate_divider_(10), three_sigma_p_(0), three_sigma_v_(0), three_sigma_phi_(0), three_sigma_omega_(0)
 {
@@ -61,7 +122,7 @@ void FakeSensorPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   if (ros::param::get("state_estimation/sampling_time", sampling_time_))
   {
     ROS_DEBUG_STREAM("sensor_plugin: update rate: " << (1 / sampling_time_) << " Hz");
-    output_rate_divider_ = int(sampling_time_ * 1000.0);  // convert sampling time to divider
+    output_rate_divider_ = int(sampling_time_ * 1000.0 + 0.5);  // convert sampling time to divider
   }
   if (ros::param::get("state_estimation/nr_of_msg_delay", nr_of_msg_delay_))
   {
@@ -107,7 +168,7 @@ void FakeSensorPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
 {
   static int loop_cnt = 0;
 
-  if (loop_cnt >= output_rate_divider_)
+  if (loop_cnt >= output_rate_divider_ - 1)
   {
     loop_cnt = 0;  // reset loop counter
     // ROS_INFO_STREAM("I am fake sensor:"<<this->world->SimTime().Double());
@@ -200,6 +261,8 @@ void FakeSensorPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
   }
   else
     loop_cnt++;
+
+  std::cout<<"loop_cnt = " << loop_cnt << std::endl;
 
   ros::spinOnce();
 
