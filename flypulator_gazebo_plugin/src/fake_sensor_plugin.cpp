@@ -262,7 +262,7 @@ void FakeSensorPlugin::OnUpdate(const common::UpdateInfo &_info)  // update rate
   else
     loop_cnt++;
 
-  std::cout<<"loop_cnt = " << loop_cnt << std::endl;
+  // std::cout<<"loop_cnt = " << loop_cnt << std::endl;
 
   ros::spinOnce();
 
