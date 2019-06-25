@@ -15,10 +15,12 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 
+
 include_directories(${catkin_INCLUDE_DIRS})
 
 catkin_package(
     CATKIN_DEPENDS flypulator_common_msgs)
 
 add_executable(vive_pose src/vive_pose.cpp)
-target_link_libraries(vive_pose ${catkin_LIBRARIES})  
+target_link_libraries(vive_pose ${catkin_LIBRARIES})
+add_dependencies(vive_pose ${catkin_EXPORTED_TARGETS})  
