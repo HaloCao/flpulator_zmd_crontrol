@@ -7,7 +7,7 @@ sim/add_wrench_to_drone: true  # apply aerodynamic wrench to UAV
 sim/use_ground_effect: false   # invalid for simple aerodynamic
 sim/use_motor_dynamic: true    # add motor model to simulation
 sim/use_simple_aerodynamic: true  # coeff. k and b are constant
-sim/add_dist: false   # add disturbance forces on base_link (use wind topic)
+sim/add_dist: true   # add disturbance forces on base_link (use wind topic)
 
 #naming conventions
 urdf/controller_joint_names: ['blade_joint_1', 'blade_joint_2', 'blade_joint_3', 'blade_joint_4', 'blade_joint_5', 'blade_joint_6']

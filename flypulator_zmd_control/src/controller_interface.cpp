@@ -69,6 +69,7 @@ void ControllerInterface::computeControlOutput(const PoseVelocityAcceleration& x
                                                const PoseVelocityAcceleration& x_current,
                                                Eigen::Matrix<float, 6, 1>& spinning_rates)
 {
+ 
   // call controller to compute Force and Torque output
   controller_->computeControlForceTorqueInput(x_des, x_current, control_force_and_torque_);
   // map control force and torque to spinning velocities of the propellers resp. rotors
