@@ -355,6 +355,9 @@ void PropulsionPlugin::onUpdate(const common::UpdateInfo &_info)  // update rate
   {
     this->link0_->AddForce(dist_force_);
     this->link0_->AddTorque(dist_torque_);
+
+    // std::cout<< "force: " << dist_force_.X() << "," << dist_force_.Y() << "," << dist_force_.Z() << "\n";
+    // std::cout<< "torque: " << dist_torque_.X() << "," << dist_torque_.Y() << "," << dist_torque_.Z() << "\n";
   }
 
   // print to file

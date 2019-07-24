@@ -18,8 +18,11 @@ public:
 	  , e3_(Eigen::Vector3f(0,0,1))
     ,eps_err_sum_(Eigen::Vector3f(0,0,0))
     ,e_p_sum_(Eigen::Vector3f(0,0,0))
-    //, purpose_position_(Eigen::Vector3f(1.2,1.5,1.8))
-    //, purpose_velocity_(Eigen::Vector3f(0,0,0))
+    //,purpose_position_(Eigen::Vector3f(0,0,1))
+    //, purpose_position_(Eigen::Vector3f(0,0,0))
+    ,purpose_velocity_(Eigen::Vector3f(0,0,0))
+    //,purpose_quaternion_(Eigen::Quaternionf(1, 0, 0, 0 ))
+    //,purpose_quaternion_(Eigen::Quaternionf(0.998287844479674, 0.0523081612886283,	0.0261411483561912,	-0.00136974061343832))
   {
     // initialize t_last_ with assumed sampling time (200Hz).
     t_last_ = ros::Time::now() ;
@@ -33,8 +36,10 @@ public:
   void configCallback(flypulator_zmd_control::zmd_parameterConfig& config, uint32_t level);
 
 private:
-  //Eigen::Vector3f purpose_position_;
-  //Eigen::Vector3f purpose_velocity_;
+
+  Eigen::Vector3f purpose_position_;
+  Eigen::Vector3f purpose_velocity_;
+  Eigen::Quaternionf purpose_quaternion_;
   float mass_;
   Eigen::Matrix3f inertia_;
   Eigen::Matrix3f inertia_inv_;

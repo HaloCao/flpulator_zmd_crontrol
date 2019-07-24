@@ -59,6 +59,7 @@ void ZeroMomentDirectionController::computeControlForceTorqueInput(const PoseVel
 	f_r_ = mass_ * gravity_ - K_pi_ * e_p_sum_ - K_pp_ * e_p_ - K_pd_ * e_v_;
 
 	//calculate zeromoment direction
+	//_d_ = (purpose_quaternion_.toRotationMatrix()).transpose() * e3_;
 	_d_ = (x_des.q.toRotationMatrix()).transpose() * e3_;
 	d_norm_ = sqrt(_d_.x() * _d_.x() + _d_.y() * _d_.y()+_d_.z() * _d_.z());
 	d_ = _d_ / d_norm_;
@@ -73,13 +74,18 @@ void ZeroMomentDirectionController::computeControlForceTorqueInput(const PoseVel
 		-d_(1), d_(0), 0;
 
 	eta_ = x_current.q.w();
+	//eta_r_ = purpose_quaternion_.w();
 	eta_r_ = x_des.q.w();
 	eta_d_ = q_d_.w();
 	eps_ = x_current.q.vec();
+	//eps_r_ =purpose_quaternion_.vec();
 	eps_r_ = x_des.q.vec();
 	eps_d_ = q_d_.vec();
 	eps_err_ = eta_d_ * eps_ - eta_ * eps_d_ - eps_d_.cross(eps_);  // skew symmetric matrix times vector is equal to cross product
 	eps_rd_err_ = eta_r_ * eps_d_ - eta_d_ * eps_r_ - eps_r_.cross(eps_d_);  // skew symmetric matrix times vector is equal to cross product
+	
+
+	
 
 	//attitude controller
 	w_rd_ = -K_q_ * d_ * d_.transpose() * eps_rd_err_;
@@ -115,7 +121,6 @@ void ZeroMomentDirectionController::computeControlForceTorqueInput(const PoseVel
 
 	//cout << "torque = " << tau_r_.transpose() << endl;
 	//cout << "force = " << f_del_.transpose() << endl;
-
-
-
+ 
+    
 }
