@@ -5,6 +5,7 @@
 #include "geometry_msgs/WrenchStamped.h"
 #include "flypulator_common_msgs/PoseXYZRPYStamped.h"
 #include "flypulator_common_msgs/UavStateRPYStamped.h"
+#include <signal.h>
 
 ControllerInterface* g_drone_controller_p;
 PoseVelocityAcceleration g_current_pose;
@@ -233,10 +234,26 @@ void stateMessageCallback(const flypulator_common_msgs::UavStateStamped::ConstPt
   computeControlOutputAndPublish(msg->header.stamp);
 }
 
+void sigintHandler(int sig)
+{
+  flypulator_common_msgs::RotorVelStamped msg;
+  msg.header.stamp = ros::Time::now();
+  for (int i = 0; i < 6; i++)
+  {
+    msg.velocity.push_back(0);
+    msg.name.push_back(std::string("blade_joint") + std::to_string(i));
+  }
+  ROS_WARN("Shut down controller...");
+  g_rotor_cmd_pub->publish(msg);
+  
+  // All the default sigint handler does is call shutdown()
+  ros::shutdown();
+}
+
 int main(int argc, char** argv)
 {
   // initialize node
-  ros::init(argc, argv, "controller");
+  ros::init(argc, argv, "controller", ros::init_options::NoSigintHandler);
 
   ros::NodeHandle n;
 
@@ -273,6 +290,11 @@ int main(int argc, char** argv)
   dynamic_reconfigure::Server<flypulator_control::pid_parameterConfig>::CallbackType cb;
   cb = boost::bind(&BaseController::configCallback, g_drone_controller_p->getControllerReference(), _1, _2);
   dr_srv.setCallback(cb);
+
+  // Override the default ros sigint handler.
+  // This must be set after the first NodeHandle is created.
+  //http://wiki.ros.org/roscpp/Overview/Initialization%20and%20Shutdown
+  signal(SIGINT, sigintHandler);
 
   ros::spin();
 
