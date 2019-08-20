@@ -1,6 +1,0 @@
-trajectory/rotor_vel_max: 5700 # [rpm] Maximum rotor w.r.t. feasibility check of trajectories
-trajectory/rotor_vel_min: 600  #[rpm] Minimum rotor w.r.t. feasibility check of trajectories
-trajectory/simulation_step_size: 0.01 # [s] step size for numerical integration in terms of actuator rpm prediction
-trajectory/newton_stepsize: 0.01 # [rad] the step_size which is used to calculate the derivative in the newton approach when retrieving a feasible target pose
-trajectory/newton_epsilon: 10 # [rad²/s²] The terminating condition for the newton approach when retrieving a feasible target pose
-trajectory/boundary_buffer: 150 # [rpm] The additional offset that the rotorvelocities shall obtain w.r.t. the actuator limits

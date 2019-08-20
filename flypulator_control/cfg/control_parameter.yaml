@@ -1,3 +1,0 @@
-controller/type: "pid" #controller type, "ism" for integral sliding mode, "pid" for PID controller
-controller/use_motor_ff: false # enable or disable feedforward motor control
-controller/update_rate: 200 # [Hz] update_rate of control loop, used by motor FF and traj. generator

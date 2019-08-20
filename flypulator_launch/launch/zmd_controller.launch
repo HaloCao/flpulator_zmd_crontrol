@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-
-	<rosparam command="load" file="$(find flypulator_zmd_control)/cfg/control_parameter.yaml" />
-
-	<node name="controller_zmd_node" pkg="flypulator_zmd_control" type="controller_zmd_node" 			output="screen">
-	</node>
-	
-</launch>
